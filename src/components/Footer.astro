@@ -1,0 +1,40 @@
+---
+import { SITE, NAV_TOOLS } from '../site.config';
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container grid">
+    <div>
+      <strong>{SITE.name}</strong>
+      <p class="muted">{SITE.tagline}. Everything runs locally in your browser — nothing you paste is uploaded.</p>
+    </div>
+    <div>
+      <strong>Tools</strong>
+      <ul>
+        {NAV_TOOLS.map((t) => <li><a href={t.href}>{t.label}</a></li>)}
+      </ul>
+    </div>
+    <div>
+      <strong>Site</strong>
+      <ul>
+        <li><a href="/about">About</a></li>
+        <li><a href="/contact">Contact</a></li>
+        <li><a href="/privacy-policy">Privacy Policy</a></li>
+        <li><a href="/terms">Terms of Use</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container copy muted">© {year} {SITE.author}. All rights reserved.</div>
+</footer>
+
+<style>
+  .site-footer { border-top: 1px solid var(--border); background: var(--surface); margin-top: 2rem; font-size: 0.925rem; }
+  .grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 2rem; padding-block: 2rem 1rem; }
+  ul { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+  li { margin-bottom: 0.3rem; }
+  a { color: var(--text-muted); }
+  a:hover { color: var(--accent); }
+  .copy { padding-block: 1rem 1.5rem; font-size: 0.85rem; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; gap: 1.25rem; } }
+</style>

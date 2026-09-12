@@ -1,0 +1,29 @@
+{
+  "name": "devtools-hub",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Fast, private, browser-based text and list utilities. Built with Astro.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "test": "node --test --import tsx \"tests/**/*.test.ts\"",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.2.1",
+    "astro": "^5.13.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  },
+  "allowScripts": {
+    "esbuild@0.27.7": true,
+    "esbuild@0.28.2": true,
+    "esbuild@0.25.12": true,
+    "sharp@0.34.5": true
+  }
+}

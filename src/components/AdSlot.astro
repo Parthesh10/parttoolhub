@@ -1,0 +1,42 @@
+---
+/**
+ * Renders a Google AdSense unit. Emits nothing at all until ADS.client and the
+ * requested slot ID are filled in, so the layout is ad-free during development
+ * and before AdSense approval. Reserving min-height prevents layout shift (CLS)
+ * once ads do load — a Core Web Vitals factor Google weights for ranking.
+ */
+import { ADS } from '../site.config';
+
+export interface Props {
+  slot: keyof typeof ADS.slots;
+  format?: 'auto' | 'horizontal' | 'rectangle';
+  class?: string;
+}
+
+const { slot, format = 'auto', class: className = '' } = Astro.props;
+const slotId = ADS.slots[slot];
+const enabled = Boolean(ADS.client && slotId);
+---
+
+{enabled && (
+  <div class:list={['ad-slot', `ad-${format}`, className]} aria-label="Advertisement">
+    <ins
+      class="adsbygoogle"
+      style="display:block"
+      data-ad-client={ADS.client}
+      data-ad-slot={slotId}
+      data-ad-format={format}
+      data-full-width-responsive="true"
+    />
+    <script is:inline>
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
+)}
+
+<style>
+  .ad-slot { margin: 1.5rem 0; text-align: center; }
+  .ad-horizontal { min-height: 90px; }
+  .ad-rectangle { min-height: 250px; }
+  .ad-auto { min-height: 100px; }
+</style>

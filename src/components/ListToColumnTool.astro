@@ -1,0 +1,145 @@
+---
+/**
+ * Interactive delimited list → column converter.
+ * Behaviour lives in ./list-to-column.client.ts
+ */
+---
+
+<section class="tool card" id="tool" data-tool="list-to-column">
+  <div class="panes">
+    <div class="pane">
+      <div class="pane-head">
+        <label for="input">Paste your list</label>
+        <span class="stat" id="input-stat" aria-live="polite">0 characters</span>
+      </div>
+      <textarea
+        id="input"
+        rows="10"
+        spellcheck="false"
+        autocomplete="off"
+        placeholder={'Comma, semicolon, pipe or tab separated, e.g.\napple, banana, cherry'}
+      ></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+        <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+      </div>
+    </div>
+
+    <div class="pane">
+      <div class="pane-head">
+        <label for="output">One item per line</label>
+        <span class="stat" id="output-stat" aria-live="polite">0 items</span>
+      </div>
+      <textarea id="output" rows="10" readonly spellcheck="false" placeholder="Each item lands on its own line here"></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy to clipboard</button>
+        <button type="button" class="btn btn-sm" id="btn-download">Download .txt</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="options">
+    <fieldset>
+      <legend>Split on</legend>
+      <div class="row">
+        <label class="field">
+          <span>Separator</span>
+          <select id="opt-delimiter">
+            <option value="auto">Detect automatically</option>
+            <option value=",">Comma</option>
+            <option value=";">Semicolon</option>
+            <option value="|">Pipe</option>
+            <option value="&#9;">Tab</option>
+            <option value=" ">Any whitespace</option>
+            <option value="__custom__">Custom…</option>
+          </select>
+        </label>
+        <label class="field" id="custom-delim-field" hidden>
+          <span>Custom separator</span>
+          <input type="text" id="opt-delimiter-custom" placeholder="e.g. --" />
+        </label>
+      </div>
+      <p class="detected muted" id="detected" aria-live="polite"></p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Clean up</legend>
+      <div class="checks">
+        <label><input type="checkbox" id="opt-trim" checked /> Trim spaces around items</label>
+        <label><input type="checkbox" id="opt-skip-empty" checked /> Skip empty items</label>
+        <label><input type="checkbox" id="opt-unquote" checked /> Remove surrounding quotes</label>
+        <label><input type="checkbox" id="opt-dedupe" /> Remove duplicates</label>
+        <label><input type="checkbox" id="opt-reverse" /> Reverse order</label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Transform</legend>
+      <div class="row">
+        <label class="field">
+          <span>Sort</span>
+          <select id="opt-sort">
+            <option value="none">Keep original order</option>
+            <option value="az">A → Z</option>
+            <option value="za">Z → A</option>
+            <option value="num-asc">Numeric, low → high</option>
+            <option value="num-desc">Numeric, high → low</option>
+            <option value="len-asc">Shortest first</option>
+            <option value="len-desc">Longest first</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Letter case</span>
+          <select id="opt-case">
+            <option value="keep">Keep as is</option>
+            <option value="lower">lowercase</option>
+            <option value="upper">UPPERCASE</option>
+            <option value="title">Title Case</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+  </div>
+
+  <p class="toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./list-to-column.client.ts"></script>
+
+<style>
+  .tool { padding: 1rem; }
+  @media (min-width: 640px) { .tool { padding: 1.25rem 1.5rem; } }
+  .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 760px) { .panes { grid-template-columns: 1fr; } }
+  .pane-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem; }
+  .pane-head label { font-weight: 650; }
+  .stat { font-size: 0.8rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  textarea {
+    width: 100%; resize: vertical; min-height: 180px;
+    font-family: var(--mono); font-size: 0.9rem; line-height: 1.5;
+    padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--surface-2); color: var(--text);
+  }
+  textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; background: var(--surface); }
+  textarea[readonly] { background: var(--surface); }
+  .pane-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem; }
+  .options { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.85rem; margin-top: 1.25rem; }
+  fieldset { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.6rem 0.85rem 0.85rem; margin: 0; min-width: 0; }
+  legend { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); padding: 0 0.3rem; }
+  .row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .field { display: flex; flex-direction: column; gap: 0.2rem; flex: 1 1 100px; font-size: 0.85rem; color: var(--text-muted); min-width: 0; }
+  .field input, .field select {
+    font: inherit; font-size: 0.9rem; color: var(--text); padding: 0.4rem 0.5rem;
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); width: 100%;
+  }
+  .field input { font-family: var(--mono); }
+  .detected { font-size: 0.8rem; margin: 0.5rem 0 0; min-height: 1.2em; }
+  .checks { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; }
+  .checks label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+  .checks input { accent-color: var(--accent); width: 1rem; height: 1rem; }
+  .toast {
+    position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%);
+    background: var(--text); color: var(--bg); padding: 0.55rem 1rem; border-radius: 999px;
+    font-size: 0.9rem; font-weight: 600; box-shadow: var(--shadow); z-index: 60; margin: 0;
+  }
+</style>

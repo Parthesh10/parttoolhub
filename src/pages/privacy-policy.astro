@@ -1,0 +1,69 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { SITE } from '../site.config';
+const updated = '13 September 2026';
+---
+
+<Base title="Privacy Policy" description={`How ${SITE.name} handles data: what stays in your browser, what cookies advertising partners may set, and your choices.`}>
+  <Breadcrumbs items={[{ label: 'Privacy Policy' }]} />
+  <article class="prose">
+    <h1>Privacy Policy</h1>
+    <p class="muted">Last updated: {updated}</p>
+
+    <h2>The short version</h2>
+    <p>
+      Text you paste into any tool on {SITE.name} is processed by JavaScript running in your own browser. It is not transmitted
+      to us or to anyone else. The only data collection on this site comes from standard web-server logs and from the
+      advertising and analytics partners described below.
+    </p>
+
+    <h2>Data you enter into tools</h2>
+    <p>
+      Our tools are static web pages. When you paste a list, the conversion happens on your device and the result is displayed
+      on the same page. We have no server component that receives, stores or inspects that content. Closing the tab discards it.
+    </p>
+
+    <h2>Server logs</h2>
+    <p>
+      Like virtually every website, our hosting provider records basic request information — IP address, browser type, the
+      page requested and the time — for security and capacity planning. These logs are retained for a limited period and are
+      not combined with any other data.
+    </p>
+
+    <h2>Advertising</h2>
+    <p>
+      We use Google AdSense to display advertisements. Google and its partners may use cookies or similar technologies to serve
+      ads based on your prior visits to this and other websites. You can opt out of personalised advertising by visiting
+      <a href="https://www.google.com/settings/ads" rel="noopener nofollow">Google Ads Settings</a>, and learn more about how
+      Google uses data from sites that use its services at
+      <a href="https://policies.google.com/technologies/partner-sites" rel="noopener nofollow">policies.google.com/technologies/partner-sites</a>.
+    </p>
+    <p>
+      Visitors in the European Economic Area, the United Kingdom and Switzerland will be shown a consent message before any
+      personalised advertising cookies are set, and can change their choice at any time.
+    </p>
+
+    <h2>Analytics</h2>
+    <p>
+      We may use Google Analytics to understand which tools are used and how often. IP addresses are anonymised. This
+      information is aggregated and cannot identify you individually. You can prevent analytics collection with the
+      <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener nofollow">Google Analytics opt-out add-on</a>.
+    </p>
+
+    <h2>Cookies</h2>
+    <p>
+      {SITE.name} itself sets no cookies. Third-party cookies may be set by the advertising and analytics services above.
+      Most browsers let you block or delete cookies in their settings; the tools on this site continue to work with cookies disabled.
+    </p>
+
+    <h2>Children</h2>
+    <p>This site is not directed at children under 13 and we do not knowingly collect personal information from them.</p>
+
+    <h2>Changes to this policy</h2>
+    <p>We will update this page if our practices change and revise the date at the top. Continued use of the site after a change constitutes acceptance of the updated policy.</p>
+
+    <h2>Contact</h2>
+    <p>Questions about privacy can be sent to <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>.</p>
+  </article>
+</Base>

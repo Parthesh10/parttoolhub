@@ -1,0 +1,3 @@
+# Replace the line below with the exact line shown in your AdSense account
+# (Sites > your domain > "ads.txt"). Until then this file is intentionally a placeholder.
+# google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0

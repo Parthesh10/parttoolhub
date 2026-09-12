@@ -1,0 +1,45 @@
+---
+/**
+ * Accessible FAQ using native <details>, plus FAQPage structured data so the
+ * questions are eligible for rich results in Google Search.
+ */
+export interface QA {
+  q: string;
+  a: string;
+}
+export interface Props {
+  items: QA[];
+  heading?: string;
+}
+const { items, heading = 'Frequently asked questions' } = Astro.props;
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: items.map((i) => ({
+    '@type': 'Question',
+    name: i.q,
+    acceptedAnswer: { '@type': 'Answer', text: i.a },
+  })),
+};
+---
+
+<section class="faq" aria-labelledby="faq-heading">
+  <h2 id="faq-heading">{heading}</h2>
+  {items.map((i) => (
+    <details>
+      <summary>{i.q}</summary>
+      <p set:html={i.a} />
+    </details>
+  ))}
+</section>
+<script is:inline type="application/ld+json" set:html={JSON.stringify(schema)} />
+
+<style>
+  details { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); margin-bottom: 0.6rem; }
+  summary { cursor: pointer; padding: 0.8rem 1rem; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 1rem; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '+'; color: var(--text-muted); font-weight: 400; }
+  details[open] summary::after { content: '−'; }
+  details p { padding: 0 1rem 0.9rem; margin: 0; color: var(--text-muted); }
+</style>

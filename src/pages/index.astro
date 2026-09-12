@@ -1,0 +1,66 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE } from '../site.config';
+
+const tools = [
+  {
+    href: '/column-to-comma-separated-list',
+    name: 'Column to Comma Separated List',
+    blurb: 'Join a column of values into one delimited line. Quotes, brackets, custom separators, dedupe and sort — with presets for SQL, JSON and Python.',
+  },
+  {
+    href: '/comma-separated-list-to-column',
+    name: 'Comma Separated List to Column',
+    blurb: 'Split any comma, semicolon, pipe or tab separated text into one item per line. Auto-detects the separator and strips quotes.',
+  },
+];
+---
+
+<Base title={`${SITE.name} — ${SITE.tagline}`} description={`${SITE.tagline}. Free online converters for lists and text that never upload your data.`} canonical="/">
+  <section class="hero">
+    <h1>Small text tools that respect your data</h1>
+    <p class="lead">
+      Every converter on {SITE.name} runs entirely in your browser. There is no upload, no account and no waiting — paste,
+      adjust, copy.
+    </p>
+  </section>
+
+  <section aria-labelledby="tools-heading">
+    <h2 id="tools-heading">Tools</h2>
+    <div class="grid">
+      {tools.map((t) => (
+        <a class="card tool-card" href={t.href}>
+          <h3>{t.name}</h3>
+          <p>{t.blurb}</p>
+          <span class="cta">Open tool →</span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="prose why">
+    <h2>Why these tools exist</h2>
+    <p>
+      Reshaping a list is a two-minute job that somehow eats twenty: open an editor, fiddle with find-and-replace, fix the
+      stray trailing comma, repeat. Each tool here does one of those jobs well, shows you the result as you type, and stays out
+      of your way.
+    </p>
+    <ul>
+      <li><strong>Private by design.</strong> The pages are static files; the conversion is plain JavaScript on your device.</li>
+      <li><strong>Fast on any connection.</strong> No frameworks to download, no round-trips to a server.</li>
+      <li><strong>Honest about what changed.</strong> Counters tell you how many items went in, came out and were dropped.</li>
+    </ul>
+  </section>
+</Base>
+
+<style>
+  .hero { max-width: 72ch; margin-bottom: 1.5rem; }
+  .lead { font-size: 1.15rem; color: var(--text-muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+  .tool-card { display: flex; flex-direction: column; padding: 1.25rem 1.4rem; color: var(--text); transition: border-color 0.15s, transform 0.15s; }
+  .tool-card:hover { text-decoration: none; border-color: var(--accent); transform: translateY(-2px); }
+  .tool-card h3 { margin: 0 0 0.4rem; font-size: 1.1rem; }
+  .tool-card p { color: var(--text-muted); font-size: 0.95rem; flex: 1; }
+  .cta { color: var(--accent); font-weight: 600; font-size: 0.9rem; }
+  .why { margin-top: 1rem; }
+</style>

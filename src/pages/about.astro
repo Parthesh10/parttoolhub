@@ -1,0 +1,36 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { SITE } from '../site.config';
+---
+
+<Base title="About" description={`What ${SITE.name} is, who builds it, and the principles behind every tool on the site.`}>
+  <Breadcrumbs items={[{ label: 'About' }]} />
+  <article class="prose">
+    <h1>About {SITE.name}</h1>
+    <p>
+      {SITE.name} is a growing collection of single-purpose text utilities. Each one solves a small, recurring chore — the kind
+      of thing you could script in a minute but would rather not have to, every time.
+    </p>
+
+    <h2>Principles</h2>
+    <ul>
+      <li><strong>Nothing leaves your browser.</strong> Every tool is built as static HTML plus a few kilobytes of JavaScript. There is no backend to receive your data.</li>
+      <li><strong>Show the result immediately.</strong> No “Convert” button to hunt for; the output updates as you type or change an option.</li>
+      <li><strong>Be explicit about side effects.</strong> If lines are skipped or duplicates removed, the counters say so.</li>
+      <li><strong>Work without an account.</strong> Bookmark the page and it is ready whenever you are.</li>
+    </ul>
+
+    <h2>How the site is funded</h2>
+    <p>
+      The tools are free to use and always will be. Hosting and development are supported by a small number of display
+      advertisements. Ads are never placed in a way that interferes with the tool itself, and no personal data you paste into a
+      tool is ever used for advertising.
+    </p>
+
+    <h2>Get in touch</h2>
+    <p>
+      Found a bug, want a new option, or have an idea for another tool? See the <a href="/contact">contact page</a>.
+    </p>
+  </article>
+</Base>

@@ -1,0 +1,49 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { SITE } from '../site.config';
+const updated = '13 September 2026';
+---
+
+<Base title="Terms of Use" description={`The terms under which the free tools on ${SITE.name} are provided.`}>
+  <Breadcrumbs items={[{ label: 'Terms of Use' }]} />
+  <article class="prose">
+    <h1>Terms of Use</h1>
+    <p class="muted">Last updated: {updated}</p>
+
+    <p>By using {SITE.name} you agree to these terms. They are short because the service is simple.</p>
+
+    <h2>Use of the tools</h2>
+    <p>
+      The tools are provided free of charge for personal and commercial use. You may not attempt to disrupt the site, scrape it
+      at a rate that affects other visitors, or use it for any unlawful purpose.
+    </p>
+
+    <h2>No warranty</h2>
+    <p>
+      The tools are provided “as is”. We work hard to make them correct, but we make no guarantee that any output is accurate,
+      complete or fit for a particular purpose. Always review results before relying on them, especially in production systems.
+    </p>
+
+    <h2>Limitation of liability</h2>
+    <p>
+      To the fullest extent permitted by law, {SITE.author} shall not be liable for any loss or damage arising from your use of,
+      or inability to use, this site or its tools.
+    </p>
+
+    <h2>Intellectual property</h2>
+    <p>
+      The text, design and code of this site are the property of {SITE.author} unless otherwise stated. Content you paste into a
+      tool remains yours; we claim no rights over it and, as described in the <a href="/privacy-policy">privacy policy</a>, never receive it.
+    </p>
+
+    <h2>Third-party links</h2>
+    <p>Links to other websites are provided for convenience. We are not responsible for their content or practices.</p>
+
+    <h2>Changes</h2>
+    <p>We may revise these terms from time to time. The date at the top shows when they were last changed.</p>
+
+    <h2>Contact</h2>
+    <p>Questions about these terms: <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>.</p>
+  </article>
+</Base>
