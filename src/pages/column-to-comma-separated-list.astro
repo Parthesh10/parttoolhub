@@ -44,7 +44,7 @@ const faq = [
   },
   {
     q: 'How do I go the other way — from a comma list back into a column?',
-    a: 'Use the companion <a href="/comma-separated-list-to-column">comma separated list to column</a> tool, or click <em>Use as input</em> here to feed the result back in with a new-line separator.',
+    a: 'Use the companion <a href="/comma-separated-list-to-column">comma separated list to column</a> tool, or click <em>Split back to column</em> under the result box, which opens that tool with your list already loaded.',
   },
 ];
 
@@ -199,7 +199,7 @@ result = ", ".join(lines)</code></pre>
       <li><strong>Watch the item counter.</strong> If it shows fewer items than lines, blank or duplicate lines were removed — expected, but worth a glance.</li>
       <li><strong>Sorting is number-aware.</strong> A–Z ordering puts <code>item2</code> before <code>item10</code>, unlike a plain character sort.</li>
       <li><strong>Values containing commas</strong> should be quoted before they go into a CSV file, otherwise a downstream parser will split them. The double-quote wrapper handles this.</li>
-      <li><strong>Use “Use as input”</strong> to chain transformations: convert once, feed the result back, and convert again with different settings.</li>
+      <li><strong>Round-trip with one click.</strong> <em>Split back to column</em> sends the result to the reverse tool, and that tool’s <em>Join into a list</em> brings it back here — useful for cleaning a list, then re-joining it with different settings.</li>
     </ul>
   </article>
 

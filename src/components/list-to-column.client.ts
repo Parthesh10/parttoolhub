@@ -1,4 +1,5 @@
 import { listToColumn, detectDelimiter, type ListToColumnOptions, type SortMode, type CaseMode } from '../lib/list-convert';
+import { sendToTool, receiveTransfer } from '../lib/transfer';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -105,6 +106,10 @@ for (const c of [delimiter, delimiterCustom, trim, skipEmpty, unquote, dedupe, r
 input.addEventListener('input', render);
 $('btn-copy').addEventListener('click', copyOutput);
 $('btn-download').addEventListener('click', downloadOutput);
+$('btn-to-list').addEventListener('click', () => {
+  if (!output.value) return showToast('Nothing to join yet');
+  sendToTool(output.value, '/column-to-comma-separated-list');
+});
 $('btn-clear').addEventListener('click', () => {
   input.value = '';
   render();
@@ -120,5 +125,9 @@ input.addEventListener('keydown', (e) => {
     copyOutput();
   }
 });
+
+// Text handed over from the column-to-list tool, if any.
+const incoming = receiveTransfer();
+if (incoming) input.value = incoming;
 
 render();

@@ -1,4 +1,5 @@
 import { columnToList, PRESETS, CUSTOM_DELIMITER, type ColumnToListOptions, type SortMode, type CaseMode } from '../lib/list-convert';
+import { sendToTool, receiveTransfer } from '../lib/transfer';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -152,11 +153,9 @@ $('btn-sample').addEventListener('click', () => {
   input.value = SAMPLE;
   render();
 });
-$('btn-swap').addEventListener('click', () => {
-  if (!output.value) return showToast('Nothing to move yet');
-  input.value = output.value;
-  render();
-  showToast('Result moved to input');
+$('btn-to-column').addEventListener('click', () => {
+  if (!output.value) return showToast('Nothing to split yet');
+  sendToTool(output.value, '/comma-separated-list-to-column');
 });
 
 // Ctrl/Cmd + Enter copies — handy when the cursor is still in the input box.
@@ -166,5 +165,9 @@ input.addEventListener('keydown', (e) => {
     copyOutput();
   }
 });
+
+// Text handed over from the reverse tool, if any.
+const incoming = receiveTransfer();
+if (incoming) input.value = incoming;
 
 render();
