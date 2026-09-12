@@ -3,13 +3,13 @@
  * Change these once you own a domain and have an AdSense account.
  */
 export const SITE = {
-  name: 'DevTools Hub',
-  tagline: 'Fast, private text & list utilities that run in your browser',
-  url: 'https://example.com',
+  name: 'PartToolHub',
+  tagline: 'Fast, private tools for text, data and code that run in your browser',
+  url: 'https://parttoolhub.com',
   /** Shown in the footer and on the About page. */
-  author: 'DevTools Hub',
+  author: 'PartToolHub',
   /** Contact address surfaced on /contact and in the privacy policy. */
-  contactEmail: 'hello@example.com',
+  contactEmail: 'hello@parttoolhub.com',
   /** Default social preview image, relative to /public. */
   ogImage: '/og-default.png',
   /** ISO date the site launched — used in schema.org markup. */
