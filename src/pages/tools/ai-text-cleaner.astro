@@ -1,0 +1,61 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import AiTextCleanerTool from '../../components/tools/AiTextCleanerTool.astro';
+import { toolBySlug } from '../../data/tools';
+
+const tool = toolBySlug('ai-text-cleaner');
+
+const faq = [
+  {
+    q: 'Is this a detector — will it tell me if text was written by AI?',
+    a: 'No. It doesn’t judge or classify text; it removes formatting and characters that make AI output look out of place once pasted into an email, document or CMS — Markdown symbols the target doesn’t render, em dashes, curly quotes, and invisible characters some models insert.',
+  },
+  {
+    q: 'What are the invisible characters it removes?',
+    a: 'Mainly zero-width spaces, word joiners, a byte-order mark (BOM), and other Unicode formatting characters that some AI tools insert but that render as nothing — yet can break exact-match searches, URL slugs, or copy-paste into code.',
+  },
+  {
+    q: 'Will it change my meaning?',
+    a: 'The default options only touch formatting and punctuation style, not wording. Replacing an em dash with a comma can occasionally read slightly differently in a sentence with several clauses — the “Leave as is” option skips that step if you’d rather keep dashes.',
+  },
+  {
+    q: 'Why remove citation markers like [1] or 【2】?',
+    a: 'Some AI answers include inline reference numbers meant for a source list that doesn’t travel with the pasted text. Left in place they read as stray brackets with no citation to point to, so removing them is usually what you want once you’ve pasted the answer elsewhere.',
+  },
+];
+---
+
+<ToolLayout {tool} {faq}>
+  <AiTextCleanerTool />
+
+  <Fragment slot="content">
+    <h2>Why pasted AI text needs cleanup</h2>
+    <p>
+      Chat assistants format their answers in Markdown and typographic punctuation because that's what renders nicely in a
+      chat window. The moment you copy that answer into an email, a plain-text field, a CMS that doesn't support Markdown, or
+      a script that expects plain ASCII, the formatting stops helping and starts showing: literal <code>**asterisks**</code>
+      around words, a stray <code>##</code> in front of a heading, an em dash where a comma would read more naturally, and
+      occasionally characters that don't print at all but are still sitting in the text.
+    </p>
+    <p>
+      This tool runs a fixed set of text transformations — no AI model involved — so the same input always produces the same
+      output, and nothing you paste leaves your browser.
+    </p>
+
+    <h2>What gets cleaned, and why it matters</h2>
+    <ul>
+      <li><strong>Markdown symbols</strong> (<code>#</code>, <code>**</code>, <code>_</code>, <code>`</code>, <code>[text](url)</code>) are stripped down to their plain-text content, so a heading stays readable and a link keeps its visible label.</li>
+      <li><strong>Em dashes</strong> are a stylistic tell of a lot of AI writing; swapping them for a comma or hyphen makes the result read more like ordinary prose.</li>
+      <li><strong>Curly quotes</strong> (“ ” ‘ ’) become straight quotes ("  '), which some older systems and monospace fonts render as boxes or question marks.</li>
+      <li><strong>Invisible characters</strong> (zero-width spaces, a leading byte-order mark) take up no visual space but can break an exact string match, a URL, or a diff.</li>
+      <li><strong>Citation markers</strong> like <code>[1]</code> or <code>【2†source】</code> reference a source list that usually isn't included when you copy just the answer text.</li>
+    </ul>
+
+    <h2>What it leaves alone by default</h2>
+    <p>
+      Emoji are left untouched unless you turn that option on — plenty of pasted text is meant to keep them. Fenced code
+      blocks keep their code but drop the triple-backtick fence lines, so a snippet stays intact while the Markdown wrapper
+      disappears.
+    </p>
+  </Fragment>
+</ToolLayout>

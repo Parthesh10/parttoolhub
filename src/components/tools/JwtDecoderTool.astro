@@ -1,0 +1,68 @@
+---
+/** JWT decoder. Behaviour in ./jwt-decoder.client.ts */
+---
+
+<section class="tool card" id="tool" data-tool="jwt-decoder">
+  <div class="single">
+    <div class="pane-head">
+      <label for="input">Paste a JWT</label>
+      <span class="stat" id="input-stat" aria-live="polite"></span>
+    </div>
+    <textarea
+      id="input"
+      rows="6"
+      spellcheck="false"
+      autocomplete="off"
+      placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SIGNATURE"
+    ></textarea>
+    <div class="pane-actions">
+      <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+      <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+    </div>
+  </div>
+
+  <p class="status-banner" id="status" hidden></p>
+
+  <div class="jwt-result" id="result" hidden>
+    <div class="jwt-timing" id="timing"></div>
+
+    <div class="jwt-panes">
+      <div class="pane">
+        <div class="pane-head">
+          <label for="header-out">Header</label>
+        </div>
+        <textarea id="header-out" rows="6" readonly spellcheck="false"></textarea>
+        <div class="pane-actions">
+          <button type="button" class="btn btn-sm" data-copy="header-out">Copy header</button>
+        </div>
+      </div>
+      <div class="pane">
+        <div class="pane-head">
+          <label for="payload-out">Payload</label>
+        </div>
+        <textarea id="payload-out" rows="6" readonly spellcheck="false"></textarea>
+        <div class="pane-actions">
+          <button type="button" class="btn btn-sm" data-copy="payload-out">Copy payload</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">This decodes the token so you can read its contents. It does not verify the signature — that requires the secret or public key the token was signed with, which never leaves your own server.</p>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./jwt-decoder.client.ts"></script>
+
+<style>
+  .single textarea { min-height: 100px; }
+  .jwt-panes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+  @media (max-width: 760px) { .jwt-panes { grid-template-columns: 1fr; } }
+  .jwt-timing { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; margin-top: 1rem; font-size: 0.9rem; }
+  .jwt-timing .item { display: flex; flex-direction: column; }
+  .jwt-timing .item .k { color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .jwt-timing .item .v { font-weight: 600; }
+  .jwt-timing .v.expired { color: var(--danger); }
+  .jwt-timing .v.valid { color: var(--success); }
+</style>

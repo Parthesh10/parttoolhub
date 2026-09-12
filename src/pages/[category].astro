@@ -1,0 +1,61 @@
+---
+/**
+ * Category hub, e.g. /converters. One per entry in src/data/categories.ts.
+ * Lists every tool in the category with a one-line description, per the
+ * "home directory grid organized by category" nav rule (this is that same
+ * grid, scoped to one category, reachable in one click from home).
+ */
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { CATEGORIES, categoryBySlug } from '../data/categories';
+import { toolsInCategory, toolPath } from '../data/tools';
+import { canonicalUrl } from '../lib/urls';
+
+export function getStaticPaths() {
+  return CATEGORIES.map((c) => ({ params: { category: c.slug } }));
+}
+
+const { category: slug } = Astro.params;
+const category = categoryBySlug(slug!);
+const tools = toolsInCategory(category.slug);
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: category.name,
+    description: category.description,
+    url: canonicalUrl(`/${category.slug}`),
+  },
+];
+---
+
+<Base title={category.name} description={category.description} schema={schema}>
+  <Breadcrumbs items={[{ label: category.name }]} />
+
+  <header class="hero">
+    <h1>{category.name}</h1>
+    <p class="lead">{category.blurb}</p>
+  </header>
+
+  <div class="grid">
+    {tools.map((t) => (
+      <a class="card tool-card" href={toolPath(t)}>
+        <h2>{t.name}</h2>
+        <p>{t.short}</p>
+        <span class="cta">Open tool →</span>
+      </a>
+    ))}
+  </div>
+</Base>
+
+<style>
+  .hero { max-width: 72ch; margin-bottom: 1.5rem; }
+  .lead { font-size: 1.1rem; color: var(--text-muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+  .tool-card { display: flex; flex-direction: column; padding: 1.25rem 1.4rem; color: var(--text); transition: border-color 0.15s, transform 0.15s; }
+  .tool-card:hover { text-decoration: none; border-color: var(--accent); transform: translateY(-2px); }
+  .tool-card h2 { margin: 0 0 0.4rem; font-size: 1.1rem; }
+  .tool-card p { color: var(--text-muted); font-size: 0.95rem; flex: 1; }
+  .cta { color: var(--accent); font-weight: 600; font-size: 0.9rem; }
+</style>

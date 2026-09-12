@@ -1,5 +1,14 @@
 ---
-import { SITE, NAV_TOOLS } from '../site.config';
+/**
+ * Header shows only Home + a category dropdown — never the full tool list —
+ * per the nav rule: listing 50+ tools in the header dilutes focus and hurts
+ * the content-to-clutter ratio. The dropdown is pure CSS (:focus-within /
+ * hover), no JavaScript, matching "shared layout components must be pure
+ * HTML/CSS with no JavaScript."
+ */
+import { SITE } from '../site.config';
+import { CATEGORIES } from '../data/categories';
+
 const current = Astro.url.pathname;
 ---
 
@@ -12,11 +21,19 @@ const current = Astro.url.pathname;
       </svg>
       <span>{SITE.name}</span>
     </a>
-    <nav aria-label="Tools">
+    <nav aria-label="Main">
       <ul>
-        {NAV_TOOLS.map((t) => (
-          <li><a href={t.href} aria-current={current === t.href ? 'page' : undefined}>{t.label}</a></li>
-        ))}
+        <li><a href="/" aria-current={current === '/' ? 'page' : undefined}>Home</a></li>
+        <li class="has-dropdown">
+          <a href="/#tools" class="dropdown-trigger" aria-haspopup="true">
+            Tools <span class="caret" aria-hidden="true">▾</span>
+          </a>
+          <ul class="dropdown">
+            {CATEGORIES.map((c) => (
+              <li><a href={`/${c.slug}`} aria-current={current === `/${c.slug}` ? 'page' : undefined}>{c.name}</a></li>
+            ))}
+          </ul>
+        </li>
       </ul>
     </nav>
   </div>
@@ -31,12 +48,34 @@ const current = Astro.url.pathname;
   .inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 58px; flex-wrap: wrap; }
   .brand { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 800; font-size: 1.1rem; color: var(--text); }
   .brand:hover { text-decoration: none; color: var(--accent); }
-  nav ul { list-style: none; display: flex; gap: 0.25rem; margin: 0; padding: 0; flex-wrap: wrap; }
-  nav a {
+  nav > ul { list-style: none; display: flex; gap: 0.25rem; margin: 0; padding: 0; }
+  nav > ul > li > a {
     display: block; padding: 0.4rem 0.7rem; border-radius: var(--radius-sm);
     color: var(--text-muted); font-weight: 500; font-size: 0.925rem;
   }
-  nav a:hover { background: var(--surface-2); color: var(--text); text-decoration: none; }
-  nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
-  @media (max-width: 640px) { .inner { padding-block: 0.5rem; } }
+  nav > ul > li > a:hover { background: var(--surface-2); color: var(--text); text-decoration: none; }
+  nav > ul > li > a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
+
+  .has-dropdown { position: relative; }
+  .caret { font-size: 0.7em; }
+  .dropdown {
+    list-style: none; margin: 0; padding: 0.4rem;
+    position: absolute; top: 100%; right: 0; min-width: 220px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
+    opacity: 0; visibility: hidden; transform: translateY(-4px);
+    transition: opacity 0.12s, transform 0.12s, visibility 0.12s;
+  }
+  .has-dropdown:hover .dropdown,
+  .has-dropdown:focus-within .dropdown {
+    opacity: 1; visibility: visible; transform: translateY(0);
+  }
+  .dropdown a { display: block; padding: 0.5rem 0.6rem; border-radius: var(--radius-sm); color: var(--text); font-size: 0.9rem; }
+  .dropdown a:hover { background: var(--surface-2); text-decoration: none; }
+  .dropdown a[aria-current="page"] { color: var(--accent); font-weight: 600; }
+
+  @media (max-width: 640px) {
+    .inner { padding-block: 0.5rem; }
+    .dropdown { right: auto; left: 0; }
+  }
 </style>

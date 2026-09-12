@@ -1,0 +1,81 @@
+---
+/** AI text cleaner. Behaviour in ./ai-text-cleaner.client.ts */
+---
+
+<section class="tool card" id="tool" data-tool="ai-text-cleaner">
+  <div class="panes">
+    <div class="pane">
+      <div class="pane-head">
+        <label for="input">Paste AI-generated text</label>
+        <span class="stat" id="input-stat" aria-live="polite">0 characters</span>
+      </div>
+      <textarea
+        id="input"
+        rows="14"
+        spellcheck="false"
+        placeholder={'## Summary\n\nThis is **important** — really important — and here’s why…'}
+      ></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+        <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+      </div>
+    </div>
+
+    <div class="pane">
+      <div class="pane-head">
+        <label for="output">Cleaned text</label>
+        <span class="stat" id="output-stat" aria-live="polite"></span>
+      </div>
+      <textarea id="output" rows="14" readonly spellcheck="false" placeholder="Cleaned text appears here as you type"></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy to clipboard</button>
+        <button type="button" class="btn btn-sm" id="btn-download">Download .txt</button>
+      </div>
+      <p class="hint" id="summary" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <div class="options">
+    <fieldset>
+      <legend>Markdown</legend>
+      <div class="checks">
+        <label><input type="checkbox" id="opt-markdown" checked /> Strip headings, bold/italic, links, code</label>
+        <label class="indent"><input type="checkbox" id="opt-bullets" checked /> …normalize bullet markers to “-”</label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Punctuation</legend>
+      <div class="row">
+        <label class="field">
+          <span>Em dash (—)</span>
+          <select id="opt-emdash">
+            <option value="comma">Replace with comma</option>
+            <option value="hyphen">Replace with hyphen</option>
+            <option value="spaced-hyphen">Replace with " - "</option>
+            <option value="remove">Replace with space</option>
+            <option value="keep">Leave as is</option>
+          </select>
+        </label>
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" id="opt-quotes" checked /> Straighten curly quotes (“ ” → ")</label>
+        <label><input type="checkbox" id="opt-ellipsis" checked /> Replace … with ...</label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Hidden content</legend>
+      <div class="checks">
+        <label><input type="checkbox" id="opt-invisible" checked /> Remove invisible / zero-width characters</label>
+        <label><input type="checkbox" id="opt-citations" checked /> Remove citation markers ([1], 【2】)</label>
+        <label><input type="checkbox" id="opt-emoji" /> Remove emoji</label>
+        <label><input type="checkbox" id="opt-whitespace" checked /> Tidy extra spaces and blank lines</label>
+      </div>
+    </fieldset>
+  </div>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./ai-text-cleaner.client.ts"></script>

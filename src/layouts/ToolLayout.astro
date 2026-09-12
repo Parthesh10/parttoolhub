@@ -1,0 +1,70 @@
+---
+/**
+ * Shared shell for every /tools/<slug> page. Handles everything the SEO
+ * rules require on every tool page so an individual page file only supplies
+ * its unique content: intro copy, a worked example and FAQ.
+ *
+ * Ad placement follows the 2-unit budget: one slot after the intro content
+ * block (passed as the default slot, above), one after the FAQ section
+ * (rendered here). Never more than two on a tool page.
+ */
+import Base from './Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import AdSlot from '../components/AdSlot.astro';
+import Faq from '../components/Faq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { canonicalUrl } from '../lib/urls';
+import { categoryBySlug } from '../data/categories';
+import { toolPath, type Tool } from '../data/tools';
+
+export interface Props {
+  tool: Tool;
+  /** 2–3 real, searchable FAQ entries (rule: content depth requirements). */
+  faq: { q: string; a: string }[];
+  /** Extra JSON-LD objects beyond WebSite/SoftwareApplication/FAQPage/BreadcrumbList. */
+  schema?: Record<string, unknown>[];
+}
+
+const { tool, faq, schema = [] } = Astro.props;
+const category = categoryBySlug(tool.category);
+
+const toolSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: tool.title,
+  applicationCategory: 'UtilitiesApplication',
+  operatingSystem: 'Any (web browser)',
+  url: canonicalUrl(toolPath(tool)),
+  description: tool.description,
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  featureList: tool.features,
+};
+---
+
+<Base title={tool.title} description={tool.description} schema={[toolSchema, ...schema]}>
+  <Breadcrumbs items={[{ label: category.name, href: `/${category.slug}` }, { label: tool.name }]} />
+
+  <header class="hero">
+    <h1>{tool.name}</h1>
+    <p class="lead">{tool.short}</p>
+  </header>
+
+  <slot />
+
+  <AdSlot slot="toolTop" format="horizontal" />
+
+  <article class="prose">
+    <slot name="content" />
+  </article>
+
+  <Faq items={faq} heading={`${tool.name} FAQ`} />
+
+  <AdSlot slot="toolBottom" format="rectangle" />
+
+  <RelatedTools current={tool} />
+</Base>
+
+<style>
+  .hero { margin-bottom: 1.25rem; max-width: 76ch; }
+  .lead { font-size: 1.1rem; color: var(--text-muted); margin: 0; }
+</style>

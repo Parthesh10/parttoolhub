@@ -1,0 +1,70 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import Base64Tool from '../../components/tools/Base64Tool.astro';
+import { toolBySlug } from '../../data/tools';
+import { encodeBase64 } from '../../lib/encoding';
+
+const tool = toolBySlug('base64-encode-decode');
+const sample = 'Hello, world!';
+const encoded = encodeBase64(sample);
+
+const faq = [
+  {
+    q: 'Is Base64 encryption?',
+    a: 'No. Base64 is a reversible encoding, not a cipher — anyone can decode it back to the original text with no key or password. It exists to safely represent binary or Unicode data using only the 64 characters that are guaranteed safe in contexts like email headers, URLs, and older text-only systems.',
+  },
+  {
+    q: 'What is “URL-safe” Base64?',
+    a: 'Standard Base64 uses "+" and "/", both of which have special meaning inside a URL. The URL-safe variant replaces them with "-" and "_" so the encoded text can be used directly in a URL path or query string without extra escaping.',
+  },
+  {
+    q: 'Why does decoding sometimes fail?',
+    a: 'Base64 text must be made up only of A–Z, a–z, 0–9, "+", "/" (or "-", "_" for the URL-safe variant) and optional "=" padding. If you paste text that includes line breaks from an email client, or the string was truncated, decoding will report exactly what looks wrong.',
+  },
+  {
+    q: 'Does this handle emoji and non-English text?',
+    a: 'Yes — text is encoded as UTF-8 bytes before Base64, so accented letters, CJK text and emoji all round-trip correctly.',
+  },
+];
+---
+
+<ToolLayout {tool} {faq}>
+  <Base64Tool />
+
+  <Fragment slot="content">
+    <h2>What Base64 is for</h2>
+    <p>
+      Base64 turns arbitrary bytes into text made up of only 64 printable ASCII characters (A–Z, a–z, 0–9, "+", "/"), plus
+      "=" for padding. That makes it safe to embed binary data — or text using characters some systems can't handle — inside
+      formats that only guarantee plain ASCII will survive: email (MIME attachments), URLs, JSON strings, and configuration
+      files. The trade-off is size: Base64 output is roughly a third larger than the original data.
+    </p>
+    <p>
+      It is not encryption. Encoding and decoding require no secret, so Base64 should never be used as a way to hide
+      sensitive data — only to safely transport it through systems that would otherwise mangle raw bytes.
+    </p>
+
+    <h2>Example</h2>
+    <p>Encoding <code>{sample}</code> produces:</p>
+    <pre><code>{encoded}</code></pre>
+
+    <h2>Where you'll run into Base64</h2>
+    <ul>
+      <li><strong>HTTP Basic Authentication</strong> — the <code>Authorization: Basic …</code> header is <code>username:password</code> Base64-encoded (not encrypted — HTTPS is what protects it in transit).</li>
+      <li><strong>Data URIs</strong> — <code>data:image/png;base64,…</code> embeds an image directly inside HTML or CSS.</li>
+      <li><strong>JWTs</strong> — each of the three dot-separated segments is Base64URL-encoded JSON.</li>
+      <li><strong>Email attachments</strong> — MIME encodes binary files as Base64 so they survive text-only mail transport.</li>
+    </ul>
+
+    <h2>Doing it in code</h2>
+    <h3>JavaScript</h3>
+    <pre><code>const encoded = btoa(unescape(encodeURIComponent(text))); // legacy pattern
+const decoded = decodeURIComponent(escape(atob(encoded)));
+// or, more directly, on modern engines:
+const encoded2 = Buffer.from(text, "utf8").toString("base64"); // Node.js</code></pre>
+    <h3>Python</h3>
+    <pre><code>import base64
+encoded = base64.b64encode(text.encode("utf-8")).decode("ascii")
+decoded = base64.b64decode(encoded).decode("utf-8")</code></pre>
+  </Fragment>
+</ToolLayout>

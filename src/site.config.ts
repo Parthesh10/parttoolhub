@@ -38,8 +38,6 @@ export const ANALYTICS = {
   ga4: '',
 } as const;
 
-/** Navigation shown in the header. Add new tools here as you build them. */
-export const NAV_TOOLS = [
-  { href: '/column-to-comma-separated-list', label: 'Column → Comma List' },
-  { href: '/comma-separated-list-to-column', label: 'Comma List → Column' },
-] as const;
+// Header/footer navigation is generated from src/data/categories.ts and
+// src/data/tools.ts (the tool registry), not listed here — see those files
+// to add a category or a tool.

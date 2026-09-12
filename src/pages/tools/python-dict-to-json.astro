@@ -1,0 +1,72 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import PythonDictTool from '../../components/tools/PythonDictTool.astro';
+import { toolBySlug } from '../../data/tools';
+import { pythonToJson } from '../../lib/python-dict';
+
+const tool = toolBySlug('python-dict-to-json');
+
+const pySample = "{'id': 7, 'active': True, 'ref': None, 'tags': ('a', 'b')}";
+const jsonSample = (pythonToJson(pySample) as { ok: true; output: string }).output;
+
+const faq = [
+  {
+    q: 'Why can’t I just use JSON.parse on a printed Python dict?',
+    a: 'Python’s repr() uses single quotes and the literals True, False and None, none of which are valid JSON — JSON.parse rejects them immediately. This tool understands Python’s literal syntax specifically and converts it to the equivalent JSON.',
+  },
+  {
+    q: 'What happens to tuples and sets?',
+    a: 'Both become JSON arrays, since JSON has no equivalent of either. Order is preserved for tuples; sets have no defined order in Python either, so their order in the output matches whatever order they were written in.',
+  },
+  {
+    q: 'Does it handle nested dicts, nested nesting, and multi-line dicts pasted from a debugger?',
+    a: 'Yes — any level of nesting, trailing commas, and Python comments (<code>#…</code>) are all handled, which covers most values copied from a REPL, a debugger watch panel, or a print() call.',
+  },
+  {
+    q: 'What if a value is a variable name, not a literal?',
+    a: 'The converter only understands literal values (strings, numbers, True/False/None, lists, dicts, tuples, sets) — the same set JSON can represent. A bare variable name like <code>some_var</code> has no fixed value to convert, so it is reported as an error rather than guessed at.',
+  },
+];
+---
+
+<ToolLayout {tool} {faq}>
+  <PythonDictTool />
+
+  <Fragment slot="content">
+    <h2>Why this conversion needs its own parser</h2>
+    <p>
+      When you <code>print()</code> a Python dictionary, or paste one from a Jupyter notebook, debugger or log line, what you
+      get back is Python's own literal syntax — not JSON. The two look almost identical but differ in exactly the spots that
+      make a strict JSON parser fail: single quotes instead of double, <code>True</code>/<code>False</code>/<code>None</code>
+      instead of <code>true</code>/<code>false</code>/<code>null</code>, and Python-only types like tuples and sets that JSON
+      has no syntax for at all.
+    </p>
+    <p>
+      This tool runs a small Python-literal parser (not <code>eval()</code>, and nothing is executed) that understands that
+      syntax directly, then re-serialises the result as JSON — so you can take output straight from a Python script and paste
+      it into a config file, an API request body, or a JSON-only tool.
+    </p>
+
+    <h2>Example</h2>
+    <p>A dict as Python prints it:</p>
+    <pre><code>{pySample}</code></pre>
+    <p>becomes:</p>
+    <pre><code>{jsonSample}</code></pre>
+
+    <h2>What gets converted</h2>
+    <ul>
+      <li><strong>Quotes:</strong> single, double and triple-quoted strings, including <code>r'raw'</code>, <code>u'unicode'</code> and adjacent-string concatenation.</li>
+      <li><strong>Constants:</strong> <code>True</code> → <code>true</code>, <code>False</code> → <code>false</code>, <code>None</code> → <code>null</code>.</li>
+      <li><strong>Numbers:</strong> ints, floats, underscores in literals (<code>1_000</code>), and hex/octal/binary (<code>0xff</code>, <code>0o17</code>, <code>0b101</code>).</li>
+      <li><strong>Containers:</strong> lists stay arrays; tuples and sets become arrays; nested dicts stay objects.</li>
+      <li><strong>Extras:</strong> trailing commas and <code>#</code> comments are ignored, matching how Python itself reads them.</li>
+    </ul>
+
+    <h2>Doing it in Python instead</h2>
+    <p>If you're already inside a Python process, this is the direct equivalent of what the tool does:</p>
+    <pre><code>import json, ast
+data = ast.literal_eval(python_repr_string)
+print(json.dumps(data, indent=2))</code></pre>
+    <p class="muted"><code>ast.literal_eval</code> is the safe alternative to <code>eval()</code> — it only accepts literal values, never runs code.</p>
+  </Fragment>
+</ToolLayout>

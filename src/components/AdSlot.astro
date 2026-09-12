@@ -4,33 +4,76 @@
  * requested slot ID are filled in, so the layout is ad-free during development
  * and before AdSense approval. Reserving min-height prevents layout shift (CLS)
  * once ads do load — a Core Web Vitals factor Google weights for ranking.
+ *
+ * `lazy` (default true) defers requesting the ad until the slot is within
+ * `rootMargin` of the viewport, via a tiny inline IntersectionObserver script
+ * scoped to this instance — so an ad far below the fold never competes with
+ * the tool's own interactive load, per the site's ad rules. Pass lazy={false}
+ * for a slot that is expected to sit above the fold (e.g. "toolTop" on a
+ * short page) where eager loading is harmless.
  */
 import { ADS } from '../site.config';
 
 export interface Props {
   slot: keyof typeof ADS.slots;
   format?: 'auto' | 'horizontal' | 'rectangle';
+  lazy?: boolean;
   class?: string;
 }
 
-const { slot, format = 'auto', class: className = '' } = Astro.props;
+const { slot, format = 'auto', lazy = true, class: className = '' } = Astro.props;
 const slotId = ADS.slots[slot];
 const enabled = Boolean(ADS.client && slotId);
+const uid = `ad-${slot}-${Math.random().toString(36).slice(2, 8)}`;
 ---
 
 {enabled && (
-  <div class:list={['ad-slot', `ad-${format}`, className]} aria-label="Advertisement">
-    <ins
-      class="adsbygoogle"
-      style="display:block"
-      data-ad-client={ADS.client}
-      data-ad-slot={slotId}
-      data-ad-format={format}
-      data-full-width-responsive="true"
-    />
-    <script is:inline>
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    </script>
+  <div class:list={['ad-slot', `ad-${format}`, className]} aria-label="Advertisement" data-ad-container id={uid}>
+    {lazy ? (
+      <script is:inline define:vars={{ uid, client: ADS.client, adSlot: slotId, format }}>
+        (function (container) {
+          if (!container) return;
+          function mount() {
+            var ins = document.createElement('ins');
+            ins.className = 'adsbygoogle';
+            ins.style.display = 'block';
+            ins.setAttribute('data-ad-client', client);
+            ins.setAttribute('data-ad-slot', adSlot);
+            ins.setAttribute('data-ad-format', format);
+            ins.setAttribute('data-full-width-responsive', 'true');
+            container.appendChild(ins);
+            (window.adsbygoogle = window.adsbygoogle || []).push({});
+          }
+          var io = new IntersectionObserver(
+            function (entries) {
+              for (var i = 0; i < entries.length; i++) {
+                if (entries[i].isIntersecting) {
+                  io.disconnect();
+                  mount();
+                  break;
+                }
+              }
+            },
+            { rootMargin: '200px' },
+          );
+          io.observe(container);
+        })(document.getElementById(uid));
+      </script>
+    ) : (
+      <>
+        <ins
+          class="adsbygoogle"
+          style="display:block"
+          data-ad-client={ADS.client}
+          data-ad-slot={slotId}
+          data-ad-format={format}
+          data-full-width-responsive="true"
+        />
+        <script is:inline>
+          (window.adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+      </>
+    )}
   </div>
 )}
 

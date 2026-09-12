@@ -1,0 +1,68 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import UrlEncodeTool from '../../components/tools/UrlEncodeTool.astro';
+import { toolBySlug } from '../../data/tools';
+import { urlEncode } from '../../lib/encoding';
+
+const tool = toolBySlug('url-encode-decode');
+const sample = 'hello world & more/less?';
+const encoded = urlEncode(sample, 'component');
+
+const faq = [
+  {
+    q: 'What is the difference between the three encode options?',
+    a: 'A single value (encodeURIComponent) escapes everything that isn’t a letter, digit or a small set of safe symbols — use it for one query parameter\'s value. A whole URL (encodeURI) leaves characters like : / ? # & = alone since they are structural, not data — use it when you have a complete URL you don’t want to break. Form field encoding is the same as a single value but turns spaces into "+", matching how HTML forms submit data.',
+  },
+  {
+    q: 'Why would encoding the same text two different ways give different results for spaces?',
+    a: 'A space becomes <code>%20</code> under encodeURIComponent/encodeURI, but becomes <code>+</code> under the form-field convention (<code>application/x-www-form-urlencoded</code>), which is what browsers use for classic HTML form submissions.',
+  },
+  {
+    q: 'When does decoding fail?',
+    a: 'Percent-encoding is only valid when a "%" is followed by exactly two hexadecimal digits. Text that was cut off mid-sequence, or that contains a literal "%" that was never meant to be encoded, will fail to decode — the tool reports this rather than guessing.',
+  },
+];
+---
+
+<ToolLayout {tool} {faq}>
+  <UrlEncodeTool />
+
+  <Fragment slot="content">
+    <h2>Why URLs need percent-encoding</h2>
+    <p>
+      A URL can only safely contain a limited set of characters — letters, digits, and a handful of punctuation marks that
+      have no special meaning in that position. Everything else (spaces, ampersands inside a value, non-English characters,
+      slashes inside a value rather than as a path separator) has to be percent-encoded: replaced with <code>%</code> followed
+      by its byte value in hex. A space becomes <code>%20</code>, an ampersand becomes <code>%26</code>, and so on.
+    </p>
+    <p>
+      Get this wrong and a URL either breaks outright or, worse, silently does the wrong thing — an unencoded <code>&</code>
+      inside a query value looks like the start of the next parameter, quietly truncating or corrupting the one before it.
+    </p>
+
+    <h2>Example</h2>
+    <p>Encoding <code>{sample}</code> as a single value gives:</p>
+    <pre><code>{encoded}</code></pre>
+    <p class="muted">Every character outside letters, digits and <code>-_.~</code> is escaped, including the slash and question mark, since as a <em>value</em> they carry no special meaning.</p>
+
+    <h2>Component vs. full-URL encoding</h2>
+    <p>
+      The common mistake is running an entire URL through component-style encoding, which escapes the very characters
+      (<code>:</code>, <code>/</code>, <code>?</code>, <code>&amp;</code>, <code>=</code>) that make it a URL in the first
+      place. The rule of thumb: encode a <em>value</em> that will be placed inside a URL with the component option; only use
+      the full-URL option on something that is already a complete, structurally valid URL and only needs its non-ASCII or
+      space characters escaped.
+    </p>
+
+    <h2>Doing it in code</h2>
+    <h3>JavaScript</h3>
+    <pre><code>encodeURIComponent("hello world & more");  // "hello%20world%20%26%20more"
+encodeURI("https://x.y/p q?a=b c");        // "https://x.y/p%20q?a=b%20c"
+decodeURIComponent("hello%20world");       // "hello world"</code></pre>
+    <h3>Python</h3>
+    <pre><code>from urllib.parse import quote, unquote, quote_plus
+quote("hello world & more")   # 'hello%20world%20%26%20more'
+quote_plus("hello world")     # 'hello+world'
+unquote("hello%20world")      # 'hello world'</code></pre>
+  </Fragment>
+</ToolLayout>

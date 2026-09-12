@@ -1,0 +1,33 @@
+---
+/**
+ * "Related Tools" section required at the bottom of every tool page —
+ * internal link equity without cluttering the header/nav.
+ */
+import { relatedTools, toolPath, type Tool } from '../data/tools';
+
+export interface Props {
+  current: Tool;
+  max?: number;
+}
+const { current, max = 4 } = Astro.props;
+const related = relatedTools(current, max);
+---
+
+<aside class="related card">
+  <h2>Related tools</h2>
+  <ul>
+    {related.map((t) => (
+      <li>
+        <a href={toolPath(t)}>{t.name}</a>
+        <span class="muted"> — {t.short}</span>
+      </li>
+    ))}
+  </ul>
+</aside>
+
+<style>
+  .related { padding: 1rem 1.5rem; margin-top: 2rem; }
+  .related h2 { margin-top: 0; font-size: 1.2rem; }
+  .related ul { margin: 0; padding-left: 1.2rem; }
+  .related li { margin-bottom: 0.4rem; }
+</style>

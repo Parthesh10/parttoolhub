@@ -1,14 +1,9 @@
 ---
-import Base from '../layouts/Base.astro';
-import Breadcrumbs from '../components/Breadcrumbs.astro';
-import ListToColumnTool from '../components/ListToColumnTool.astro';
-import AdSlot from '../components/AdSlot.astro';
-import Faq from '../components/Faq.astro';
-import { canonicalUrl } from '../lib/urls';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import ListToColumnTool from '../../components/ListToColumnTool.astro';
+import { toolBySlug } from '../../data/tools';
 
-const title = 'Comma Separated List to Column Converter';
-const description =
-  'Split a comma, semicolon, pipe or tab separated list into a column with one item per line. Auto-detects the separator, strips quotes, removes duplicates and sorts — free and private.';
+const tool = toolBySlug('comma-separated-list-to-column');
 
 const faq = [
   {
@@ -28,37 +23,12 @@ const faq = [
     a: 'No. The page is static and the conversion runs in your browser. Your data never leaves your device.',
   },
 ];
-
-const schema = [
-  {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: title,
-    applicationCategory: 'UtilitiesApplication',
-    operatingSystem: 'Any (web browser)',
-    url: canonicalUrl(Astro.url.pathname),
-    description,
-    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-  },
-];
 ---
 
-<Base {title} {description} {schema}>
-  <Breadcrumbs items={[{ label: 'Comma Separated List to Column' }]} />
-
-  <header class="hero">
-    <h1>Comma Separated List to Column</h1>
-    <p class="lead">
-      Paste any delimited list and get one item per line. The separator is detected for you; quotes and brackets are cleaned
-      away; duplicates and sorting are one click each.
-    </p>
-  </header>
-
+<ToolLayout {tool} {faq}>
   <ListToColumnTool />
 
-  <AdSlot slot="toolTop" format="horizontal" />
-
-  <article class="prose">
+  <Fragment slot="content">
     <h2>When you need a column instead of a list</h2>
     <p>
       Data tends to travel as a single line — a comma separated field in a CRM export, a JSON array in an API response, a
@@ -94,30 +64,8 @@ const schema = [
     <pre><code>items = [s.strip().strip('"\'') for s in text.split(",") if s.strip()]
 print("\n".join(items))</code></pre>
 
-    <h3>JavaScript</h3>
-    <pre><code>const column = text.split(",").map(s =&gt; s.trim()).filter(Boolean).join("\n");</code></pre>
-
     <h3>Command line</h3>
     <pre><code>tr ',' '\n' &lt; list.txt                   # Linux / macOS
 (Get-Content list.txt) -split ','       # PowerShell</code></pre>
-  </article>
-
-  <AdSlot slot="toolBottom" format="rectangle" />
-
-  <Faq items={faq} />
-
-  <aside class="related card">
-    <h2>Related tools</h2>
-    <ul>
-      <li><a href="/column-to-comma-separated-list">Column to comma separated list</a> — join lines into a single delimited line with quotes, brackets and presets for SQL, JSON and Python.</li>
-    </ul>
-  </aside>
-</Base>
-
-<style>
-  .hero { margin-bottom: 1.25rem; max-width: 76ch; }
-  .lead { font-size: 1.1rem; color: var(--text-muted); margin: 0; }
-  .related { padding: 1rem 1.5rem; margin-top: 2rem; }
-  .related h2 { margin-top: 0; font-size: 1.2rem; }
-  .related ul { margin: 0; padding-left: 1.2rem; }
-</style>
+  </Fragment>
+</ToolLayout>

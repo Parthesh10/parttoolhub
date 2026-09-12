@@ -1,6 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
-import { NAV_TOOLS } from '../site.config';
+import { CATEGORIES } from '../data/categories';
 ---
 
 <Base title="Page not found" description="That page does not exist." noindex>
@@ -8,8 +8,8 @@ import { NAV_TOOLS } from '../site.config';
     <h1>Page not found</h1>
     <p>The address may be mistyped, or the page may have moved. Try one of these instead:</p>
     <ul>
-      <li><a href="/">Home</a></li>
-      {NAV_TOOLS.map((t) => <li><a href={t.href}>{t.label}</a></li>)}
+      <li><a href="/">Home — full tool directory</a></li>
+      {CATEGORIES.map((c) => <li><a href={`/${c.slug}`}>{c.name}</a></li>)}
     </ul>
   </section>
 </Base>

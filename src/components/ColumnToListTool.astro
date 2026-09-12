@@ -119,58 +119,15 @@ import { PRESETS, DELIMITER_CHOICES } from '../lib/list-convert';
     </fieldset>
   </div>
 
-  <p class="toast" id="toast" role="status" aria-live="polite" hidden></p>
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
 </section>
 
 <script src="./column-to-list.client.ts"></script>
 
 <style>
-  .tool { padding: 1rem; }
-  @media (min-width: 640px) { .tool { padding: 1.25rem 1.5rem; } }
-
+  /* Base .tool/.panes/.options/.chip/.toast rules live in global.css so they
+     are shared (and cached) across every tool page. Only this tool's unique
+     bits — the presets bar — are styled here. */
   .presets { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-bottom: 1rem; }
   .presets-label { font-size: 0.85rem; color: var(--text-muted); margin-right: 0.25rem; }
-  .chip {
-    font: inherit; font-size: 0.82rem; font-weight: 600; padding: 0.3rem 0.7rem;
-    border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
-    cursor: pointer; font-family: var(--mono);
-  }
-  .chip:hover { border-color: var(--accent); color: var(--accent); }
-  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
-
-  .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  @media (max-width: 760px) { .panes { grid-template-columns: 1fr; } }
-  .pane-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem; }
-  .pane-head label { font-weight: 650; }
-  .stat { font-size: 0.8rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-  textarea {
-    width: 100%; resize: vertical; min-height: 200px;
-    font-family: var(--mono); font-size: 0.9rem; line-height: 1.5;
-    padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm);
-    background: var(--surface-2); color: var(--text);
-  }
-  textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; background: var(--surface); }
-  textarea[readonly] { background: var(--surface); }
-  .pane-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem; }
-
-  .options { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.85rem; margin-top: 1.25rem; }
-  fieldset { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.6rem 0.85rem 0.85rem; margin: 0; min-width: 0; }
-  legend { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); padding: 0 0.3rem; }
-  .row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-  .field { display: flex; flex-direction: column; gap: 0.2rem; flex: 1 1 100px; font-size: 0.85rem; color: var(--text-muted); min-width: 0; }
-  .field input, .field select {
-    font: inherit; font-size: 0.9rem; color: var(--text); padding: 0.4rem 0.5rem;
-    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); width: 100%;
-  }
-  .field input { font-family: var(--mono); }
-  .checks { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; }
-  .checks label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
-  .checks .indent { padding-left: 1.4rem; color: var(--text-muted); }
-  .checks input { accent-color: var(--accent); width: 1rem; height: 1rem; }
-
-  .toast {
-    position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%);
-    background: var(--text); color: var(--bg); padding: 0.55rem 1rem; border-radius: 999px;
-    font-size: 0.9rem; font-weight: 600; box-shadow: var(--shadow); z-index: 60; margin: 0;
-  }
 </style>

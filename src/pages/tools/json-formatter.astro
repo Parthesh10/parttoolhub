@@ -1,0 +1,73 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import JsonFormatterTool from '../../components/tools/JsonFormatterTool.astro';
+import { toolBySlug } from '../../data/tools';
+import { formatJson } from '../../lib/json-format';
+
+const tool = toolBySlug('json-formatter');
+
+const messy = '{"name":"Ada","born":1815,"tags":["math","writer"]}';
+const pretty = (formatJson(messy) as { ok: true; output: string }).output;
+
+const faq = [
+  {
+    q: 'Is my JSON uploaded to a server?',
+    a: 'No. Parsing and formatting happen with the browser’s own JSON engine, on your device. Nothing you paste is sent anywhere — useful when the JSON contains API keys, tokens or customer data.',
+  },
+  {
+    q: 'How do I find exactly where a syntax error is?',
+    a: 'When the input is invalid, the result panel shows the line and column of the problem, plus a short description such as a missing comma or an unquoted key. Trailing commas and single-quoted keys are the two most common causes.',
+  },
+  {
+    q: 'What does “Sort keys alphabetically” do?',
+    a: 'It reorders every object’s keys (recursively, at every nesting level) alphabetically without changing any values. Useful for diffing two JSON files where only the key order differs.',
+  },
+  {
+    q: 'Can I format a single value, like just a number or a string?',
+    a: 'Yes. <code>42</code>, <code>"hello"</code> and <code>true</code> are all valid JSON documents on their own, and the formatter accepts them.',
+  },
+];
+---
+
+<ToolLayout {tool} {faq}>
+  <JsonFormatterTool />
+
+  <Fragment slot="content">
+    <h2>What this tool checks</h2>
+    <p>
+      JSON looks like JavaScript but is stricter: keys must be double-quoted, trailing commas are not allowed, and values are
+      limited to strings, numbers, booleans, <code>null</code>, objects and arrays. A single misplaced comma or a stray
+      single-quote is enough to break a whole payload, and the resulting error from most languages' JSON parsers only gives a
+      byte offset. This tool converts that into a line and column you can actually find, and beautifies valid JSON so nested
+      structures are easy to read.
+    </p>
+    <p>
+      Minifying does the opposite: it strips every non-significant space and newline, which is what you want before sending
+      JSON over the wire or pasting it into a field with a size limit.
+    </p>
+
+    <h2>Example</h2>
+    <p>Paste a compact object:</p>
+    <pre><code>{messy}</code></pre>
+    <p>and Format produces:</p>
+    <pre><code>{pretty}</code></pre>
+
+    <h2>Common causes of invalid JSON</h2>
+    <ul>
+      <li><strong>Trailing commas</strong> — <code>{'{"a": 1,}'}</code> is valid in JavaScript object literals but not in JSON.</li>
+      <li><strong>Single-quoted strings or keys</strong> — JSON requires double quotes: <code>{'{"a": 1}'}</code>, not <code>{"{'a': 1}"}</code>.</li>
+      <li><strong>Unquoted keys</strong> — <code>{'{a: 1}'}</code> needs to be <code>{'{"a": 1}'}</code>.</li>
+      <li><strong>Comments</strong> — JSON has no comment syntax; <code>// like this</code> will fail to parse.</li>
+      <li><strong>NaN, Infinity or undefined</strong> — none of these are valid JSON values.</li>
+    </ul>
+
+    <h2>Doing the same thing in code</h2>
+    <h3>JavaScript</h3>
+    <pre><code>const pretty = JSON.stringify(JSON.parse(text), null, 2);
+const compact = JSON.stringify(JSON.parse(text));</code></pre>
+    <h3>Python</h3>
+    <pre><code>import json
+pretty = json.dumps(json.loads(text), indent=2)
+compact = json.dumps(json.loads(text), separators=(",", ":"))</code></pre>
+  </Fragment>
+</ToolLayout>

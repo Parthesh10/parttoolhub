@@ -1,0 +1,82 @@
+---
+/**
+ * JSON formatter / validator / minifier. Markup is server-rendered; behaviour
+ * is attached by ./json-formatter.client.ts
+ */
+---
+
+<section class="tool card" id="tool" data-tool="json-formatter">
+  <div class="panes">
+    <div class="pane">
+      <div class="pane-head">
+        <label for="input">Paste JSON</label>
+        <span class="stat" id="input-stat" aria-live="polite">0 characters</span>
+      </div>
+      <textarea
+        id="input"
+        rows="14"
+        spellcheck="false"
+        autocomplete="off"
+        placeholder={'{\n  "name": "Ada",\n  "active": true,\n  "tags": ["admin", "beta"]\n}'}
+      ></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+        <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+      </div>
+    </div>
+
+    <div class="pane">
+      <div class="pane-head">
+        <label for="output">Result</label>
+        <span class="stat" id="output-stat" aria-live="polite"></span>
+      </div>
+      <textarea id="output" rows="14" readonly spellcheck="false" placeholder="Formatted JSON appears here as you type"></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy to clipboard</button>
+        <button type="button" class="btn btn-sm" id="btn-download">Download .json</button>
+      </div>
+      <p class="status-banner" id="status" hidden></p>
+    </div>
+  </div>
+
+  <div class="options">
+    <fieldset>
+      <legend>Action</legend>
+      <div class="row" role="group" aria-label="Format or minify">
+        <button type="button" class="btn btn-sm" id="mode-format" aria-pressed="true">Format</button>
+        <button type="button" class="btn btn-sm" id="mode-minify" aria-pressed="false">Minify</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Indent</legend>
+      <div class="row">
+        <label class="field">
+          <span>Spacing</span>
+          <select id="opt-indent">
+            <option value="2">2 spaces</option>
+            <option value="4">4 spaces</option>
+            <option value="tab">Tab</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Keys</legend>
+      <div class="checks">
+        <label><input type="checkbox" id="opt-sort" /> Sort keys alphabetically</label>
+      </div>
+    </fieldset>
+  </div>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./json-formatter.client.ts"></script>
+
+<style>
+  #mode-format[aria-pressed="true"], #mode-minify[aria-pressed="true"] {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+</style>

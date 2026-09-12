@@ -1,0 +1,79 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import TitleCaseTool from '../../components/tools/TitleCaseTool.astro';
+import { toolBySlug } from '../../data/tools';
+import { titleCaseLine, STYLE_LABELS, type TitleStyle } from '../../lib/title-case';
+
+const tool = toolBySlug('title-case-converter');
+
+const sample = 'a walk through the park with dogs';
+const styleExamples = (['apa', 'chicago', 'ap', 'mla'] as TitleStyle[]).map((s) => ({
+  style: s,
+  label: STYLE_LABELS[s],
+  output: titleCaseLine(sample, { style: s }),
+}));
+
+const faq = [
+  {
+    q: 'Which style should I use?',
+    a: 'APA and AP both lowercase short prepositions and articles under four letters; Chicago and MLA lowercase every preposition regardless of length. If a publication or professor has assigned a style guide, use that one — otherwise APA is a safe, widely used default.',
+  },
+  {
+    q: 'Why does it keep “NASA” or “iPhone” unchanged?',
+    a: 'A word with a capital letter after its first letter is treated as intentional casing — an acronym or a stylised brand name — and is left exactly as typed by default. Untick “Keep acronyms and brand names” to force every word through the same capitalization rule.',
+  },
+  {
+    q: 'Does it handle titles that are already in ALL CAPS?',
+    a: 'Yes. An all-caps line carries no information about which words should be capitalized, so it is lowercased first and then title-cased normally.',
+  },
+  {
+    q: 'What happens to hyphenated words?',
+    a: 'Each part of a hyphenated compound is capitalized on its own terms — for example “Self-Driving” and “Out-of-Date” — matching how style guides treat compound modifiers in titles.',
+  },
+];
+---
+
+<ToolLayout {tool} {faq}>
+  <TitleCaseTool />
+
+  <Fragment slot="content">
+    <h2>What “Title Case” actually means</h2>
+    <p>
+      Title case is not simply capitalizing every word. Style guides agree that the first and last word of a title are always
+      capitalized, and that short articles (<em>a, an, the</em>) and coordinating conjunctions (<em>and, but, or</em>) stay
+      lowercase in the middle of a title. Where they disagree is prepositions: APA and AP capitalize any word of four or more
+      letters — so “With” is capitalized but “to” is not — while Chicago and MLA lowercase every preposition no matter its
+      length.
+    </p>
+    <p>
+      Getting this right by hand means checking a list of exceptions for every word, which is exactly the kind of small,
+      repetitive rule-following that is easy to get slightly wrong under a deadline. This tool applies the rule set
+      consistently and instantly as you type.
+    </p>
+
+    <h2>The same title, four ways</h2>
+    <p>Starting from <code>{sample}</code>:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Style</th><th>Result</th></tr></thead>
+        <tbody>
+          {styleExamples.map((e) => (
+            <tr>
+              <td><strong>{e.label}</strong></td>
+              <td><code>{e.output}</code></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="muted">Notice “Through” and “With” only capitalize under APA/AP, since Chicago and MLA lowercase prepositions of any length.</p>
+
+    <h2>Other case modes</h2>
+    <ul>
+      <li><strong>Sentence case</strong> capitalizes only the first word of each sentence (and the pronoun “I”) — the style most style guides use for headings and figure captions.</li>
+      <li><strong>UPPERCASE / lowercase</strong> convert every letter, ignoring word boundaries entirely.</li>
+      <li><strong>Capitalize Each Word</strong> capitalizes every word with no exceptions — useful for names, not for titles.</li>
+      <li><strong>aLtErNaTiNg</strong> and <strong>tOGGLE</strong> case are novelty formats sometimes used for emphasis or "mocking" text online.</li>
+    </ul>
+  </Fragment>
+</ToolLayout>

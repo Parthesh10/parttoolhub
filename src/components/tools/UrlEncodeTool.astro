@@ -1,0 +1,76 @@
+---
+/** URL / percent encode-decode. Behaviour in ./url-encode.client.ts */
+---
+
+<section class="tool card" id="tool" data-tool="url-encode">
+  <div class="options">
+    <fieldset>
+      <legend>Direction</legend>
+      <div class="row" role="group" aria-label="Encode or decode">
+        <button type="button" class="btn btn-sm" id="mode-encode" aria-pressed="true">Encode</button>
+        <button type="button" class="btn btn-sm" id="mode-decode" aria-pressed="false">Decode</button>
+        <button type="button" class="btn btn-sm" id="btn-swap" title="Swap input and output, and flip direction">⇄ Swap</button>
+      </div>
+    </fieldset>
+  </div>
+
+  <div class="panes">
+    <div class="pane">
+      <div class="pane-head">
+        <label for="input" id="input-label">Plain text or URL</label>
+        <span class="stat" id="input-stat" aria-live="polite">0 characters</span>
+      </div>
+      <textarea id="input" rows="8" spellcheck="false" autocomplete="off" placeholder="https://example.com/search?q=hello world&lang=en"></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+        <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+      </div>
+    </div>
+
+    <div class="pane">
+      <div class="pane-head">
+        <label for="output" id="output-label">Encoded</label>
+        <span class="stat" id="output-stat" aria-live="polite"></span>
+      </div>
+      <textarea id="output" rows="8" readonly spellcheck="false"></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy to clipboard</button>
+      </div>
+      <p class="status-banner" id="status" hidden></p>
+    </div>
+  </div>
+
+  <div class="options" id="encode-options">
+    <fieldset>
+      <legend>Encode as</legend>
+      <div class="row">
+        <label class="field">
+          <select id="opt-encode-mode">
+            <option value="component">A single value (encodeURIComponent)</option>
+            <option value="full">A whole URL, keep :/?#&= intact (encodeURI)</option>
+            <option value="form">A form field — spaces become "+"</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+  </div>
+
+  <div class="options" id="decode-options" hidden>
+    <fieldset>
+      <legend>Decode options</legend>
+      <div class="checks">
+        <label><input type="checkbox" id="opt-plus" checked /> Treat "+" as a space</label>
+      </div>
+    </fieldset>
+  </div>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./url-encode.client.ts"></script>
+
+<style>
+  #mode-encode[aria-pressed="true"], #mode-decode[aria-pressed="true"] {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+</style>
