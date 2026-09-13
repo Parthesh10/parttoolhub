@@ -1,9 +1,12 @@
 {
-  "name": "devtools-hub",
+  "name": "parttoolhub",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Fast, private, browser-based text and list utilities. Built with Astro.",
+  "description": "PartToolHub: fast, private, browser-based converters, text tools and encoders. Built with Astro.",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "astro dev",
     "build": "astro check && astro build",

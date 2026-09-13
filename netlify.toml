@@ -3,7 +3,8 @@
   publish = "dist"
 
 [build.environment]
-  NODE_VERSION = "20"
+  # Astro 7 requires Node >= 22.12.0 (see astro's package.json "engines").
+  NODE_VERSION = "22"
 
 # Astro's build.format "file" emits clean-URL-friendly files (e.g. tools/foo.html
 # instead of tools/foo/index.html); Netlify serves those at /tools/foo natively,
