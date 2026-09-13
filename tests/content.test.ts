@@ -197,7 +197,10 @@ test('supporting pages exist, are indexable, and name the maintainer where they 
     assert.ok(!/noindex/.test(html), `${route}: should be indexable`);
   }
   assert.ok(read('/about').includes(SITE.author), 'about page names the maintainer');
-  assert.ok(read('/contact').includes(SITE.contactEmail), 'contact page shows the email');
+  // Public contact is deliberately via GitHub issues, not a displayed email (maintainer's choice,
+  // seo-rules.md §4A) — assert a real reachable channel exists and no page leaks contactEmail.
+  assert.ok(read('/contact').includes(`${SITE.github}/issues`), 'contact page links the GitHub issue tracker');
+  for (const route of INDEXABLE) assert.ok(!read(route).includes(SITE.contactEmail), `${route}: must not display the internal contact email`);
   assert.ok(/noindex/.test(read('/404')), '404 is noindex');
 });
 

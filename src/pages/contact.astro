@@ -4,16 +4,17 @@ import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { SITE } from '../site.config';
 ---
 
-<Base title="Contact" description={`How to reach the ${SITE.name} team with bug reports, feature requests and other questions.`}>
+<Base title="Contact" description={`How to reach ${SITE.author} with bug reports, feature requests and other questions about ${SITE.name}.`}>
   <Breadcrumbs items={[{ label: 'Contact' }]} />
   <article class="prose">
     <h1>Contact</h1>
     <p>
-      Email <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a> and it reaches {SITE.author}, who builds
-      and maintains every tool here (more on the <a href="/about">about page</a>).
+      {SITE.author} builds and maintains every tool here (more on the <a href="/about">about page</a>).
+      {SITE.linkedin && <>The quickest way to reach me directly is <a href={SITE.linkedin} rel="noopener">LinkedIn</a>.</>}
       {SITE.github && (
         <>
-          {' '}For bugs, an issue on <a href={SITE.github} rel="noopener">GitHub</a> works too.
+          {' '}For bugs and feature requests specifically, open an <a href={`${SITE.github}/issues`} rel="noopener">issue on GitHub</a> —
+          it keeps a public record other people hitting the same problem can find.
         </>
       )}
     </p>
@@ -21,7 +22,7 @@ import { SITE } from '../site.config';
     <ul>
       <li><strong>Bug reports:</strong> which tool, which browser, a small sample of input that misbehaves, and what you expected to happen.</li>
       <li><strong>Feature requests:</strong> a sentence or two on the situation you are in — that tells us far more than a description of the button you want.</li>
-      <li><strong>Privacy questions:</strong> see the <a href="/privacy-policy">privacy policy</a> first; if it does not answer your question, we would like to know so we can improve it.</li>
+      <li><strong>Privacy questions:</strong> see the <a href="/privacy-policy">privacy policy</a> first; if it does not answer your question, reach out and it will be improved.</li>
     </ul>
     <p class="muted">Every message is read; expect a reply to most within a few working days.</p>
   </article>

@@ -13,5 +13,7 @@ export const authorSchema = {
   '@id': AUTHOR_ID,
   name: SITE.author,
   url: new URL(SITE.authorUrl, SITE.url).href,
-  ...(SITE.github ? { sameAs: [SITE.github] } : {}),
+  ...(SITE.github || SITE.linkedin
+    ? { sameAs: ([SITE.github, SITE.linkedin] as string[]).filter(Boolean) }
+    : {}),
 };

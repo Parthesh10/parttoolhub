@@ -25,10 +25,12 @@ const categoryCount = CATEGORIES.length;
 
     <h2 id="who">Who builds it</h2>
     <p>
-      I'm <strong>{SITE.author}</strong>, and I build and maintain everything here: the conversion engines, their tests,
-      the pages and the hosting. The site started on {formatDate(SITE.launched)} as two converters, column-to-list and
-      list-to-column, that I wanted in a form I could bookmark, and has grown one tool at a time since. There is no team
-      and no company behind it.
+      I'm <strong>{SITE.author}</strong>{SITE.linkedin && <> (<a href={SITE.linkedin} rel="noopener">LinkedIn</a>)</>}, and I
+      build and maintain everything here: the conversion engines, their tests, the pages and the hosting. I work as a
+      backend-focused software developer, which is exactly why these tools exist — most of them started as small scripts I
+      kept rewriting for myself before I put them behind a UI. The site started on {formatDate(SITE.launched)} as two
+      converters, column-to-list and list-to-column, that I wanted in a form I could bookmark, and has grown one tool at a
+      time since. There is no team and no company behind it.
     </p>
 
     <h2 id="why">Why it exists</h2>
@@ -74,13 +76,14 @@ const categoryCount = CATEGORIES.length;
 
     <h2 id="bugs">Reporting a bug or requesting a tool</h2>
     <p>
-      Email <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a> with the tool name, the browser you used, a
-      small sample of the input and what you expected. I read everything and usually reply within a few working days.
-      {SITE.github && (
+      {SITE.github ? (
         <>
-          {' '}The source code is public at <a href={SITE.github} rel="noopener">GitHub</a>, where you can also open an
-          issue.
+          The source code is public at <a href={SITE.github} rel="noopener">GitHub</a> — open an
+          {' '}<a href={`${SITE.github}/issues`} rel="noopener">issue</a> with the tool name, the browser you used, a small
+          sample of the input and what you expected. I read everything and usually reply within a few working days.
         </>
+      ) : (
+        <>See the <a href="/contact">contact page</a> to report a bug or suggest a tool.</>
       )}
     </p>
     <p class="muted">Last content review across the site: {formatDate(latestReviewDate())}.</p>
