@@ -23,7 +23,7 @@ export const ADS = {
    * Leave empty to disable every ad slot and skip loading the AdSense script.
    * Remember to also update /public/ads.txt when you fill this in.
    */
-  client: '',
+  client: 'ca-pub-1131275888668306',
   /** Individual ad-unit slot IDs. Create these in the AdSense dashboard. */
   slots: {
     toolTop: '',
