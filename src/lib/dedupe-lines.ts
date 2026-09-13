@@ -1,4 +1,7 @@
 /** Remove duplicate lines. Pure, no DOM. */
+/** The "Load sample" input, shared with the worked example on /tools/remove-duplicate-lines. */
+export const SAMPLE_INPUT = ['apple', 'banana', 'Apple', 'cherry', 'banana', 'date'].join('\n');
+
 export interface DedupeOptions {
   ignoreCase: boolean;
   /** Compare trimmed lines (and output them trimmed). */

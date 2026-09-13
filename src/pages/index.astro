@@ -5,7 +5,11 @@ import { CATEGORIES } from '../data/categories';
 import { toolsInCategory, toolPath } from '../data/tools';
 ---
 
-<Base title={`${SITE.name} — ${SITE.tagline}`} description={`${SITE.tagline}. Free online converters, text tools and encoders that never upload your data.`} canonical="/">
+<Base
+  title={`${SITE.name}: Free Online Text, JSON & Encoding Tools`}
+  description={`${SITE.tagline}. Free online converters, text tools and encoders that never upload your data.`}
+  canonical="/"
+>
   <section class="hero">
     <h1>Small text tools that respect your data</h1>
     <p class="lead">
@@ -14,8 +18,7 @@ import { toolsInCategory, toolPath } from '../data/tools';
     </p>
   </section>
 
-  <section id="tools" aria-labelledby="tools-heading">
-    <h2 id="tools-heading" class="sr-only">All tools</h2>
+  <section id="tools" aria-label="All tools" data-nav="home-directory">
     {CATEGORIES.map((cat) => {
       const tools = toolsInCategory(cat.slug);
       return (
@@ -49,7 +52,12 @@ import { toolsInCategory, toolPath } from '../data/tools';
       <li><strong>Private by design.</strong> The pages are static files; the conversion is plain JavaScript on your device.</li>
       <li><strong>Fast on any connection.</strong> No frameworks to download, no round-trips to a server.</li>
       <li><strong>Honest about what changed.</strong> Counters tell you how many items went in, came out and were dropped.</li>
+      <li><strong>Documented from real input.</strong> Each tool page lists the edge cases and error messages you will actually hit, and the date it was last checked against the running tool.</li>
     </ul>
+    <p>
+      The site is built and maintained by <a href="/about">{SITE.author}</a>; the <a href="/about">about page</a> explains
+      how the tools are tested and how the site is funded.
+    </p>
   </section>
 </Base>
 

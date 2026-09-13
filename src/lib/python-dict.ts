@@ -156,6 +156,13 @@ class Parser {
           while (!this.isP(')')) {
             const v = this.parseValue();
             if (v && typeof v === 'object' && !Array.isArray(v)) inner = v;
+            // OrderedDict's repr is a list of (key, value) pairs, not a dict:
+            // OrderedDict([('a', 1), ('b', 2)]) — rebuild the object from them.
+            else if (Array.isArray(v) && v.every((p) => Array.isArray(p) && p.length === 2)) {
+              const obj: Record<string, unknown> = {};
+              for (const [k, val] of v as [unknown, unknown][]) obj[keyToString(k, this.i)] = val;
+              inner = obj;
+            }
             if (this.isP(',')) this.next();
           }
           this.expectP(')');

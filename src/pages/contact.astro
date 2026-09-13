@@ -9,8 +9,13 @@ import { SITE } from '../site.config';
   <article class="prose">
     <h1>Contact</h1>
     <p>
-      The quickest way to reach us is by email at
-      <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>.
+      Email <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a> and it reaches {SITE.author}, who builds
+      and maintains every tool here (more on the <a href="/about">about page</a>).
+      {SITE.github && (
+        <>
+          {' '}For bugs, an issue on <a href={SITE.github} rel="noopener">GitHub</a> works too.
+        </>
+      )}
     </p>
     <h2>What helps us help you</h2>
     <ul>
@@ -18,6 +23,6 @@ import { SITE } from '../site.config';
       <li><strong>Feature requests:</strong> a sentence or two on the situation you are in — that tells us far more than a description of the button you want.</li>
       <li><strong>Privacy questions:</strong> see the <a href="/privacy-policy">privacy policy</a> first; if it does not answer your question, we would like to know so we can improve it.</li>
     </ul>
-    <p class="muted">We read everything and reply to most messages within a few working days.</p>
+    <p class="muted">Every message is read; expect a reply to most within a few working days.</p>
   </article>
 </Base>

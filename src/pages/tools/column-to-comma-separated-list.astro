@@ -11,6 +11,17 @@ const sample = 'apple\nbanana\ncherry';
 const examples = PRESETS.map((p) => ({ ...p, output: columnToList(sample, p.options).output }));
 const idSample = '1042\n1043\n1044';
 const sqlExample = columnToList(idSample, { delimiter: ', ' }).output;
+const sqlQuoteGotcha = columnToList("O'Brien\nSmith", PRESETS.find((p) => p.id === 'sql')!.options).output;
+const versionNumeric = columnToList('v2.10\nv2.9\nv2.1', { sort: 'num-asc' }).output;
+const versionNatural = columnToList('v2.10\nv2.9\nv2.1', { sort: 'az' }).output;
+const trailingNewline = columnToList('a\nb\n');
+
+const steps = [
+  '<strong>Paste your column.</strong> It can come from Excel, Google Sheets, a SQL result, a log file or any text editor; each line is one item.',
+  '<strong>Pick an output shape.</strong> Click a preset chip (SQL IN, JSON array, Python list…) or set the separator and wrappers by hand in the options panel.',
+  '<strong>Tidy the list if you need to.</strong> Remove duplicates, sort A–Z or numerically, change the letter case, or reverse the order.',
+  '<strong>Copy or download.</strong> The result updates as you type; <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the input box copies without reaching for the mouse.',
+];
 
 const faq = [
   {
@@ -40,19 +51,11 @@ const faq = [
 ];
 ---
 
-<ToolLayout {tool} {faq}>
+<ToolLayout {tool} {steps} {faq}>
   <ColumnToListTool />
 
   <Fragment slot="content">
-    <h2>How to use this converter</h2>
-    <ol>
-      <li><strong>Paste your column.</strong> It can come from Excel, Google Sheets, a SQL query result, a log file or any text editor. Each line is treated as one item.</li>
-      <li><strong>Pick an output shape.</strong> Use the preset chips for the common cases, or set the separator and wrappers by hand in the options panel.</li>
-      <li><strong>Tidy the list if you need to.</strong> Remove duplicates, sort A–Z or numerically, change the letter case, or reverse the order.</li>
-      <li><strong>Copy or download.</strong> The result box updates instantly; press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the input box to copy without reaching for the mouse.</li>
-    </ol>
-
-    <h2>What the presets produce</h2>
+    <h2>Example: what each preset produces</h2>
     <p>
       Starting from the three-line column <code>apple</code>, <code>banana</code>, <code>cherry</code>, each preset gives you a
       different, ready-to-paste result:
@@ -103,10 +106,37 @@ const faq = [
     <p>
       Product SKUs, country codes, feature flags — data often starts life in a spreadsheet and needs to end up in an array. The
       <strong>JSON array</strong> and <strong>Python list</strong> presets add the right quotes and brackets so the result parses
-      on the first try.
+      on the first try; paste the result into the <a href="/tools/json-formatter">JSON Formatter</a> if you want it validated.
     </p>
 
-    <h2>Doing the same job in a spreadsheet or in code</h2>
+    <h2>Options explained</h2>
+    <ul>
+      <li><strong>Presets</strong> (Plain, No spaces, SQL IN, JSON array, Python list, Semicolon, Pipe, Regex OR) fill the separator and wrapper boxes in one click. The highlighted chip is the preset that matches the current settings; edit any box by hand and the highlight clears.</li>
+      <li><strong>Between items</strong> is the separator: Comma + space, Comma only, Semicolon + space, Semicolon only, Pipe with spaces, Pipe only, Space, Tab, New line, or <em>Custom…</em> for anything you type, including several characters such as <code> :: </code>.</li>
+      <li><strong>Wrap each item — Before / After</strong> adds text around every item, e.g. <code>'</code> and <code>'</code> for SQL string literals. Nothing inside the item is escaped (see edge cases).</li>
+      <li><strong>Wrap whole list — Start / End</strong> adds text once at the beginning and end, e.g. <code>(</code> and <code>)</code>.</li>
+      <li><strong>Trim spaces around items</strong> (on by default) removes leading and trailing spaces and tabs from each line before anything else happens.</li>
+      <li><strong>Skip blank lines</strong> (on by default) drops lines that are empty after trimming and reports them as dropped. Untick it to keep them as empty items: <code>a, , b</code>.</li>
+      <li><strong>Remove duplicates</strong> keeps the first occurrence of each item; <strong>…ignoring letter case</strong> makes <code>Apple</code>, <code>apple</code> and <code>APPLE</code> collapse to whichever was written first.</li>
+      <li><strong>Reverse order</strong> is applied last, after sorting, so A → Z plus Reverse gives the same result as Z → A.</li>
+      <li><strong>Sort</strong>: <em>A → Z</em> and <em>Z → A</em> use natural order (<code>item2</code> before <code>item10</code>, case-insensitive); <em>Numeric, low → high</em> and <em>high → low</em> parse each item as a number; <em>Shortest first</em> and <em>Longest first</em> order by length and break ties alphabetically.</li>
+      <li><strong>Letter case</strong>: Keep as is, lowercase, UPPERCASE, or Title Case. Case is applied before duplicates are removed, so lowercase plus Remove duplicates merges <code>Apple</code> and <code>apple</code>.</li>
+      <li><strong>Copy to clipboard</strong>, <strong>Download .txt</strong>, and <strong>Split back to column →</strong>, which opens the <a href="/tools/comma-separated-list-to-column">reverse tool</a> with this result already loaded.</li>
+    </ul>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>Quotes inside values are not escaped.</strong> <code>O'Brien</code> with the SQL IN preset produces <code>{sqlQuoteGotcha}</code>, which is not valid SQL, and a value containing <code>"</code> breaks the JSON array preset the same way. Fix those values by hand, or run the JSON result through the <a href="/tools/json-formatter">JSON Formatter</a>, which will show exactly where it breaks.</li>
+      <li><strong>Values containing the separator</strong> — a line such as <code>Smith, John</code> becomes two items to anything that reads the output as CSV. Choose a separator that does not occur in the data (Pipe or Tab), or wrap each item in quotes.</li>
+      <li><strong>Numeric sort reads the first number it can find</strong> after stripping everything except digits, <code>.</code> and <code>-</code>: <code>$42</code> sorts as 42, <code>1,234.5</code> as 1234.5, and lines with no digits go last. Version strings do not work this way — <code>v2.10</code> reads as 2.1 and sorts as <code>{versionNumeric}</code>. Use <em>A → Z</em> instead, which compares digit runs naturally: <code>{versionNatural}</code>.</li>
+      <li><strong>A trailing newline counts as a blank line.</strong> Three lines followed by Enter shows “{trailingNewline.count} items · {trailingNewline.dropped} dropped”; nothing is missing, the final empty line was skipped.</li>
+      <li><strong>Windows line endings</strong> (<code>\r\n</code>) and old-Mac <code>\r</code> are recognised, so pasting from any editor works.</li>
+      <li><strong>Tabs inside a line are kept.</strong> Two spreadsheet columns copied together arrive as <code>a[tab]b</code> per line and become one item each. Copy a single column at a time.</li>
+      <li><strong>Title Case here is the simple first-letter rule</strong>: <code>o'neil mcdonald</code> becomes <code>O'neil Mcdonald</code> and <code>USA</code> becomes <code>Usa</code>. For style-guide capitalisation, run the result through the <a href="/tools/title-case-converter">Title Case Converter</a>.</li>
+      <li><strong>Input made only of blank lines</strong> produces an empty result and the counter reports every line as dropped; a completely empty box shows “0 lines” and nothing else.</li>
+    </ul>
+
+    <h2>Do the same job in a spreadsheet or in code</h2>
     <h3>Excel and Google Sheets</h3>
     <p>The <code>TEXTJOIN</code> function joins a range with a separator and can skip blank cells:</p>
     <pre><code>=TEXTJOIN(", ", TRUE, A1:A100)</code></pre>
@@ -120,13 +150,5 @@ result = ", ".join(lines)</code></pre>
     <h3>Command line</h3>
     <pre><code>paste -sd, column.txt          # Linux / macOS
 (Get-Content column.txt) -join ", "   # PowerShell</code></pre>
-
-    <h2>Tips for clean results</h2>
-    <ul>
-      <li><strong>Watch the item counter.</strong> If it shows fewer items than lines, blank or duplicate lines were removed — expected, but worth a glance.</li>
-      <li><strong>Sorting is number-aware.</strong> A–Z ordering puts <code>item2</code> before <code>item10</code>, unlike a plain character sort.</li>
-      <li><strong>Values containing commas</strong> should be quoted before they go into a CSV file, otherwise a downstream parser will split them.</li>
-      <li><strong>Round-trip with one click.</strong> <em>Split back to column</em> sends the result to the reverse tool for further cleanup.</li>
-    </ul>
   </Fragment>
 </ToolLayout>

@@ -1,10 +1,10 @@
-# DevTools Hub
+# PartToolHub
 
 A multi-tool site of fast, private, browser-only converters, text tools and encoders, built with
 [Astro](https://astro.build). Every tool runs client-side — nothing pasted into a tool is ever uploaded.
 
 Design goals: static HTML, near-zero JavaScript per page, strong on-page SEO, AdSense-ready.
-Architecture and content rules for this project are defined in `../seo-rules.md.txt` (one level up)
+Architecture and content rules for this project are defined in `../seo-rules.md` (one level up)
 and this README should stay consistent with it as the site grows.
 
 ## Commands
@@ -46,8 +46,10 @@ src/
     dedupe-lines.ts          duplicate-line removal
     jwt-decode.ts            JWT header/payload/claims decoding (no verification)
     encoding.ts              Base64 and URL/percent encode-decode
+  analytics.d.ts          ← type of window.pth, the site's one analytics entry point
   layouts/
-    Base.astro             ← <head>: canonical/OG/Twitter/JSON-LD, header, footer, ad + GA loaders
+    Base.astro             ← <head>: canonical/OG/Twitter/JSON-LD, header, footer, ad + GA loaders,
+                              window.pth.track, tool_view and delegated navigation_click
     ToolLayout.astro        ← shared tool-page shell: breadcrumbs, hero, ad slots, FAQ, related tools
   components/
     Header.astro, Footer.astro, Breadcrumbs.astro, Faq.astro, AdSlot.astro, RelatedTools.astro
@@ -59,21 +61,41 @@ src/
     tools/<slug>.astro       ← one file per tool: intro copy, worked example, FAQ, uses ToolLayout
     about.astro, contact.astro, privacy-policy.astro, terms.astro, 404.astro
 public/
-  robots.txt, ads.txt, favicon.svg
+  robots.txt, ads.txt, favicon.svg, og-default.png
+scripts/
+  make-og-image.mjs         ← regenerates / crops the social preview image (not part of the build)
+docs/
+  ANALYTICS.md              ← GA4 architecture, event taxonomy, privacy rules, how to instrument a tool
 tests/
   *.test.ts                 ← one file per lib module
+  analytics.test.ts         ← every tool script instrumented, static PII guard on track() calls,
+                               single GA init, event names ↔ docs/ANALYTICS.md
   registry.test.ts          ← enforces the SEO rules on data/tools.ts and data/categories.ts:
-                               title < 60 chars, description < 155 chars, unique slugs, every
-                               tool has a page file, every tool belongs to a real category
+                               title < 60 chars, description < 155 chars, unique slugs and intents,
+                               review fields, every tool has a page file and a real category
+  content.test.ts           ← scans dist/ after a build: required sections and order, one <h1>,
+                               canonical + OG on every page, JSON-LD matches the page and registry,
+                               sitemap ↔ build parity, robots, forbidden phrases, titles, link check
 ```
+
+## Analytics
+
+One GA4 tracker, initialised once in `src/layouts/Base.astro`, production builds only (`npm run dev`
+logs events to the console instead). Tool scripts report usage through `window.pth.track(...)` with
+non-PII parameters only — slugs, action names, option ids, size buckets, error categories; never the
+text a visitor typed. The event taxonomy, conversions, privacy rules and the recipe for instrumenting
+a new tool are in [`docs/ANALYTICS.md`](docs/ANALYTICS.md); `tests/analytics.test.ts` keeps that
+document and the code in step.
 
 ## SEO & content rules baked into the structure
 
 - **Per-page metadata**: `ToolLayout` derives `<title>`, `<meta description>`, canonical URL, OG/Twitter
   tags and `SoftwareApplication` + `FAQPage` + `BreadcrumbList` JSON-LD from the tool's registry entry —
   an individual page file only supplies unique content (intro paragraphs, one worked example, FAQ).
-- **Content depth**: every tool page has 2–4 intro paragraphs, one worked example and 3+ FAQ entries
-  (checked visually in review; the registry test only enforces title/description length and structure).
+- **Content depth**: every tool page has "How to use" steps, an explanatory section, a worked example
+  generated from the engine at build time, "Options explained", "Edge cases and common errors", code
+  equivalents where relevant, 3–6 FAQ entries, and a "Last reviewed" line. `tests/content.test.ts`
+  checks all of that against the built HTML; `tests/registry.test.ts` checks the registry fields.
 - **Ads**: `AdSlot` renders nothing until `ADS.client` + a slot ID are set in `site.config.ts`, so pages
   are ad-free until AdSense approval. Budget is 2 slots per tool page (`toolTop`, `toolBottom`), and
   `toolBottom` lazy-loads via `IntersectionObserver` so an ad below the fold never competes with the
@@ -97,7 +119,8 @@ tests/
    `public/ads.txt`.
 5. **Consent** — if you expect EU/UK traffic, enable Google's consent message (Privacy & messaging in
    the AdSense dashboard) so the privacy policy's promise holds.
-6. **OG image** — add a 1200×630 `public/og-default.png` for social previews.
+6. **OG image** — `public/og-default.png` (1200×630) is generated by `node scripts/make-og-image.mjs`;
+   pass `--from some.png` to centre-crop a designed image to the right size instead.
 
 ## Adding a new tool
 
@@ -105,9 +128,12 @@ tests/
 2. Register it in `src/data/tools.ts` (title < 60 chars, description < 155 chars, pick a category
    from `src/data/categories.ts` or add a new one there).
 3. Build `src/components/tools/<Name>Tool.astro` (markup) + `<name>.client.ts` (behaviour) — reuse the
-   shared `.tool`/`.panes`/`.options` classes from `global.css` rather than redefining them.
-4. Create `src/pages/tools/<slug>.astro` using `ToolLayout`: pass `tool` (from the registry) and `faq`
-   as props, put the interactive component in the default slot, and the intro/example/how-to content
-   in the `content` named slot.
-5. Run `npm test` — `registry.test.ts` will fail loudly if the page file is missing or the metadata
-   breaks a length rule.
+   shared `.tool`/`.panes`/`.options` classes from `global.css` rather than redefining them, debounce
+   the textarea input, and copy the `// --- Analytics` helper block (see `docs/ANALYTICS.md`).
+4. Create `src/pages/tools/<slug>.astro` using `ToolLayout`: pass `tool` (from the registry), `steps`
+   and `faq` as props, put the interactive component in the default slot, and the explanation /
+   example / options / edge-cases / code sections in the `content` named slot.
+5. Run `npm run build && npm test` — `registry.test.ts` fails on a missing page or a metadata rule;
+   `analytics.test.ts` on missing instrumentation or a PII leak; `content.test.ts` on a missing
+   section, a forbidden phrase or mismatched structured data. Then work through the "Mandatory rule"
+   checklist in `CLAUDE.md` — a page is not done when the route renders.

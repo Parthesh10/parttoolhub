@@ -28,7 +28,7 @@ const uid = `ad-${slot}-${Math.random().toString(36).slice(2, 8)}`;
 ---
 
 {enabled && (
-  <div class:list={['ad-slot', `ad-${format}`, className]} aria-label="Advertisement" data-ad-container id={uid}>
+  <div class:list={['ad-slot', `ad-${format}`, className]} role="region" aria-label="Advertisement" data-ad-container id={uid}>
     {lazy ? (
       <script is:inline define:vars={{ uid, client: ADS.client, adSlot: slotId, format }}>
         (function (container) {

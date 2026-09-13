@@ -6,8 +6,26 @@ import { pythonToJson } from '../../lib/python-dict';
 
 const tool = toolBySlug('python-dict-to-json');
 
+// Worked example and every error message below come from the real engine at build time.
 const pySample = "{'id': 7, 'active': True, 'ref': None, 'tags': ('a', 'b')}";
 const jsonSample = (pythonToJson(pySample) as { ok: true; output: string }).output;
+const err = (s: string) => {
+  const r = pythonToJson(s);
+  return r.ok ? '' : r.error.replace(/\.$/, ''); // quoted inline, so drop the message's own full stop
+};
+const datetimeErr = err("{'d': datetime.datetime(2024, 1, 1)}");
+const decimalErr = err("{'d': Decimal('1.5')}");
+const jsonInputErr = err('{"a": true}');
+const tupleKeyErr = err("{(1, 2): 'a'}");
+const mixedKeys = (pythonToJson("{1: 'a', 2.5: 'b', True: 'c', None: 'd'}", { indent: 0 }) as { ok: true; output: string }).output;
+
+const steps = [
+  'Paste the Python literal — a dict, list, tuple, set or a single value — exactly as <code>print()</code>, the REPL, a debugger or a log line showed it.',
+  'Choose the indent: 2 spaces, 4 spaces, Tab, or <em>Minified</em> for a single line.',
+  'Tick <strong>Sort keys alphabetically</strong> if you need a stable order for diffing.',
+  'If it does not convert, read the error line: it names the first thing the parser could not treat as a literal value.',
+  '<strong>Copy to clipboard</strong> or <strong>Download .json</strong>.',
+];
 
 const faq = [
   {
@@ -19,7 +37,7 @@ const faq = [
     a: 'Both become JSON arrays, since JSON has no equivalent of either. Order is preserved for tuples; sets have no defined order in Python either, so their order in the output matches whatever order they were written in.',
   },
   {
-    q: 'Does it handle nested dicts, nested nesting, and multi-line dicts pasted from a debugger?',
+    q: 'Does it handle nested dicts and multi-line dicts pasted from a debugger?',
     a: 'Yes — any level of nesting, trailing commas, and Python comments (<code>#…</code>) are all handled, which covers most values copied from a REPL, a debugger watch panel, or a print() call.',
   },
   {
@@ -29,7 +47,7 @@ const faq = [
 ];
 ---
 
-<ToolLayout {tool} {faq}>
+<ToolLayout {tool} {steps} {faq}>
   <PythonDictTool />
 
   <Fragment slot="content">
@@ -44,7 +62,8 @@ const faq = [
     <p>
       This tool runs a small Python-literal parser (not <code>eval()</code>, and nothing is executed) that understands that
       syntax directly, then re-serialises the result as JSON — so you can take output straight from a Python script and paste
-      it into a config file, an API request body, or a JSON-only tool.
+      it into a config file, an API request body, or a JSON-only tool. It follows the same rules as <code>json.dumps</code> for
+      the awkward parts: non-string keys, <code>nan</code>, and duplicate keys.
     </p>
 
     <h2>Example</h2>
@@ -55,18 +74,38 @@ const faq = [
 
     <h2>What gets converted</h2>
     <ul>
-      <li><strong>Quotes:</strong> single, double and triple-quoted strings, including <code>r'raw'</code>, <code>u'unicode'</code> and adjacent-string concatenation.</li>
+      <li><strong>Quotes:</strong> single, double and triple-quoted strings, including <code>r'raw'</code>, <code>u'unicode'</code>, <code>b'bytes'</code> (treated as text) and adjacent-string concatenation (<code>'a' 'b'</code> → <code>"ab"</code>).</li>
       <li><strong>Constants:</strong> <code>True</code> → <code>true</code>, <code>False</code> → <code>false</code>, <code>None</code> → <code>null</code>.</li>
-      <li><strong>Numbers:</strong> ints, floats, underscores in literals (<code>1_000</code>), and hex/octal/binary (<code>0xff</code>, <code>0o17</code>, <code>0b101</code>).</li>
-      <li><strong>Containers:</strong> lists stay arrays; tuples and sets become arrays; nested dicts stay objects.</li>
+      <li><strong>Numbers:</strong> ints, floats, signs, underscores in literals (<code>1_000</code>), and hex/octal/binary (<code>0xff</code>, <code>0o17</code>, <code>0b101</code>) all become plain decimal numbers.</li>
+      <li><strong>Containers:</strong> lists stay arrays; tuples and sets become arrays; nested dicts stay objects. <code>set()</code>, <code>dict()</code>, <code>list()</code>, <code>tuple()</code> and <code>frozenset()</code> calls are unwrapped, and so are <code>OrderedDict</code> (either form) and <code>Counter</code>.</li>
       <li><strong>Extras:</strong> trailing commas and <code>#</code> comments are ignored, matching how Python itself reads them.</li>
     </ul>
 
-    <h2>Doing it in Python instead</h2>
+    <h2>Options explained</h2>
+    <ul>
+      <li><strong>Indent: 2 spaces / 4 spaces / Tab / Minified</strong> sets the output layout. Minified is one line with no spaces at all, the same as <code>json.dumps(obj, separators=(",", ":"))</code>.</li>
+      <li><strong>Sort keys alphabetically</strong> sorts every object's keys at every depth in code-point order, like <code>json.dumps(obj, sort_keys=True)</code>; uppercase keys therefore come before lowercase ones.</li>
+      <li><strong>Load sample</strong> inserts a small dict that uses single quotes, <code>True</code>, <code>None</code> and a tuple; <strong>Clear</strong> empties the box.</li>
+    </ul>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>Object reprs are not literals.</strong> <code>datetime.datetime(2024, 1, 1)</code> stops with “{datetimeErr}”, <code>Decimal('1.5')</code> with “{decimalErr}”, and <code>&lt;User id=1&gt;</code> or the <code>&lt;class 'int'&gt;</code> inside a printed <code>defaultdict</code> at the <code>&lt;</code>. Convert those values to strings in Python before printing, or edit them out.</li>
+      <li><strong>Text that is already JSON fails</strong>: <code>{'{"a": true}'}</code> is reported as “{jsonInputErr}”, because <code>true</code> is not a Python name. Use the <a href="/tools/json-formatter">JSON Formatter</a> for that.</li>
+      <li><strong>Non-string keys follow <code>json.dumps</code>:</strong> <code>{"{1: 'a', 2.5: 'b', True: 'c', None: 'd'}"}</code> becomes <code>{mixedKeys}</code>. A tuple key such as <code>{"{(1, 2): 'a'}"}</code> is rejected with “{tupleKeyErr}”.</li>
+      <li><strong><code>float('nan')</code>, <code>float('inf')</code>, <code>nan</code> and <code>inf</code> become <code>null</code></strong>, because JSON cannot express them. Python's own <code>json.dumps</code> would emit the non-standard <code>NaN</code> unless you pass <code>allow_nan=False</code>.</li>
+      <li><strong>Duplicate keys keep the last value</strong>, exactly as Python does when it builds the dict.</li>
+      <li><strong>Integers above 2<sup>53</sup> lose precision</strong>: <code>12345678901234567890</code> comes out as <code>12345678901234567000</code>, because the output passes through JavaScript numbers. Python itself would keep every digit — store such IDs as strings.</li>
+      <li><strong>f-strings are not evaluated</strong>: <code>f'hi {'{x}'}'</code> is kept literally as <code>"hi {'{x}'}"</code>. Complex numbers (<code>1+2j</code>) are rejected outright.</li>
+      <li><strong>Anything after the value is an error</strong>, not ignored: <code>{"{'a': 1} extra"}</code> stops at <code>extra</code>. Paste one value at a time.</li>
+      <li><strong>Size:</strong> a 4 MB literal takes about half a second to parse on a laptop, and typing is debounced so the page stays responsive while you edit.</li>
+    </ul>
+
+    <h2>Do the same thing in Python</h2>
     <p>If you're already inside a Python process, this is the direct equivalent of what the tool does:</p>
     <pre><code>import json, ast
 data = ast.literal_eval(python_repr_string)
 print(json.dumps(data, indent=2))</code></pre>
-    <p class="muted"><code>ast.literal_eval</code> is the safe alternative to <code>eval()</code> — it only accepts literal values, never runs code.</p>
+    <p class="muted"><code>ast.literal_eval</code> is the safe alternative to <code>eval()</code> — it only accepts literal values, never runs code. Like this tool, it rejects <code>datetime(…)</code> and other object reprs.</p>
   </Fragment>
 </ToolLayout>

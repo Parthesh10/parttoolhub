@@ -19,6 +19,41 @@ const plusAsSpace = $<HTMLInputElement>('opt-plus');
 
 let mode: 'encode' | 'decode' = 'encode';
 
+// --- Analytics (docs/ANALYTICS.md) -----------------------------------------
+// Duplicated per tool on purpose: no shared JS across tools (seo-rules §4).
+// Only slugs, action names, control ids, enumerated values, size buckets and
+// error *categories* are ever sent — never the text a visitor typed.
+const fired = new Set<string>();
+let inputSource: 'typed' | 'pasted' | 'sample' | 'transfer' = 'typed';
+let justPasted = false;
+function track(name: string, params: Record<string, string | number | boolean> = {}, once?: string) {
+  if (once) {
+    if (fired.has(once)) return;
+    fired.add(once);
+  }
+  const b = document.body.dataset;
+  window.pth?.track(name, { tool_slug: b.toolSlug ?? '', tool_category: b.toolCategory ?? '', ...params });
+}
+const sizeBucket = (n: number) => (n < 100 ? 'xs' : n < 1_000 ? 's' : n < 10_000 ? 'm' : n < 100_000 ? 'l' : 'xl');
+/** First run on non-empty input → tool_use; first success → tool_result; first failure → tool_error. */
+function trackRun(action: string, ok: boolean, errorType = 'unknown') {
+  track('tool_use', { action, success: ok, input_source: inputSource, input_size: sizeBucket(input.value.length) }, 'use');
+  if (ok) track('tool_result', { action }, 'result');
+  else track('tool_error', { action, error_type: errorType }, 'error');
+}
+/** Which controls people touch. Free-text inputs report no value; selects report the visible label. */
+function trackOption(el: HTMLInputElement | HTMLSelectElement | HTMLButtonElement, value?: string) {
+  let v = value;
+  if (v === undefined) {
+    if (el instanceof HTMLSelectElement) v = el.options[el.selectedIndex]?.text ?? '';
+    else if (el instanceof HTMLInputElement && el.type === 'checkbox') v = String(el.checked);
+    else v = '(text)';
+  }
+  track('tool_option', { option: el.id || el.dataset.preset || 'unknown', value: v }, `opt:${el.id || el.dataset.preset}`);
+}
+input.addEventListener('paste', () => { justPasted = true; });
+input.addEventListener('input', () => { inputSource = justPasted ? 'pasted' : 'typed'; justPasted = false; });
+
 function plural(n: number, word: string) {
   return `${n.toLocaleString()} ${word}${n === 1 ? '' : 's'}`;
 }
@@ -31,6 +66,7 @@ function setMode(next: 'encode' | 'decode') {
   outputLabel.textContent = next === 'encode' ? 'Encoded' : 'Decoded';
   encodeOptions.hidden = next === 'decode';
   decodeOptions.hidden = next === 'encode';
+  track('tool_option', { option: 'mode', value: next }, 'opt:mode');
   render();
 }
 
@@ -50,8 +86,10 @@ function render() {
     output.value = out;
     outputStat.textContent = plural(out.length, 'character');
     status.hidden = true;
+    trackRun(`encode:${encodeMode.value}`, true);
   } else {
     const r = urlDecode(raw, plusAsSpace.checked);
+    trackRun('decode', r.ok, r.ok ? undefined : /UTF-8/.test(r.error) ? 'utf8' : 'bad_escape');
     if (r.ok) {
       output.value = r.output;
       outputStat.textContent = plural(r.output.length, 'character');
@@ -76,6 +114,7 @@ function showToast(msg: string) {
 
 async function copyOutput() {
   if (!output.value) return showToast('Nothing to copy yet');
+  track('copy_result', { target: 'output' });
   try {
     await navigator.clipboard.writeText(output.value);
     showToast('Copied to clipboard');
@@ -89,6 +128,7 @@ async function copyOutput() {
 modeEncodeBtn.addEventListener('click', () => setMode('encode'));
 modeDecodeBtn.addEventListener('click', () => setMode('decode'));
 $('btn-swap').addEventListener('click', () => {
+  track('tool_option', { option: 'swap', value: 'swap' }, 'opt:swap');
   const prevOutput = output.value;
   setMode(mode === 'encode' ? 'decode' : 'encode');
   if (prevOutput) {
@@ -96,16 +136,27 @@ $('btn-swap').addEventListener('click', () => {
     render();
   }
 });
-input.addEventListener('input', render);
+// Typing is debounced so a keystroke never waits on the engine — the site's
+// INP budget is < 200 ms and large pastes can take longer than that to process
+// synchronously. Option toggles still re-render immediately (one event, not a burst).
+let renderTimer: number | undefined;
+function scheduleRender() {
+  window.clearTimeout(renderTimer);
+  renderTimer = window.setTimeout(render, 120);
+}
+input.addEventListener('input', scheduleRender);
 encodeMode.addEventListener('input', render);
 plusAsSpace.addEventListener('input', render);
+for (const c of [encodeMode, plusAsSpace]) c.addEventListener('change', () => trackOption(c));
 $('btn-copy').addEventListener('click', copyOutput);
 $('btn-clear').addEventListener('click', () => {
+  track('reset_tool');
   input.value = '';
   render();
   input.focus();
 });
 $('btn-sample').addEventListener('click', () => {
+  inputSource = 'sample';
   input.value =
     mode === 'encode' ? 'https://example.com/search?q=hello world&lang=en' : urlEncode('hello world & more', 'component');
   render();
@@ -113,6 +164,8 @@ $('btn-sample').addEventListener('click', () => {
 input.addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
     e.preventDefault();
+    window.clearTimeout(renderTimer); // flush a pending debounced render first
+    render();
     copyOutput();
   }
 });

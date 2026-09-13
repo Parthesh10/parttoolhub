@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import { SITE, ADS, ANALYTICS } from '../site.config';
 import { canonicalUrl } from '../lib/urls';
+import { AUTHOR_ID, authorSchema } from '../lib/schema';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 
@@ -15,13 +16,32 @@ export interface Props {
   schema?: Record<string, unknown>[];
   /** Set true on utility pages you don't want indexed (e.g. 404). */
   noindex?: boolean;
+  /**
+   * Set by ToolLayout. Exposed as data-tool-slug / data-tool-category on <body>
+   * (read by the tool's client script for analytics) and fires `tool_view`.
+   */
+  tool?: { slug: string; category: string };
 }
 
-const { title, description, canonical, ogImage = SITE.ogImage, schema = [], noindex = false } = Astro.props;
+const { title, description, canonical, ogImage = SITE.ogImage, schema = [], noindex = false, tool } = Astro.props;
+/**
+ * Analytics goes live only in production builds so `npm run dev` never pollutes
+ * real data. In production the inline snippet below initialises GA4 once and
+ * defines the site's one event API, window.pth.track (docs/ANALYTICS.md): page
+ * views come from the config call (one per full load — no client-side routing),
+ * everything else is a custom event whose parameters are slugs, action names,
+ * control ids, enumerated values and size buckets, never visitor text.
+ * Internal-link clicks are captured by delegation so pages need no wiring.
+ * Outside production the same API logs to the console instead.
+ */
+const analyticsOn = Boolean(ANALYTICS.ga4) && import.meta.env.PROD;
 
 const pageUrl = canonicalUrl(canonical ?? Astro.url.pathname);
 const ogImageUrl = new URL(ogImage, SITE.url).href;
-const fullTitle = title.includes(SITE.name) ? title : `${title} | ${SITE.name}`;
+// Brand suffix only when the whole <title> stays within 60 characters (seo-rules §2);
+// a long, specific title beats a truncated one with the brand on the end.
+const suffixed = `${title} | ${SITE.name}`;
+const fullTitle = title.includes(SITE.name) || suffixed.length > 60 ? title : suffixed;
 
 const baseSchema = [
   {
@@ -30,7 +50,10 @@ const baseSchema = [
     name: SITE.name,
     url: SITE.url,
     description: SITE.tagline,
+    inLanguage: 'en',
+    author: { '@id': AUTHOR_ID },
   },
+  authorSchema,
   ...schema,
 ];
 ---
@@ -80,6 +103,9 @@ const baseSchema = [
     <meta property="og:description" content={description} />
     <meta property="og:url" content={pageUrl} />
     <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${SITE.name} — ${SITE.tagline}`} />
     <meta property="og:locale" content={SITE.locale} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={fullTitle} />
@@ -91,24 +117,48 @@ const baseSchema = [
     {ADS.client && (
       <script
         async
+        fetchpriority="low"
         src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADS.client}`}
         crossorigin="anonymous"
       />
     )}
 
-    {ANALYTICS.ga4 && (
+    {analyticsOn ? (
       <>
-        <script async src={`https://www.googletagmanager.com/gtag/js?id=${ANALYTICS.ga4}`} />
-        <script is:inline define:vars={{ id: ANALYTICS.ga4 }}>
+        <script async fetchpriority="low" src={`https://www.googletagmanager.com/gtag/js?id=${ANALYTICS.ga4}`} />
+        <script is:inline define:vars={{ id: ANALYTICS.ga4, tool: tool ?? null }}>
           window.dataLayer = window.dataLayer || [];
           function gtag() { dataLayer.push(arguments); }
           gtag('js', new Date());
-          gtag('config', id, { anonymize_ip: true });
+          gtag('config', id);
+          window.pth = {
+            track: function (name, params) {
+              try { gtag('event', name, params || {}); } catch (e) { /* analytics must never break a tool */ }
+            },
+          };
+          if (tool) window.pth.track('tool_view', { tool_slug: tool.slug, tool_category: tool.category });
+          document.addEventListener('click', function (e) {
+            var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+            if (!a) return;
+            var href = a.getAttribute('href') || '';
+            // Internal links only; GA4 enhanced measurement already reports outbound clicks.
+            if (href.charAt(0) !== '/' || href.charAt(1) === '/') return;
+            var zone = a.closest('[data-nav]');
+            window.pth.track('navigation_click', {
+              link_placement: zone ? zone.getAttribute('data-nav') : 'content',
+              link_to: href.split('#')[0].split('?')[0],
+            });
+          }, true);
         </script>
       </>
+    ) : (
+      <script is:inline define:vars={{ tool: tool ?? null }}>
+        window.pth = { track: function (name, params) { console.debug('[analytics]', name, params || {}); } };
+        if (tool) window.pth.track('tool_view', { tool_slug: tool.slug, tool_category: tool.category });
+      </script>
     )}
   </head>
-  <body>
+  <body data-tool-slug={tool?.slug} data-tool-category={tool?.category}>
     <a class="skip-link" href="#main">Skip to content</a>
     <Header />
     <main id="main" class="container">

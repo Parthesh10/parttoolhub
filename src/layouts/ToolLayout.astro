@@ -1,47 +1,74 @@
 ---
 /**
- * Shared shell for every /tools/<slug> page. Handles everything the SEO
- * rules require on every tool page so an individual page file only supplies
- * its unique content: intro copy, a worked example and FAQ.
+ * Shared shell for every /tools/<slug> page. Generates everything that
+ * seo-rules.md says is identical across tools — breadcrumbs, <h1> + lead
+ * sentence, metadata, JSON-LD, the "How to use" list, both ad slots, the FAQ,
+ * Related Tools and the trust/review line — so a page file only supplies what
+ * is unique to it: the widget (default slot), the numbered steps, the prose
+ * sections of §3.1 (named `content` slot) and the FAQ entries.
  *
- * Ad placement follows the 2-unit budget: one slot after the intro content
- * block (passed as the default slot, above), one after the FAQ section
- * (rendered here). Never more than two on a tool page.
+ * Page order is fixed by §3.1: breadcrumb → h1 → tool → How to use → [ad] →
+ * content sections → FAQ → [ad] → related tools → trust line. The first ad
+ * unit sits after "How to use", never above the tool or between the tool's
+ * input and output (§8); the second after the FAQ. Two per page, never more.
  */
 import Base from './Base.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import AdSlot from '../components/AdSlot.astro';
 import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
+import { SITE } from '../site.config';
 import { canonicalUrl } from '../lib/urls';
+import { formatDate } from '../lib/dates';
+import { AUTHOR_ID } from '../lib/schema';
 import { categoryBySlug } from '../data/categories';
 import { toolPath, type Tool } from '../data/tools';
 
 export interface Props {
   tool: Tool;
-  /** 2–3 real, searchable FAQ entries (rule: content depth requirements). */
+  /** 3–5 imperative one-line steps for the "How to use" section. Inline HTML allowed. */
+  steps: string[];
+  /** 3–6 real, searchable FAQ entries (seo-rules §3.3). */
   faq: { q: string; a: string }[];
-  /** Extra JSON-LD objects beyond WebSite/SoftwareApplication/FAQPage/BreadcrumbList. */
+  /** Extra JSON-LD objects beyond WebSite/Person/SoftwareApplication/FAQPage/BreadcrumbList. */
   schema?: Record<string, unknown>[];
 }
 
-const { tool, faq, schema = [] } = Astro.props;
+const { tool, steps, faq, schema = [] } = Astro.props;
 const category = categoryBySlug(tool.category);
+
+if (steps.length < 3 || steps.length > 5) {
+  throw new Error(`${tool.slug}: "How to use" needs 3–5 steps, got ${steps.length} (seo-rules §3.1 item 4)`);
+}
+if (faq.length < 3 || faq.length > 6) {
+  throw new Error(`${tool.slug}: FAQ needs 3–6 entries, got ${faq.length} (seo-rules §3.3)`);
+}
 
 const toolSchema = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: tool.title,
+  // Must match what a visitor sees: the <h1> is tool.name, not the <title>.
+  name: tool.name,
   applicationCategory: 'UtilitiesApplication',
-  operatingSystem: 'Any (web browser)',
+  operatingSystem: 'Any',
+  browserRequirements: 'Requires JavaScript',
   url: canonicalUrl(toolPath(tool)),
   description: tool.description,
+  isAccessibleForFree: true,
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
   featureList: tool.features,
+  datePublished: SITE.launched,
+  dateModified: tool.reviewedOn,
+  author: { '@id': AUTHOR_ID },
 };
 ---
 
-<Base title={tool.title} description={tool.description} schema={[toolSchema, ...schema]}>
+<Base
+  title={tool.title}
+  description={tool.description}
+  schema={[toolSchema, ...schema]}
+  tool={{ slug: tool.slug, category: tool.category }}
+>
   <Breadcrumbs items={[{ label: category.name, href: `/${category.slug}` }, { label: tool.name }]} />
 
   <header class="hero">
@@ -51,9 +78,16 @@ const toolSchema = {
 
   <slot />
 
-  <AdSlot slot="toolTop" format="horizontal" />
-
   <article class="prose">
+    <section aria-labelledby="how-to-use">
+      <h2 id="how-to-use">How to use</h2>
+      <ol class="steps">
+        {steps.map((s) => <li set:html={s} />)}
+      </ol>
+    </section>
+
+    <AdSlot slot="toolTop" format="horizontal" />
+
     <slot name="content" />
   </article>
 
@@ -62,9 +96,22 @@ const toolSchema = {
   <AdSlot slot="toolBottom" format="rectangle" />
 
   <RelatedTools current={tool} />
+
+  <p class="trust-line muted">
+    Runs entirely in your browser: this page is a static file with no server behind it, so nothing you paste can be
+    uploaded. Last reviewed <time datetime={tool.reviewedOn}>{formatDate(tool.reviewedOn)}</time> by
+    <a href={SITE.authorUrl}>{tool.reviewedBy}</a>.
+    {tool.spec && (
+      <>
+        {' '}Implements <a href={tool.spec.url} rel="noopener">{tool.spec.name}</a>.
+      </>
+    )}
+  </p>
 </Base>
 
 <style>
   .hero { margin-bottom: 1.25rem; max-width: 76ch; }
   .lead { font-size: 1.1rem; color: var(--text-muted); margin: 0; }
+  .steps li { margin-bottom: 0.45rem; }
+  .trust-line { font-size: 0.875rem; margin-top: 2rem; max-width: 76ch; }
 </style>

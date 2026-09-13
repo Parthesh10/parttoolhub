@@ -12,7 +12,7 @@ import { CATEGORIES } from '../data/categories';
 const current = Astro.url.pathname;
 ---
 
-<header class="site-header">
+<header class="site-header" data-nav="header">
   <div class="container inner">
     <a class="brand" href="/" aria-label={`${SITE.name} home`}>
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -151,5 +151,11 @@ const current = Astro.url.pathname;
 
   @media (max-width: 640px) {
     .inner { padding-block: 0.5rem; }
+  }
+
+  /* Touch devices: 44 px minimum tap targets for the nav links and the theme toggle. */
+  @media (pointer: coarse) {
+    nav > ul > li > a, .dropdown a { min-height: 44px; display: flex; align-items: center; }
+    .theme-toggle { width: 44px; height: 44px; }
   }
 </style>

@@ -55,7 +55,9 @@ function locate(message: string, input: string): { line?: number; column?: numbe
 
   const lc = message.match(/line (\d+) column (\d+)/i);
   const posMatch = message.match(/position (\d+)/i);
-  const ctx = message.match(/^Unexpected token '(.+?)', (\.\.\.)?"([\s\S]*)"(?:\.\.\.)? is not valid JSON$/);
+  // `[\s\S]` rather than `.` for the token: V8 reports a literal newline
+  // as the offending token when a value is cut short at a line end.
+  const ctx = message.match(/^Unexpected token '([\s\S]+?)', (\.\.\.)?"([\s\S]*)"(?:\.\.\.)? is not valid JSON$/);
 
   if (lc) {
     line = Number(lc[1]);
@@ -92,7 +94,9 @@ function cleanMessage(message: string): string {
     .replace(/\s*in JSON at position \d+.*$/i, '')
     .replace(/\s*\(line \d+ column \d+\)\s*$/i, '')
     .replace(/\s*at line \d+ column \d+ of the JSON data$/i, '')
-    .replace(/,\s*"[^"]*"\s*is not valid JSON$/i, '')
+    // The quoted context V8 appends can itself contain quotes and newlines,
+    // so match greedily to the end rather than stopping at the first quote.
+    .replace(/,\s*(?:\.\.\.)?"[\s\S]*"(?:\.\.\.)?\s*is not valid JSON$/i, '')
     .trim();
 }
 
@@ -106,18 +110,32 @@ export function parseJson(input: string): { ok: true; value: unknown } | JsonErr
   }
 }
 
+const TOO_DEEP: JsonError = { ok: false, error: 'The document is nested too deeply to format (several thousand levels).' };
+
+/**
+ * JSON.parse copes with absurd nesting, but JSON.stringify and sortDeep are
+ * recursive and overflow the stack somewhere past a few thousand levels. Turn
+ * that into an ordinary error instead of an exception that kills the page.
+ */
+function serialise(value: unknown, sortKeys: boolean, indent: string | number | undefined): JsonResult {
+  try {
+    const v = sortKeys ? sortDeep(value) : value;
+    return { ok: true, output: JSON.stringify(v, null, indent), kind: kindOf(v) };
+  } catch (e) {
+    if (e instanceof RangeError) return TOO_DEEP;
+    throw e;
+  }
+}
+
 export function formatJson(input: string, opts: Partial<FormatOptions> = {}): JsonResult {
   const o = { ...DEFAULT_FORMAT, ...opts };
   const parsed = parseJson(input);
   if (!parsed.ok) return parsed;
-  const value = o.sortKeys ? sortDeep(parsed.value) : parsed.value;
-  const indent = o.indent === 'tab' ? '\t' : o.indent;
-  return { ok: true, output: JSON.stringify(value, null, indent), kind: kindOf(value) };
+  return serialise(parsed.value, o.sortKeys, o.indent === 'tab' ? '\t' : o.indent);
 }
 
 export function minifyJson(input: string, opts: Partial<Pick<FormatOptions, 'sortKeys'>> = {}): JsonResult {
   const parsed = parseJson(input);
   if (!parsed.ok) return parsed;
-  const value = opts.sortKeys ? sortDeep(parsed.value) : parsed.value;
-  return { ok: true, output: JSON.stringify(value), kind: kindOf(value) };
+  return serialise(parsed.value, Boolean(opts.sortKeys), undefined);
 }

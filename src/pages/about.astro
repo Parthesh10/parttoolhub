@@ -2,35 +2,87 @@
 import Base from '../layouts/Base.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { SITE } from '../site.config';
+import { TOOLS, latestReviewDate } from '../data/tools';
+import { CATEGORIES } from '../data/categories';
+import { formatDate } from '../lib/dates';
+
+const toolCount = TOOLS.length;
+const categoryCount = CATEGORIES.length;
 ---
 
-<Base title="About" description={`What ${SITE.name} is, who builds it, and the principles behind every tool on the site.`}>
+<Base
+  title={`About ${SITE.name}`}
+  description={`Who builds ${SITE.name}, how the tools are tested, how the pages are written, how the site is funded, and how to report a bug.`}
+>
   <Breadcrumbs items={[{ label: 'About' }]} />
   <article class="prose">
     <h1>About {SITE.name}</h1>
     <p>
-      {SITE.name} is a growing collection of single-purpose text utilities. Each one solves a small, recurring chore — the kind
-      of thing you could script in a minute but would rather not have to, every time.
+      {SITE.name} is a collection of {toolCount} single-purpose text and data tools in {categoryCount} categories, all of
+      which run in your browser. Each one does a chore you could script in a minute but would rather not script again:
+      joining a column into a comma list, reading the claims inside a JWT, finding the line where a JSON payload breaks.
     </p>
 
-    <h2>Principles</h2>
-    <ul>
-      <li><strong>Nothing leaves your browser.</strong> Every tool is built as static HTML plus a few kilobytes of JavaScript. There is no backend to receive your data.</li>
-      <li><strong>Show the result immediately.</strong> No “Convert” button to hunt for; the output updates as you type or change an option.</li>
-      <li><strong>Be explicit about side effects.</strong> If lines are skipped or duplicates removed, the counters say so.</li>
-      <li><strong>Work without an account.</strong> Bookmark the page and it is ready whenever you are.</li>
-    </ul>
-
-    <h2>How the site is funded</h2>
+    <h2 id="who">Who builds it</h2>
     <p>
-      The tools are free to use and always will be. Hosting and development are supported by a small number of display
-      advertisements. Ads are never placed in a way that interferes with the tool itself, and no personal data you paste into a
-      tool is ever used for advertising.
+      I'm <strong>{SITE.author}</strong>, and I build and maintain everything here: the conversion engines, their tests,
+      the pages and the hosting. The site started on {formatDate(SITE.launched)} as two converters, column-to-list and
+      list-to-column, that I wanted in a form I could bookmark, and has grown one tool at a time since. There is no team
+      and no company behind it.
     </p>
 
-    <h2>Get in touch</h2>
+    <h2 id="why">Why it exists</h2>
     <p>
-      Found a bug, want a new option, or have an idea for another tool? See the <a href="/contact">contact page</a>.
+      Most "online converter" pages send what you paste to a server, wrap the result in a page of filler, and stop at the
+      easy cases. I wanted the opposite: a page that does the conversion on your own device, tells you exactly what it
+      changed (the counters and status lines on every tool), and documents the awkward inputs — quotes inside values,
+      tokens with the wrong number of segments, integers too large for JSON — because those are the cases you actually
+      search for.
     </p>
+
+    <h2 id="testing">How the tools are tested</h2>
+    <p>
+      Every tool is split into a pure conversion engine with no browser code and a thin layer that wires it to the page.
+      The engines have unit tests that run before each build; a test also checks the tool registry itself, so a page
+      cannot ship with an over-long title, a duplicate search intent, or a missing review date. The worked example on
+      each tool page is produced by running that tool's real engine at build time, not typed in, so the documentation
+      cannot drift from what the tool does.
+    </p>
+
+    <h2 id="writing">How the pages are written</h2>
+    <p>
+      The text on a tool page comes from running the tool against real and deliberately broken input and writing down
+      what happens. I sometimes use writing tools to draft or tidy prose, but every sentence is checked against the
+      running tool and edited by me before it is published, and each page shows the date I last did that review. If you
+      find a claim on a page that the tool does not live up to, that is a bug — please tell me.
+    </p>
+
+    <h2 id="privacy">What happens to your data</h2>
+    <p>
+      Nothing you paste is uploaded, and not as a policy choice you have to trust: the site is a set of static files with
+      no server component, so there is nowhere for the text to go. You can load a tool, disconnect from the internet, and
+      keep using it. The <a href="/privacy-policy">privacy policy</a> covers the two third-party services that do run on
+      the page, advertising and analytics, and what they can see.
+    </p>
+
+    <h2 id="funding">How the site is funded</h2>
+    <p>
+      Hosting and development are paid for by display advertising through Google AdSense. Ads never appear above a tool
+      or between its input and output, there are at most two on a page, and the tools work identically with an ad
+      blocker on. Text you paste into a tool is never used for advertising, because it never leaves the page.
+    </p>
+
+    <h2 id="bugs">Reporting a bug or requesting a tool</h2>
+    <p>
+      Email <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a> with the tool name, the browser you used, a
+      small sample of the input and what you expected. I read everything and usually reply within a few working days.
+      {SITE.github && (
+        <>
+          {' '}The source code is public at <a href={SITE.github} rel="noopener">GitHub</a>, where you can also open an
+          issue.
+        </>
+      )}
+    </p>
+    <p class="muted">Last content review across the site: {formatDate(latestReviewDate())}.</p>
   </article>
 </Base>

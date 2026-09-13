@@ -2,6 +2,16 @@
  * Decode (never verify) a JSON Web Token. Pure, no DOM. Uses the platform
  * atob/TextDecoder that exist in every modern browser and in Node 16+.
  */
+/**
+ * The token behind the page's "Load sample" button and the worked example on
+ * /tools/jwt-decoder — one constant so the two can never drift apart.
+ * HS256, sub 1234567890, name "Ada Lovelace", iat 2023-11-14, exp 2033-05-18.
+ */
+export const SAMPLE_TOKEN =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +
+  'eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkFkYSBMb3ZlbGFjZSIsImlhdCI6MTcwMDAwMDAwMCwiZXhwIjoyMDAwMDAwMDAwfQ.' +
+  'dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U';
+
 export interface JwtTiming {
   exp?: Date;
   iat?: Date;

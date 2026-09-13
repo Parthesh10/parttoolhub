@@ -57,3 +57,26 @@ test('locates unexpected end of input', () => {
   const r = parseJson('{"a": [1, 2');
   assert.ok(!r.ok && r.line === 1 && r.column === 12);
 });
+
+test('locates an error whose offending token is a line break', () => {
+  // A value cut short at the end of a line: V8 reports the newline itself as the token.
+  const r = parseJson('{\n  "a": 1,\n  "b": tru\n}');
+  assert.ok(!r.ok);
+  assert.equal(r.line, 3, `line was ${r.line}`);
+  assert.ok(!/is not valid JSON/.test(r.error), `context noise not stripped: ${r.error}`);
+});
+
+test('strips V8 context noise even when the context contains quotes', () => {
+  const r = parseJson('{"a": NaN}');
+  assert.ok(!r.ok);
+  assert.ok(!/is not valid JSON/.test(r.error), r.error);
+  assert.equal(r.line, 1);
+});
+
+test('pathological nesting is an error, not a stack-overflow exception', () => {
+  const deep = '['.repeat(10_000) + '1' + ']'.repeat(10_000);
+  const r = formatJson(deep);
+  assert.ok(!r.ok && /too deeply/.test(r.error), 'format');
+  const m = minifyJson(deep, { sortKeys: true });
+  assert.ok(!m.ok && /too deeply/.test(m.error), 'minify with sortKeys');
+});

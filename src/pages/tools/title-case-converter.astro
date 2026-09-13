@@ -2,21 +2,37 @@
 import ToolLayout from '../../layouts/ToolLayout.astro';
 import TitleCaseTool from '../../components/tools/TitleCaseTool.astro';
 import { toolBySlug } from '../../data/tools';
-import { titleCaseLine, STYLE_LABELS, type TitleStyle } from '../../lib/title-case';
+import { titleCaseLine, convertCase, STYLE_LABELS, type TitleStyle } from '../../lib/title-case';
 
 const tool = toolBySlug('title-case-converter');
 
+// Every example below is produced by the real engine at build time.
 const sample = 'a walk through the park with dogs';
 const styleExamples = (['apa', 'chicago', 'ap', 'mla'] as TitleStyle[]).map((s) => ({
   style: s,
   label: STYLE_LABELS[s],
   output: titleCaseLine(sample, { style: s }),
 }));
+const allCaps = titleCaseLine('NASA LAUNCHES ROCKET');
+const mixedCaps = titleCaseLine('NASA launches rocket');
+const subtitle = titleCaseLine('who is it? the story of a man');
+const hyphen = titleCaseLine('a state-of-the-art self-driving car');
+const sentenceAcronym = convertCase('The NASA Team', 'sentence');
+const capitalizeEach = convertCase('state-of-the-art thing', 'capitalize');
+const accented = titleCaseLine('über die brücke');
+
+const steps = [
+  'Paste one title per line; each line is converted on its own.',
+  'Pick a <strong>Mode</strong>: Title Case, Sentence case, UPPERCASE, lowercase, Capitalize Each Word, aLtErNaTiNg cAsE or tOGGLE cASE.',
+  'For Title Case, choose the <strong>Title case style</strong> — APA, Chicago, AP or MLA. The result updates as you switch, so you can compare them.',
+  'Leave <strong>Keep acronyms and brand names (NASA, iPhone) as typed</strong> on unless you want every word forced through the rule.',
+  '<strong>Copy to clipboard</strong>, or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> from the input box.',
+];
 
 const faq = [
   {
     q: 'Which style should I use?',
-    a: 'APA and AP both lowercase short prepositions and articles under four letters; Chicago and MLA lowercase every preposition regardless of length. If a publication or professor has assigned a style guide, use that one — otherwise APA is a safe, widely used default.',
+    a: 'APA and AP both lowercase short prepositions and articles of three letters or fewer; Chicago and MLA lowercase every preposition regardless of length. If a publication or professor has assigned a style guide, use that one — otherwise APA is a safe, widely used default.',
   },
   {
     q: 'Why does it keep “NASA” or “iPhone” unchanged?',
@@ -24,16 +40,16 @@ const faq = [
   },
   {
     q: 'Does it handle titles that are already in ALL CAPS?',
-    a: 'Yes. An all-caps line carries no information about which words should be capitalized, so it is lowercased first and then title-cased normally.',
+    a: 'Yes. An all-caps line carries no information about which words should be capitalized, so it is lowercased first and then title-cased normally. That also lowercases acronyms in the line — retype those in mixed case if you need them kept.',
   },
   {
     q: 'What happens to hyphenated words?',
-    a: 'Each part of a hyphenated compound is capitalized on its own terms — for example “Self-Driving” and “Out-of-Date” — matching how style guides treat compound modifiers in titles.',
+    a: 'Each part of a hyphenated compound is capitalized on its own terms — for example “Self-Driving” and “State-of-the-Art” — matching how style guides treat compound modifiers in titles.',
   },
 ];
 ---
 
-<ToolLayout {tool} {faq}>
+<ToolLayout {tool} {steps} {faq}>
   <TitleCaseTool />
 
   <Fragment slot="content">
@@ -48,10 +64,10 @@ const faq = [
     <p>
       Getting this right by hand means checking a list of exceptions for every word, which is exactly the kind of small,
       repetitive rule-following that is easy to get slightly wrong under a deadline. This tool applies the rule set
-      consistently and instantly as you type.
+      consistently and instantly as you type, one line at a time, and links the APA rules it follows at the bottom of the page.
     </p>
 
-    <h2>The same title, four ways</h2>
+    <h2>Example: the same title, four ways</h2>
     <p>Starting from <code>{sample}</code>:</p>
     <div class="table-wrap">
       <table>
@@ -68,12 +84,38 @@ const faq = [
     </div>
     <p class="muted">Notice “Through” and “With” only capitalize under APA/AP, since Chicago and MLA lowercase prepositions of any length.</p>
 
-    <h2>Other case modes</h2>
+    <h2>Options explained</h2>
     <ul>
-      <li><strong>Sentence case</strong> capitalizes only the first word of each sentence (and the pronoun “I”) — the style most style guides use for headings and figure captions.</li>
-      <li><strong>UPPERCASE / lowercase</strong> convert every letter, ignoring word boundaries entirely.</li>
-      <li><strong>Capitalize Each Word</strong> capitalizes every word with no exceptions — useful for names, not for titles.</li>
-      <li><strong>aLtErNaTiNg</strong> and <strong>tOGGLE</strong> case are novelty formats sometimes used for emphasis or "mocking" text online.</li>
+      <li><strong>Mode: Title Case</strong> applies the selected style guide's rules to each line.</li>
+      <li><strong>Sentence case</strong> lowercases everything, then capitalizes the first letter of each sentence (after <code>.</code>, <code>!</code> or <code>?</code>) and the pronoun I. Acronyms are lowercased too: <code>The NASA Team</code> becomes <code>{sentenceAcronym}</code>.</li>
+      <li><strong>UPPERCASE / lowercase</strong> change every letter and ignore word boundaries entirely.</li>
+      <li><strong>Capitalize Each Word</strong> capitalizes the first letter of every word <em>and</em> every hyphenated part, with no exceptions: <code>{capitalizeEach}</code>. Use it for names and menu labels, not titles.</li>
+      <li><strong>aLtErNaTiNg cAsE / tOGGLE cASE</strong> are novelty modes. Alternating counts letters only, so spaces and punctuation do not reset the pattern; Toggle flips the case of every letter.</li>
+      <li><strong>Title case style: APA / Chicago / AP / MLA</strong>. APA and AP lowercase only minor words of three letters or fewer (<code>of</code>, <code>to</code>, <code>in</code>, <code>per</code>, <code>via</code>), so <code>With</code> and <code>From</code> are capitalized. Chicago and MLA lowercase every preposition whatever its length (<code>with</code>, <code>through</code>, <code>between</code>). All four capitalize the first and last word and the word after a colon.</li>
+      <li><strong>Keep acronyms and brand names (NASA, iPhone) as typed</strong> leaves any word alone that has a capital letter after its first letter. Untick it to force <code>iPhone</code> → <code>Iphone</code> and <code>macOS</code> → <code>Macos</code>.</li>
     </ul>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>ALL-CAPS input loses its acronyms.</strong> An all-caps line carries no casing information, so it is lowercased first: <code>NASA LAUNCHES ROCKET</code> → <code>{allCaps}</code>. Retype the acronym in a mixed-case line and it survives: <code>NASA launches rocket</code> → <code>{mixedCaps}</code>.</li>
+      <li><strong>Subtitles work.</strong> The word after <code>:</code>, <code>—</code>, <code>–</code>, <code>?</code>, <code>!</code> or <code>.</code> is always capitalized: <code>who is it? the story of a man</code> → <code>{subtitle}</code>.</li>
+      <li><strong>Hyphenated compounds</strong> are split and each part follows the minor-word rules, so <code>a state-of-the-art self-driving car</code> → <code>{hyphen}</code> under every style.</li>
+      <li><strong>A leading quote or bracket is skipped</strong> when capitalizing: <code>"the end" of an era</code> → <code>{titleCaseLine('"the end" of an era')}</code>.</li>
+      <li><strong><code>vs.</code> and <code>as</code></strong> are treated as minor words: <code>cats vs. dogs as pets</code> → <code>{titleCaseLine('cats vs. dogs as pets')}</code>.</li>
+      <li><strong>Accented and non-Latin letters</strong> capitalize correctly (<code>über die brücke</code> → <code>{accented}</code>), but the minor-word lists are English only, so <code>die</code> is treated as an ordinary word.</li>
+      <li><strong>Sentence case does not know proper nouns.</strong> Names, places and acronyms come out lowercase and need fixing by hand.</li>
+      <li><strong>Numbers are left alone</strong>: <code>top 10 tips for 2024</code> → <code>{titleCaseLine('top 10 tips for 2024')}</code>.</li>
+      <li><strong>Empty lines stay empty</strong>, so a pasted list keeps its spacing.</li>
+    </ul>
+
+    <h2>Do the same thing in code</h2>
+    <p>The built-in helpers capitalize every word and know nothing about style guides, which is usually not what a title needs:</p>
+    <h3>Python</h3>
+    <pre><code>"the art of war".title()        # 'The Art Of War'  — capitalizes "Of"
+"state-of-the-art".title()      # 'State-Of-The-Art'
+# for real style-guide rules: pip install titlecase</code></pre>
+    <h3>JavaScript</h3>
+    <pre><code>text.replace(/\b\w/g, (c) =&gt; c.toUpperCase());   // same naive result
+// for real style-guide rules: npm install title-case</code></pre>
   </Fragment>
 </ToolLayout>

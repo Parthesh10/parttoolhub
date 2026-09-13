@@ -1,7 +1,9 @@
 ---
 /**
- * Accessible FAQ using native <details>, plus FAQPage structured data so the
- * questions are eligible for rich results in Google Search.
+ * Accessible FAQ using native <details>, plus FAQPage structured data. Google
+ * stopped showing FAQ rich results in May 2026, so expect no expanded snippet
+ * from it — it stays because Google still reads it to understand the page and
+ * Bing and the LLM retrieval crawlers use it (seo-rules.md §2).
  */
 export interface QA {
   q: string;

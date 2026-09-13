@@ -54,3 +54,23 @@ test('dedupe onlyDuplicates and sort', () => {
   assert.equal(dedupeLines('x\ny\nx\nz\ny', { onlyDuplicates: true }).output, 'x\ny');
   assert.equal(dedupeLines('b\na\nb', { sort: 'az' }).output, 'a\nb');
 });
+
+test('url decode distinguishes a bad escape from invalid UTF-8 bytes', () => {
+  const bad = urlDecode('100%');
+  assert.ok(!bad.ok && /two hex digits/.test(bad.error));
+  const notUtf8 = urlDecode('%FF');
+  assert.ok(!notUtf8.ok && /UTF-8/.test(notUtf8.error));
+});
+
+test('lone surrogates never throw: URL encoding substitutes U+FFFD like Base64 does', () => {
+  const broken = 'a\uD800b';
+  assert.equal(urlEncode(broken, 'component'), 'a%EF%BF%BDb');
+  assert.equal(urlEncode(broken, 'full'), 'a%EF%BF%BDb');
+  assert.equal(encodeBase64(broken), encodeBase64('a\uFFFDb'));
+});
+
+test('base64 round-trips a multi-megabyte input (chunked encode/decode)', () => {
+  const big = 'h\u00e9llo w\u00f6rld \u{1F44B} '.repeat(200_000); // ~4.6 MB of UTF-8
+  const r = decodeBase64(encodeBase64(big));
+  assert.ok(r.ok && r.output === big);
+});

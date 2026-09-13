@@ -61,3 +61,12 @@ test('reports what changed', () => {
   assert.ok(r.changes.markdown && r.changes.emDash);
   assert.equal(r.output, 'x, y');
 });
+
+test('a long run of brackets is cleaned in linear time (no regex backtracking blow-up)', () => {
+  const input = '['.repeat(100_000) + ']'.repeat(100_000);
+  const t = performance.now();
+  cleanText(input);
+  assert.ok(performance.now() - t < 1000, 'took longer than a second — quadratic regex again?');
+  // Links still work, including labels with other punctuation.
+  assert.equal(cleanText('see [the docs, v2](https://x.y) now', { citations: false }).output, 'see the docs, v2 now');
+});

@@ -10,7 +10,18 @@
 # instead of tools/foo/index.html); Netlify serves those at /tools/foo natively,
 # so no redirect rules are needed here.
 
+# Hashed assets never change once built — cache for a year.
 [[headers]]
   for = "/_astro/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# Baseline security headers for every response. Deliberately no CSP (AdSense and
+# GA4 load from a long, shifting list of hosts) and no X-Frame-Options (the AdSense
+# dashboard's ad preview frames the site; there is nothing here to clickjack).
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"

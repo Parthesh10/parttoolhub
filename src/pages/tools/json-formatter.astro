@@ -2,12 +2,32 @@
 import ToolLayout from '../../layouts/ToolLayout.astro';
 import JsonFormatterTool from '../../components/tools/JsonFormatterTool.astro';
 import { toolBySlug } from '../../data/tools';
-import { formatJson } from '../../lib/json-format';
+import { formatJson, parseJson } from '../../lib/json-format';
 
 const tool = toolBySlug('json-formatter');
 
+// Worked example and every error message below come from the real engine at build time.
 const messy = '{"name":"Ada","born":1815,"tags":["math","writer"]}';
 const pretty = (formatJson(messy) as { ok: true; output: string }).output;
+const err = (s: string) => {
+  const r = parseJson(s);
+  return r.ok ? '' : `${r.error.replace(/\.$/, '')}${r.line ? ` (line ${r.line}, column ${r.column})` : ''}`;
+};
+const trailingComma = err('{"a": 1,}');
+const singleQuotes = err("{'a': 1}");
+const comment = err('{"a": 1} // note');
+const bigInt = (formatJson('{"id": 12345678901234567890}') as { ok: true; output: string }).output.replace(/\s+/g, ' ');
+// Parsing this succeeds; it is the (recursive) re-serialisation that fails, so go through formatJson, not parseJson.
+const tooDeepResult = formatJson('['.repeat(10_000) + '1' + ']'.repeat(10_000));
+const tooDeep = tooDeepResult.ok ? '' : tooDeepResult.error.replace(/\.$/, '');
+
+const steps = [
+  'Paste JSON into the left box. It is parsed on every change, so there is nothing to press.',
+  'Choose <strong>Format</strong> for indented output or <strong>Minify</strong> for one line; under <em>Indent</em>, pick 2 spaces, 4 spaces or Tab.',
+  'Tick <strong>Sort keys alphabetically</strong> when two documents need to be compared side by side.',
+  'If the input is invalid, read the line and column in the red status bar, fix that spot, and the output appears as soon as the JSON parses.',
+  '<strong>Copy to clipboard</strong> or <strong>Download .json</strong>. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the input box also copies.',
+];
 
 const faq = [
   {
@@ -26,10 +46,14 @@ const faq = [
     q: 'Can I format a single value, like just a number or a string?',
     a: 'Yes. <code>42</code>, <code>"hello"</code> and <code>true</code> are all valid JSON documents on their own, and the formatter accepts them.',
   },
+  {
+    q: 'Why does a large number come out changed?',
+    a: 'JSON numbers are read as 64-bit floating point, so integers above 2<sup>53</sup> (about 9 quadrillion) lose their last digits. If an ID that large must survive, store it as a string in the source system — the formatter cannot recover digits the parser has already rounded.',
+  },
 ];
 ---
 
-<ToolLayout {tool} {faq}>
+<ToolLayout {tool} {steps} {faq}>
   <JsonFormatterTool />
 
   <Fragment slot="content">
@@ -43,7 +67,9 @@ const faq = [
     </p>
     <p>
       Minifying does the opposite: it strips every non-significant space and newline, which is what you want before sending
-      JSON over the wire or pasting it into a field with a size limit.
+      JSON over the wire or pasting it into a field with a size limit. Both directions use the browser's native parser, so a
+      4 MB document formats in around a tenth of a second on a laptop, and typing is debounced so the page never stalls
+      mid-keystroke.
     </p>
 
     <h2>Example</h2>
@@ -52,16 +78,30 @@ const faq = [
     <p>and Format produces:</p>
     <pre><code>{pretty}</code></pre>
 
-    <h2>Common causes of invalid JSON</h2>
+    <h2>Options explained</h2>
     <ul>
-      <li><strong>Trailing commas</strong> — <code>{'{"a": 1,}'}</code> is valid in JavaScript object literals but not in JSON.</li>
-      <li><strong>Single-quoted strings or keys</strong> — JSON requires double quotes: <code>{'{"a": 1}'}</code>, not <code>{"{'a': 1}"}</code>.</li>
-      <li><strong>Unquoted keys</strong> — <code>{'{a: 1}'}</code> needs to be <code>{'{"a": 1}'}</code>.</li>
-      <li><strong>Comments</strong> — JSON has no comment syntax; <code>// like this</code> will fail to parse.</li>
-      <li><strong>NaN, Infinity or undefined</strong> — none of these are valid JSON values.</li>
+      <li><strong>Format</strong> parses the input and re-emits it with one value per line, nested by the chosen indent. Key order is kept exactly as written unless sorting is on.</li>
+      <li><strong>Minify</strong> does the same parse and emits it with no whitespace at all: <code>{'{ "a" : [ 1 , 2 ] }'}</code> becomes <code>{'{"a":[1,2]}'}</code>. The Indent menu is disabled while Minify is selected because it has no effect.</li>
+      <li><strong>Indent: 2 spaces / 4 spaces / Tab</strong> sets the indentation unit for Format. Tab inserts a real tab character, which some editors display as 8 columns.</li>
+      <li><strong>Sort keys alphabetically</strong> reorders the keys of every object at every depth, in code-point order — so <code>Zebra</code> sorts before <code>apple</code>. Arrays keep their order and no value is changed.</li>
+      <li><strong>Load sample</strong> fills the input with a small nested object; <strong>Clear</strong> empties it.</li>
     </ul>
 
-    <h2>Doing the same thing in code</h2>
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>Trailing comma</strong> — <code>{'{"a": 1,}'}</code> is valid in a JavaScript object literal but not in JSON. Reported as “{trailingComma}”: the column points at the closing brace after the comma.</li>
+      <li><strong>Single-quoted or unquoted keys</strong> — <code>{"{'a': 1}"}</code> and <code>{'{a: 1}'}</code> both fail with “{singleQuotes}”. If the text uses single quotes and <code>True</code>/<code>None</code>, it is a Python literal rather than JSON — the <a href="/tools/python-dict-to-json">Python Dict to JSON converter</a> reads that directly.</li>
+      <li><strong>Comments and second documents</strong> — JSON has no comment syntax, and a file holds exactly one value. <code>// note</code> after the JSON, or two objects pasted one after the other, both fail with “{comment}”.</li>
+      <li><strong>NaN, Infinity, undefined</strong> — none of these are JSON values; they are reported as an unexpected token at the position of the first letter.</li>
+      <li><strong>Byte-order mark</strong> — a file saved by Windows Notepad can start with an invisible U+FEFF, reported as an unexpected token at line 1, column 1. Delete the first character, or run the text through the <a href="/tools/ai-text-cleaner">AI Text Cleaner</a>, which strips it.</li>
+      <li><strong>Duplicate keys are not an error.</strong> <code>{'{"a": 1, "a": 2}'}</code> formats as <code>{'{"a": 2}'}</code>: the last value wins silently, which is also what <code>JSON.parse</code> does in every browser. Check for this by hand if the document was assembled by concatenation.</li>
+      <li><strong>Numbers are 64-bit floats.</strong> <code>{'{"id": 12345678901234567890}'}</code> comes out as <code>{bigInt}</code>; <code>0.1000</code> becomes <code>0.1</code>, <code>-0</code> becomes <code>0</code>, and <code>1e400</code> becomes <code>null</code>. IDs above 2<sup>53</sup> need to be strings.</li>
+      <li><strong>Empty or whitespace-only input</strong> simply clears the output and shows no error — there is nothing to report until you paste something.</li>
+      <li><strong>Unicode</strong> round-trips: <code>"é"</code> is emitted as <code>"é"</code>, and emoji and CJK text are kept as typed.</li>
+      <li><strong>Absurd nesting</strong> — ten thousand nested arrays parse, but re-serialising them overflows the browser's call stack, so the tool reports “{tooDeep}” instead of freezing. Real documents never come close; this only happens with generated input.</li>
+    </ul>
+
+    <h2>Do the same thing in code</h2>
     <h3>JavaScript</h3>
     <pre><code>const pretty = JSON.stringify(JSON.parse(text), null, 2);
 const compact = JSON.stringify(JSON.parse(text));</code></pre>
@@ -69,5 +109,9 @@ const compact = JSON.stringify(JSON.parse(text));</code></pre>
     <pre><code>import json
 pretty = json.dumps(json.loads(text), indent=2)
 compact = json.dumps(json.loads(text), separators=(",", ":"))</code></pre>
+    <h3>Shell</h3>
+    <pre><code>jq . file.json        # pretty-print (jq)
+jq -c . file.json     # compact
+python -m json.tool file.json</code></pre>
   </Fragment>
 </ToolLayout>

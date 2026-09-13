@@ -1,4 +1,4 @@
-import { decodeJwt, relativeTime } from '../../lib/jwt-decode';
+import { decodeJwt, relativeTime, SAMPLE_TOKEN } from '../../lib/jwt-decode';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -11,10 +11,42 @@ const headerOut = $<HTMLTextAreaElement>('header-out');
 const payloadOut = $<HTMLTextAreaElement>('payload-out');
 const toast = $('toast');
 
-const SAMPLE =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +
-  'eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkFkYSBMb3ZlbGFjZSIsImlhdCI6MTcwMDAwMDAwMCwiZXhwIjoyMDAwMDAwMDAwfQ.' +
-  'dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U';
+const SAMPLE = SAMPLE_TOKEN;
+
+// --- Analytics (docs/ANALYTICS.md) -----------------------------------------
+// Duplicated per tool on purpose: no shared JS across tools (seo-rules §4).
+// Only slugs, action names, control ids, enumerated values, size buckets and
+// error *categories* are ever sent — never the text a visitor typed.
+const fired = new Set<string>();
+let inputSource: 'typed' | 'pasted' | 'sample' | 'transfer' = 'typed';
+let justPasted = false;
+function track(name: string, params: Record<string, string | number | boolean> = {}, once?: string) {
+  if (once) {
+    if (fired.has(once)) return;
+    fired.add(once);
+  }
+  const b = document.body.dataset;
+  window.pth?.track(name, { tool_slug: b.toolSlug ?? '', tool_category: b.toolCategory ?? '', ...params });
+}
+const sizeBucket = (n: number) => (n < 100 ? 'xs' : n < 1_000 ? 's' : n < 10_000 ? 'm' : n < 100_000 ? 'l' : 'xl');
+/** First run on non-empty input → tool_use; first success → tool_result; first failure → tool_error. */
+function trackRun(action: string, ok: boolean, errorType = 'unknown') {
+  track('tool_use', { action, success: ok, input_source: inputSource, input_size: sizeBucket(input.value.length) }, 'use');
+  if (ok) track('tool_result', { action }, 'result');
+  else track('tool_error', { action, error_type: errorType }, 'error');
+}
+/** Which controls people touch. Free-text inputs report no value; selects report the visible label. */
+function trackOption(el: HTMLInputElement | HTMLSelectElement | HTMLButtonElement, value?: string) {
+  let v = value;
+  if (v === undefined) {
+    if (el instanceof HTMLSelectElement) v = el.options[el.selectedIndex]?.text ?? '';
+    else if (el instanceof HTMLInputElement && el.type === 'checkbox') v = String(el.checked);
+    else v = '(text)';
+  }
+  track('tool_option', { option: el.id || el.dataset.preset || 'unknown', value: v }, `opt:${el.id || el.dataset.preset}`);
+}
+input.addEventListener('paste', () => { justPasted = true; });
+input.addEventListener('input', () => { inputSource = justPasted ? 'pasted' : 'typed'; justPasted = false; });
 
 function fmtClaimTime(d: Date | undefined): string {
   if (!d) return '—';
@@ -31,6 +63,18 @@ function render() {
     result.hidden = true;
     return;
   }
+  trackRun(
+    'decode',
+    r.ok,
+    r.ok
+      ? undefined
+      : /dot-separated/.test(r.error) ? 'segments'
+        : /Base64URL/.test(r.error) ? 'base64url'
+          : /not valid JSON/.test(r.error) ? 'json'
+            : /JSON object/.test(r.error) ? 'object'
+              : /cannot be empty/.test(r.error) ? 'empty_segment'
+                : 'other',
+  );
   if (!r.ok) {
     status.hidden = false;
     status.className = 'status-banner is-error';
@@ -71,6 +115,7 @@ function showToast(msg: string) {
 async function copyField(id: string) {
   const el = $<HTMLTextAreaElement>(id);
   if (!el.value) return showToast('Nothing to copy yet');
+  track('copy_result', { target: id === 'header-out' ? 'header' : 'payload' });
   try {
     await navigator.clipboard.writeText(el.value);
     showToast('Copied to clipboard');
@@ -81,13 +126,23 @@ async function copyField(id: string) {
   }
 }
 
-input.addEventListener('input', render);
+// Typing is debounced so a keystroke never waits on the engine — the site's
+// INP budget is < 200 ms and large pastes can take longer than that to process
+// synchronously. Option toggles still re-render immediately (one event, not a burst).
+let renderTimer: number | undefined;
+function scheduleRender() {
+  window.clearTimeout(renderTimer);
+  renderTimer = window.setTimeout(render, 120);
+}
+input.addEventListener('input', scheduleRender);
 $('btn-clear').addEventListener('click', () => {
+  track('reset_tool');
   input.value = '';
   render();
   input.focus();
 });
 $('btn-sample').addEventListener('click', () => {
+  inputSource = 'sample';
   input.value = SAMPLE;
   render();
 });

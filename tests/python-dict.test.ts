@@ -60,3 +60,8 @@ test('jsonToPython reverse direction', () => {
   assert.ok(r.ok);
   assert.equal(r.output, "{\n    'a': [\n        1,\n        True,\n        None\n    ],\n    's': 'it\\'s'\n}");
 });
+
+test('OrderedDict written as a list of pairs becomes an object', () => {
+  assert.equal(mini("OrderedDict([('a', 1), ('b', 2)])"), '{"a":1,"b":2}');
+  assert.equal(mini("OrderedDict([(1, 'x'), (None, 'y')])"), '{"1":"x","null":"y"}');
+});

@@ -6,8 +6,22 @@ export const SITE = {
   name: 'PartToolHub',
   tagline: 'Fast, private tools for text, data and code that run in your browser',
   url: 'https://parttoolhub.com',
-  /** Shown in the footer and on the About page. */
-  author: 'PartToolHub',
+  /**
+   * The person who builds and reviews the site. A real name, not the brand:
+   * it appears in the footer, the "Last reviewed by" line on every tool page,
+   * the Person JSON-LD, and on /about (seo-rules.md §4A — an unnamed
+   * maintainer is the most common AdSense "low value content" trigger).
+   */
+  author: 'Parthesh Motorwala',
+  /** Path of the page that introduces the maintainer; linked from the review line. */
+  authorUrl: '/about',
+  /**
+   * Public source repository. Leave empty while the repo is private — an
+   * empty value renders no link anywhere (a dead GitHub link is worse than
+   * none). Fill in once the repo is public: it backs the "nothing is uploaded"
+   * claim with inspectable code, and feeds the Person schema's sameAs.
+   */
+  github: '',
   /** Contact address surfaced on /contact and in the privacy policy. */
   contactEmail: 'hello@parttoolhub.com',
   /** Default social preview image, relative to /public. */

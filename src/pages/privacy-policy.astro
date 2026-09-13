@@ -46,15 +46,25 @@ const updated = '13 September 2026';
 
     <h2>Analytics</h2>
     <p>
-      We may use Google Analytics to understand which tools are used and how often. IP addresses are anonymised. This
-      information is aggregated and cannot identify you individually. You can prevent analytics collection with the
-      <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener nofollow">Google Analytics opt-out add-on</a>.
+      We use Google Analytics 4 to see which tools are used and how often: page views, which tool page was opened, whether a
+      conversion succeeded or failed (as a category such as “invalid JSON”, never the text itself), which options and buttons
+      were pressed (copy, download, clear), the rough size of the input (a bucket such as “under 1,000 characters”), and
+      which internal links were followed. What you type or paste into a tool is never sent — the analytics code is
+      written so that it cannot carry that text, and a test in the codebase enforces it. Analytics runs only on the
+      published site, not while the site is being developed. Google Analytics 4 does not log or store IP addresses. The reports we see are
+      aggregated and cannot identify you. You can prevent collection with the
+      <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener nofollow">Google Analytics opt-out add-on</a>
+      or any content blocker; the tools work identically either way.
     </p>
 
-    <h2>Cookies</h2>
+    <h2>Cookies and browser storage</h2>
     <p>
-      {SITE.name} itself sets no cookies. Third-party cookies may be set by the advertising and analytics services above.
-      Most browsers let you block or delete cookies in their settings; the tools on this site continue to work with cookies disabled.
+      {SITE.name} itself sets no cookies. It uses your browser's local storage for exactly two things: the light/dark
+      theme you pick with the toggle in the header, and, when you press a "Split back to column" or "Join into a list"
+      button, the text being handed to the other tool for the length of that page change. Both stay on your device and
+      are never sent anywhere. Third-party cookies may be set by the advertising and analytics services above. Most
+      browsers let you block or delete cookies in their settings; the tools on this site continue to work with cookies
+      disabled.
     </p>
 
     <h2>Children</h2>
@@ -63,7 +73,10 @@ const updated = '13 September 2026';
     <h2>Changes to this policy</h2>
     <p>We will update this page if our practices change and revise the date at the top. Continued use of the site after a change constitutes acceptance of the updated policy.</p>
 
-    <h2>Contact</h2>
-    <p>Questions about privacy can be sent to <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>.</p>
+    <h2>Who is responsible</h2>
+    <p>
+      This site is operated by {SITE.author} (see <a href="/about">About</a>). Questions about privacy can be sent to
+      <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>.
+    </p>
   </article>
 </Base>

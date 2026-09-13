@@ -2,8 +2,23 @@
 import ToolLayout from '../../layouts/ToolLayout.astro';
 import ListToColumnTool from '../../components/ListToColumnTool.astro';
 import { toolBySlug } from '../../data/tools';
+import { listToColumn } from '../../lib/list-convert';
 
 const tool = toolBySlug('comma-separated-list-to-column');
+
+// Worked examples come from the real engine at build time.
+const sample = '["red", "orange", "yellow", "green"]';
+const sampleOut = listToColumn(sample).output;
+const quotedCsv = listToColumn('"Smith, John", "Doe, Jane"');
+const mixedSeparators = listToColumn('a;b;c;d,e').output.split('\n');
+const trailing = listToColumn('a, b, c,');
+
+const steps = [
+  'Paste the list. Comma, semicolon, pipe, tab and new-line separated text is detected automatically; the note under the Separator menu says which one was found.',
+  'If detection picked the wrong one, choose the separator yourself, or <em>Custom…</em> for anything else, such as <code>--</code> or <code> :: </code>.',
+  'Leave <strong>Remove surrounding quotes</strong> on to strip <code>\'…\'</code>, <code>"…"</code> and <code>`…`</code> from each item; tick <strong>Remove duplicates</strong> or pick a <strong>Sort</strong> if you need them.',
+  '<strong>Copy to clipboard</strong>, <strong>Download .txt</strong>, or <strong>Join into a list →</strong> to send the column to the reverse tool.',
+];
 
 const faq = [
   {
@@ -12,7 +27,7 @@ const faq = [
   },
   {
     q: 'My values contain commas inside quotes. Will they be split incorrectly?',
-    a: 'This tool performs a simple split and does not parse quoted CSV fields, so a value like <code>"Smith, John"</code> would be broken into two items. For that kind of data, choose a separator that does not appear inside the values, or clean it up in a spreadsheet first.',
+    a: 'Yes — this tool performs a simple split and does not parse quoted CSV fields, so a value like <code>"Smith, John"</code> is broken into two items. For that kind of data, choose a separator that does not appear inside the values, or export tab-separated from the spreadsheet first.',
   },
   {
     q: 'Can I paste a JSON or Python array directly?',
@@ -25,7 +40,7 @@ const faq = [
 ];
 ---
 
-<ToolLayout {tool} {faq}>
+<ToolLayout {tool} {steps} {faq}>
   <ListToColumnTool />
 
   <Fragment slot="content">
@@ -33,7 +48,8 @@ const faq = [
     <p>
       Data tends to travel as a single line — a comma separated field in a CRM export, a JSON array in an API response, a
       semicolon separated recipient list in an email header. But spreadsheets, form fields and many scripts want each value on
-      its own row. This tool makes that switch without opening a text editor and doing a find-and-replace.
+      its own row. This tool makes that switch without opening a text editor and doing a find-and-replace, and it strips the
+      brackets and quotes that a JSON array, Python list or SQL <code>IN (…)</code> clause wraps around the values.
     </p>
 
     <h3>Paste into a spreadsheet column</h3>
@@ -51,10 +67,40 @@ const faq = [
     <h3>Count and de-duplicate</h3>
     <p>
       The item counter shows how many values you actually have. Tick <em>Remove duplicates</em> and the counter shows how many
-      were dropped — a quick sanity check on messy exports.
+      were dropped — a quick sanity check on messy exports. For a column that is already one-per-line, the dedicated
+      <a href="/tools/remove-duplicate-lines">Remove Duplicate Lines</a> tool adds case-insensitive matching and keep-last.
     </p>
 
-    <h2>Doing it in a spreadsheet or in code</h2>
+    <h2>Example</h2>
+    <p>A JSON array pasted whole:</p>
+    <pre><code>{sample}</code></pre>
+    <p>comes out as one bare value per line — the brackets and quotes are removed and the comma is detected as the separator:</p>
+    <pre><code>{sampleOut}</code></pre>
+
+    <h2>Options explained</h2>
+    <ul>
+      <li><strong>Separator: Detect automatically</strong> counts commas, semicolons, pipes, tabs and new lines and splits on the most frequent one; on a tie the earlier in that list wins (comma first). If none appears at all, the text is split on whitespace.</li>
+      <li><strong>Comma / Semicolon / Pipe / Tab / Any whitespace / Custom…</strong> force a separator. <em>Any whitespace</em> splits on runs of spaces, tabs and newlines together. <em>Custom…</em> uses exactly the characters you type, spaces included; leaving the custom box empty falls back to automatic detection.</li>
+      <li><strong>Trim spaces around items</strong> — <code>a , b</code> gives <code>a</code> and <code>b</code>, not <code>a </code> and <code> b</code>.</li>
+      <li><strong>Skip empty items</strong> — <code>a,,b</code> gives two items and reports one dropped. Untick to keep an empty line in the output.</li>
+      <li><strong>Remove surrounding quotes</strong> strips one matching pair of <code>'</code>, <code>"</code> or <code>`</code> from each item; a quote on one side only is left alone.</li>
+      <li><strong>Remove duplicates</strong> matches exact text, so <code>a</code> and <code>A</code> are different items.</li>
+      <li><strong>Reverse order</strong>, <strong>Sort</strong> and <strong>Letter case</strong> behave as in the <a href="/tools/column-to-comma-separated-list">column to list</a> tool: natural-order A → Z, numeric sorts that read the first number in each item, and simple case changes.</li>
+      <li>Surrounding <code>[ ]</code>, <code>( )</code> or <code>{'{ }'}</code> around the whole input are removed before splitting, so a JSON array, a Python tuple or an SQL <code>IN (…)</code> clause can be pasted as-is.</li>
+    </ul>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>Quoted CSV fields containing the separator are split anyway.</strong> <code>"Smith, John", "Doe, Jane"</code> becomes {quotedCsv.count} items, not two. The tool does not parse CSV quoting; use a separator that is not present in the values, or export from the spreadsheet with tabs.</li>
+      <li><strong>Nested arrays lose only the outer brackets.</strong> <code>[["a","b"],["c"]]</code> gives <code>["a"</code>, <code>"b"]</code> and <code>["c"]</code>. Flatten the structure first, or use the <a href="/tools/json-formatter">JSON Formatter</a> to reshape it.</li>
+      <li><strong>Mixed separators go to the majority.</strong> <code>a;b;c;d,e</code> has three semicolons and one comma, so it splits on semicolons and <code>{mixedSeparators.at(-1)}</code> stays one item. Pick the separator manually if the data is inconsistent.</li>
+      <li><strong>A trailing separator</strong> such as <code>a, b, c,</code> produces {trailing.count} items and {trailing.dropped} dropped, not an error.</li>
+      <li><strong>Spaces are only a separator as a last resort.</strong> <code>a b c</code> with no other separator gives three items, but <code>a b, c</code> gives <code>a b</code> and <code>c</code>, because the comma wins.</li>
+      <li><strong>An unbalanced quote</strong> (<code>"a, b</code>) is kept: quote stripping needs a matching pair on both ends of an item.</li>
+      <li><strong>Empty input</strong>, or just <code>[]</code>, gives an empty result and a count of 0.</li>
+    </ul>
+
+    <h2>Do the same job in a spreadsheet or in code</h2>
     <h3>Excel and Google Sheets</h3>
     <p>Both applications can split text to columns from the Data menu. To split into <em>rows</em> instead, use a formula:</p>
     <pre><code>=TRANSPOSE(SPLIT(A1, ","))          Google Sheets

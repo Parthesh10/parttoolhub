@@ -66,9 +66,11 @@ function stripMarkdown(text: string, normalizeBullets: boolean): string {
   t = t.replace(/^[ \t]*\|?[ \t]*:?-{2,}:?[ \t]*(?:\|[ \t]*:?-{2,}:?[ \t]*)*\|?[ \t]*\r?\n?/gm, '');
   // Setext heading underlines and horizontal rules
   t = t.replace(/^[ \t]*(?:[-=*_][ \t]*){3,}$/gm, '');
-  // Images and links: keep the visible text
-  t = t.replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1');
-  t = t.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
+  // Images and links: keep the visible text. The label excludes '[' as well as
+  // ']' so a run of opening brackets fails fast at each position instead of
+  // re-scanning to the next ']' every time (was O(n²): 100k '[' took 17 s).
+  t = t.replace(/!\[([^[\]]*)\]\([^)]*\)/g, '$1');
+  t = t.replace(/\[([^[\]]+)\]\([^)]*\)/g, '$1');
   // Bold / italic / strikethrough (longest markers first)
   t = t.replace(/(\*\*\*|___)(?=\S)([\s\S]*?\S)\1/g, '$2');
   t = t.replace(/(\*\*|__)(?=\S)([\s\S]*?\S)\1/g, '$2');

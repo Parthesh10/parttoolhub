@@ -26,6 +26,41 @@ const textCase = $<HTMLSelectElement>('opt-case');
 
 const SAMPLE = ['Alice Johnson', 'Bob Smith', 'Charlie Nguyen', 'Diana Patel', 'Ethan Brooks'].join('\n');
 
+// --- Analytics (docs/ANALYTICS.md) -----------------------------------------
+// Duplicated per tool on purpose: no shared JS across tools (seo-rules §4).
+// Only slugs, action names, control ids, enumerated values, size buckets and
+// error *categories* are ever sent — never the text a visitor typed.
+const fired = new Set<string>();
+let inputSource: 'typed' | 'pasted' | 'sample' | 'transfer' = 'typed';
+let justPasted = false;
+function track(name: string, params: Record<string, string | number | boolean> = {}, once?: string) {
+  if (once) {
+    if (fired.has(once)) return;
+    fired.add(once);
+  }
+  const b = document.body.dataset;
+  window.pth?.track(name, { tool_slug: b.toolSlug ?? '', tool_category: b.toolCategory ?? '', ...params });
+}
+const sizeBucket = (n: number) => (n < 100 ? 'xs' : n < 1_000 ? 's' : n < 10_000 ? 'm' : n < 100_000 ? 'l' : 'xl');
+/** First run on non-empty input → tool_use; first success → tool_result; first failure → tool_error. */
+function trackRun(action: string, ok: boolean, errorType = 'unknown') {
+  track('tool_use', { action, success: ok, input_source: inputSource, input_size: sizeBucket(input.value.length) }, 'use');
+  if (ok) track('tool_result', { action }, 'result');
+  else track('tool_error', { action, error_type: errorType }, 'error');
+}
+/** Which controls people touch. Free-text inputs report no value; selects report the visible label. */
+function trackOption(el: HTMLInputElement | HTMLSelectElement | HTMLButtonElement, value?: string) {
+  let v = value;
+  if (v === undefined) {
+    if (el instanceof HTMLSelectElement) v = el.options[el.selectedIndex]?.text ?? '';
+    else if (el instanceof HTMLInputElement && el.type === 'checkbox') v = String(el.checked);
+    else v = '(text)';
+  }
+  track('tool_option', { option: el.id || el.dataset.preset || 'unknown', value: v }, `opt:${el.id || el.dataset.preset}`);
+}
+input.addEventListener('paste', () => { justPasted = true; });
+input.addEventListener('input', () => { inputSource = justPasted ? 'pasted' : 'typed'; justPasted = false; });
+
 function readOptions(): ColumnToListOptions {
   const delim = delimiter.value === CUSTOM_DELIMITER ? delimiterCustom.value : delimiter.value;
   return {
@@ -54,6 +89,7 @@ function render() {
   inputStat.textContent = plural(lines, 'line');
 
   const result = columnToList(raw, readOptions());
+  if (raw.trim()) trackRun('join', true);
   output.value = result.output;
   outputStat.textContent =
     result.dropped > 0
@@ -83,6 +119,7 @@ function highlightMatchingPreset() {
 function applyPreset(id: string) {
   const p = PRESETS.find((x) => x.id === id);
   if (!p) return;
+  track('tool_option', { option: 'preset', value: id }, `opt:preset:${id}`);
   const o = p.options;
   const known = Array.from(delimiter.options).some((opt) => opt.value === o.delimiter);
   if (known) {
@@ -108,6 +145,7 @@ function showToast(msg: string) {
 
 async function copyOutput() {
   if (!output.value) return showToast('Nothing to copy yet');
+  track('copy_result', { target: 'output' });
   try {
     await navigator.clipboard.writeText(output.value);
     showToast('Copied to clipboard');
@@ -120,6 +158,7 @@ async function copyOutput() {
 
 function downloadOutput() {
   if (!output.value) return showToast('Nothing to download yet');
+  track('download_result', { target: 'output' });
   const blob = new Blob([output.value], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -135,8 +174,19 @@ const controls = [
   delimiter, delimiterCustom, itemPrefix, itemSuffix, listPrefix, listSuffix,
   trim, skipEmpty, dedupe, dedupeCi, reverse, sort, textCase,
 ];
-for (const c of controls) c.addEventListener('input', render);
-input.addEventListener('input', render);
+for (const c of controls) {
+  c.addEventListener('input', render);
+  c.addEventListener('change', () => trackOption(c));
+}
+// Typing is debounced so a keystroke never waits on the engine — the site's
+// INP budget is < 200 ms and large pastes can take longer than that to process
+// synchronously. Option toggles still re-render immediately (one event, not a burst).
+let renderTimer: number | undefined;
+function scheduleRender() {
+  window.clearTimeout(renderTimer);
+  renderTimer = window.setTimeout(render, 120);
+}
+input.addEventListener('input', scheduleRender);
 
 document.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((chip) =>
   chip.addEventListener('click', () => applyPreset(chip.dataset.preset!)),
@@ -145,29 +195,37 @@ document.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((chip) =>
 $('btn-copy').addEventListener('click', copyOutput);
 $('btn-download').addEventListener('click', downloadOutput);
 $('btn-clear').addEventListener('click', () => {
+  track('reset_tool');
   input.value = '';
   render();
   input.focus();
 });
 $('btn-sample').addEventListener('click', () => {
+  inputSource = 'sample';
   input.value = SAMPLE;
   render();
 });
 $('btn-to-column').addEventListener('click', () => {
   if (!output.value) return showToast('Nothing to split yet');
-  sendToTool(output.value, '/comma-separated-list-to-column');
+  track('navigation_click', { link_placement: 'handoff', link_to: '/tools/comma-separated-list-to-column' });
+  sendToTool(output.value, '/tools/comma-separated-list-to-column');
 });
 
 // Ctrl/Cmd + Enter copies — handy when the cursor is still in the input box.
 input.addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
     e.preventDefault();
+    window.clearTimeout(renderTimer); // flush a pending debounced render first
+    render();
     copyOutput();
   }
 });
 
 // Text handed over from the reverse tool, if any.
 const incoming = receiveTransfer();
-if (incoming) input.value = incoming;
+if (incoming) {
+  input.value = incoming;
+  inputSource = 'transfer';
+}
 
 render();

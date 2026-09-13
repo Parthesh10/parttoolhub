@@ -13,7 +13,7 @@ const { current, max = 4 } = Astro.props;
 const related = relatedTools(current, max);
 ---
 
-<aside class="related card">
+<aside class="related card" data-nav="related">
   <h2>Related tools</h2>
   <ul>
     {related.map((t) => (

@@ -5,7 +5,7 @@ import { toolsInCategory, toolPath } from '../data/tools';
 const year = new Date().getFullYear();
 ---
 
-<footer class="site-footer">
+<footer class="site-footer" data-nav="footer">
   <div class="container grid">
     <div class="about">
       <strong>{SITE.name}</strong>
@@ -26,10 +26,14 @@ const year = new Date().getFullYear();
         <li><a href="/contact">Contact</a></li>
         <li><a href="/privacy-policy">Privacy Policy</a></li>
         <li><a href="/terms">Terms of Use</a></li>
+        {SITE.github && <li><a href={SITE.github} rel="noopener">Source on GitHub</a></li>}
       </ul>
     </div>
   </div>
-  <div class="container copy muted">© {year} {SITE.author}. All rights reserved.</div>
+  <div class="container copy muted">
+    © {year} <a href={SITE.authorUrl}>{SITE.author}</a>. Built and maintained by one person; every tool page is
+    checked against the running tool before it ships.
+  </div>
 </footer>
 
 <style>

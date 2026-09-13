@@ -1,9 +1,10 @@
 ---
 /**
  * Category hub, e.g. /converters. One per entry in src/data/categories.ts.
- * Lists every tool in the category with a one-line description, per the
- * "home directory grid organized by category" nav rule (this is that same
- * grid, scoped to one category, reachable in one click from home).
+ * Opens with 1–2 paragraphs on when you'd reach for this family of tools and
+ * which one to use for what (seo-rules §3.4 — a hub with only cards is a thin
+ * page), then lists every tool in the category with a one-line description.
+ * Every tool is reachable in one click from here and two from home.
  */
 import Base from '../layouts/Base.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
@@ -26,6 +27,16 @@ const schema = [
     name: category.name,
     description: category.description,
     url: canonicalUrl(`/${category.slug}`),
+    // The visible list of tools, so the schema describes exactly what is on the page.
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: tools.map((t, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: t.name,
+        url: canonicalUrl(toolPath(t)),
+      })),
+    },
   },
 ];
 ---
@@ -38,10 +49,15 @@ const schema = [
     <p class="lead">{category.blurb}</p>
   </header>
 
-  <div class="grid">
+  <div class="prose intro">
+    {category.intro.map((p) => <p set:html={p} />)}
+  </div>
+
+  <h2 class="grid-heading">Tools in this category</h2>
+  <div class="grid" data-nav="hub-cards">
     {tools.map((t) => (
       <a class="card tool-card" href={toolPath(t)}>
-        <h2>{t.name}</h2>
+        <h3>{t.name}</h3>
         <p>{t.short}</p>
         <span class="cta">Open tool →</span>
       </a>
@@ -55,7 +71,9 @@ const schema = [
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
   .tool-card { display: flex; flex-direction: column; padding: 1.25rem 1.4rem; color: var(--text); transition: border-color 0.15s, transform 0.15s; }
   .tool-card:hover { text-decoration: none; border-color: var(--accent); transform: translateY(-2px); }
-  .tool-card h2 { margin: 0 0 0.4rem; font-size: 1.1rem; }
+  .intro { margin-bottom: 1.75rem; }
+  .grid-heading { font-size: 1.2rem; margin: 0 0 0.85rem; }
+  .tool-card h3 { margin: 0 0 0.4rem; font-size: 1.1rem; }
   .tool-card p { color: var(--text-muted); font-size: 0.95rem; flex: 1; }
   .cta { color: var(--accent); font-weight: 600; font-size: 0.9rem; }
 </style>

@@ -2,8 +2,25 @@
 import ToolLayout from '../../layouts/ToolLayout.astro';
 import AiTextCleanerTool from '../../components/tools/AiTextCleanerTool.astro';
 import { toolBySlug } from '../../data/tools';
+import { cleanText } from '../../lib/text-clean';
 
 const tool = toolBySlug('ai-text-cleaner');
+
+// The worked example and each behaviour quoted below come from the real engine at build time.
+const sampleIn = '## Summary\n\nThis is **really** important — so let’s be clear.\n\n* Point one[1]\n* See the docs[2, 3]…';
+const sampleOut = cleanText(sampleIn).output;
+const arrayIndex = cleanText('items[0] and arr[12]').output;
+const symbols = cleanText('© 2024 ™ ★', { emoji: true }).output;
+const rangeDash = cleanText('2010–2020 and A–B').output;
+const table = cleanText('| a | b |\n|---|---|\n| 1 | 2 |').output.replace(/\n/g, ' ⏎ ');
+
+const steps = [
+  'Paste the answer you copied from ChatGPT, Claude, Gemini or another assistant.',
+  'Read the line under the result: it lists which cleanups changed something (Markdown removed, dashes replaced, hidden characters removed…).',
+  'Untick any step you do not want. For code, or text with <code>[0]</code>-style brackets, untick <strong>Remove citation markers</strong>.',
+  'Choose what happens to em dashes: comma, hyphen, spaced hyphen, space, or leave them.',
+  '<strong>Copy to clipboard</strong> or <strong>Download .txt</strong>.',
+];
 
 const faq = [
   {
@@ -12,7 +29,7 @@ const faq = [
   },
   {
     q: 'What are the invisible characters it removes?',
-    a: 'Mainly zero-width spaces, word joiners, a byte-order mark (BOM), and other Unicode formatting characters that some AI tools insert but that render as nothing — yet can break exact-match searches, URL slugs, or copy-paste into code.',
+    a: 'Mainly zero-width spaces, word joiners, a byte-order mark (BOM), soft hyphens and other Unicode formatting characters that some AI tools insert but that render as nothing — yet can break exact-match searches, URL slugs, or copy-paste into code. Non-breaking spaces are turned into ordinary spaces rather than deleted.',
   },
   {
     q: 'Will it change my meaning?',
@@ -25,7 +42,7 @@ const faq = [
 ];
 ---
 
-<ToolLayout {tool} {faq}>
+<ToolLayout {tool} {steps} {faq}>
   <AiTextCleanerTool />
 
   <Fragment slot="content">
@@ -39,23 +56,50 @@ const faq = [
     </p>
     <p>
       This tool runs a fixed set of text transformations — no AI model involved — so the same input always produces the same
-      output, and nothing you paste leaves your browser.
+      output, and nothing you paste leaves your browser. The Markdown it strips is the CommonMark syntax that every major
+      assistant emits; a 1 MB paste cleans in well under a tenth of a second.
     </p>
 
-    <h2>What gets cleaned, and why it matters</h2>
+    <h2>Example</h2>
+    <p>A typical answer, as copied:</p>
+    <pre><code>{sampleIn}</code></pre>
+    <p>With the default options, it becomes:</p>
+    <pre><code>{sampleOut}</code></pre>
+    <p class="muted">The heading marker, bold markers, bullets, citation numbers, curly apostrophe, ellipsis and em dash were all changed; the words were not.</p>
+
+    <h2>Options explained</h2>
     <ul>
-      <li><strong>Markdown symbols</strong> (<code>#</code>, <code>**</code>, <code>_</code>, <code>`</code>, <code>[text](url)</code>) are stripped down to their plain-text content, so a heading stays readable and a link keeps its visible label.</li>
-      <li><strong>Em dashes</strong> are a stylistic tell of a lot of AI writing; swapping them for a comma or hyphen makes the result read more like ordinary prose.</li>
-      <li><strong>Curly quotes</strong> (“ ” ‘ ’) become straight quotes ("  '), which some older systems and monospace fonts render as boxes or question marks.</li>
-      <li><strong>Invisible characters</strong> (zero-width spaces, a leading byte-order mark) take up no visual space but can break an exact string match, a URL, or a diff.</li>
-      <li><strong>Citation markers</strong> like <code>[1]</code> or <code>【2†source】</code> reference a source list that usually isn't included when you copy just the answer text.</li>
+      <li><strong>Strip headings, bold/italic, links, code</strong> — <code>## Heading</code> → <code>Heading</code>; <code>**bold**</code>, <code>*italic*</code>, <code>__x__</code>, <code>_x_</code> and <code>~~struck~~</code> → their inner text; <code>[text](url)</code> → <code>text</code> with the URL dropped; <code>`code`</code> → <code>code</code>. Fenced <code>```</code> blocks keep their contents and lose the fence lines. Blockquote <code>&gt;</code> markers, <code>---</code> rules and table pipes are removed.</li>
+      <li><strong>…normalize bullet markers to “-”</strong> — <code>* item</code> and <code>+ item</code> become <code>- item</code>; <code>- [ ]</code> and <code>- [x]</code> task boxes are removed. Numbered lists are left as they are.</li>
+      <li><strong>Em dash (—)</strong>: <em>Replace with comma</em>, <em>hyphen</em>, <em>" - "</em>, <em>space</em>, or <em>Leave as is</em>. An en dash between words gets the same treatment (a spaced hyphen in comma mode); a numeric range always becomes a plain hyphen: <code>2010–2020 and A–B</code> → <code>{rangeDash}</code>. In comma mode a dash right before punctuation is dropped rather than producing <code>, .</code></li>
+      <li><strong>Straighten curly quotes (“ ” → ")</strong> — also <code>‘ ’</code> → <code>'</code>, <code>« »</code> → <code>"</code>, and prime marks.</li>
+      <li><strong>Replace … with ...</strong> — the single ellipsis character becomes three periods.</li>
+      <li><strong>Remove invisible / zero-width characters</strong> — zero-width spaces and joiners, soft hyphens, byte-order marks, bidirectional controls and C0/C1 control codes are deleted; non-breaking and other Unicode spaces become a normal space.</li>
+      <li><strong>Remove citation markers ([1], 【2】)</strong> — <code>[1]</code>, <code>[2, 3]</code>, <code>[4-6]</code>, <code>[^5]</code>, <code>【7†source】</code> and <code>[citation needed]</code>.</li>
+      <li><strong>Remove emoji</strong> (off by default) — pictographic emoji, flag pairs and keycap sequences. Unicode also classes <code>©</code> and <code>™</code> as pictographic, so they go too, while <code>★</code> stays: <code>© 2024 ™ ★</code> → <code>{symbols}</code>.</li>
+      <li><strong>Tidy extra spaces and blank lines</strong> — collapses runs of spaces, removes trailing spaces, limits blank lines to one, and removes a space before <code>, . ; : ! ?</code>.</li>
     </ul>
 
-    <h2>What it leaves alone by default</h2>
-    <p>
-      Emoji are left untouched unless you turn that option on — plenty of pasted text is meant to keep them. Fenced code
-      blocks keep their code but drop the triple-backtick fence lines, so a snippet stays intact while the Markdown wrapper
-      disappears.
-    </p>
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>Array indexes look like citations.</strong> <code>items[0] and arr[12]</code> becomes <code>{arrayIndex}</code>. Untick <em>Remove citation markers</em> before cleaning code or anything with bracketed numbers you need.</li>
+      <li><strong>Asterisks used as symbols are safe.</strong> <code>2 * 3 * 4</code> and <code>a*b*c</code> are untouched, because emphasis needs the marker touching the text on the inside and not touching a letter on the outside. Underscores inside identifiers (<code>snake_case_name</code>) are also safe.</li>
+      <li><strong>Markdown tables lose their structure</strong>: cells become space-separated words, one line per row — <code>| a | b |</code> plus a separator row and <code>| 1 | 2 |</code> → <code>{table}</code>.</li>
+      <li><strong>Links keep only their label.</strong> Copy the URLs out first if you need them; nested formatting is unwrapped completely (<code>[**x**](u)</code> → <code>x</code>).</li>
+      <li><strong>Emoji stay unless you ask</strong>, because plenty of pasted text is meant to keep them.</li>
+      <li><strong>Windows line endings</strong> are normalised: the output always uses plain <code>\n</code>.</li>
+      <li><strong>The character count can go up</strong>, not just down — <code>…</code> becomes three characters and an em dash in comma mode becomes <code>, </code>.</li>
+    </ul>
+
+    <h2>Do the same thing in code</h2>
+    <p>The invisible-character step is the one people most often need in a script:</p>
+    <h3>Python</h3>
+    <pre><code>import re
+ZERO_WIDTH = r"[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF\u00AD]"
+clean = re.sub(ZERO_WIDTH, "", text).replace("\u00A0", " ")</code></pre>
+    <h3>JavaScript</h3>
+    <pre><code>const clean = text
+  .replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF\u00AD]/g, "")
+  .replace(/\u00A0/g, " ");</code></pre>
   </Fragment>
 </ToolLayout>

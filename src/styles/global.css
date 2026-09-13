@@ -69,6 +69,11 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* The `hidden` attribute must always win. Without this, any class that sets
+   `display` (e.g. `.status-banner { display: flex }`) overrides the browser's
+   `[hidden] { display: none }` and an "empty" status box is painted anyway. */
+[hidden] { display: none !important; }
+
 /* Mobile safety net: nothing on the page should ever cause horizontal
    scroll of the whole document — a single stray element (a flyout menu,
    an unwrapped long word) is enough to break it otherwise. Individual
@@ -81,6 +86,13 @@
    that (sticky positions relative to the nearest scroll-container
    ancestor, and <body> would become one). */
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; overflow-x: hidden; }
+
+/* Respect the OS "reduce motion" setting: no smooth scrolling, no hover lifts,
+   no fades. Everything still works; it just happens instantly. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
 body { max-width: 100%; }
 
 body {
@@ -208,6 +220,18 @@ th { background: var(--surface-2); font-weight: 650; }
 .options .checks .indent { padding-left: 1.4rem; color: var(--text-muted); }
 .options .checks input { accent-color: var(--accent); width: 1rem; height: 1rem; }
 .options .hint { font-size: 0.8rem; margin: 0.5rem 0 0; min-height: 1.2em; color: var(--text-muted); }
+
+/* Touch devices: every control meets the 44 px tap-target minimum without
+   changing the denser mouse/keyboard layout. `pointer: coarse` is the finger
+   signal; a laptop with a mouse keeps the compact sizes. */
+@media (pointer: coarse) {
+  .btn, .btn-sm, .chip, .theme-toggle { min-height: 44px; }
+  .btn-sm { padding-block: 0.6rem; }
+  .options .checks label { min-height: 44px; }
+  .options .checks input { width: 1.25rem; height: 1.25rem; }
+  .options .field input, .options .field select { min-height: 44px; }
+  /* Header nav/toggle sizing lives in Header.astro (scoped styles win there). */
+}
 
 .chip {
   font: inherit; font-size: 0.82rem; font-weight: 600; padding: 0.3rem 0.7rem;
