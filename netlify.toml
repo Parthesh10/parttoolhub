@@ -1,0 +1,15 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Astro's build.format "file" emits clean-URL-friendly files (e.g. tools/foo.html
+# instead of tools/foo/index.html); Netlify serves those at /tools/foo natively,
+# so no redirect rules are needed here.
+
+[[headers]]
+  for = "/_astro/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
