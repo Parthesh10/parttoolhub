@@ -40,13 +40,39 @@ const baseSchema = [
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      Pre-paint theme application — must run this early (before the
+      stylesheet, before any body content) so there is no flash of the
+      wrong theme. Light is the app's own default whenever no explicit
+      choice is stored yet, even if the OS prefers dark; "system" is an
+      explicit opt-in the visitor picks from the toggle in the header.
+      Kept as a tiny inline script rather than an import so it can run
+      synchronously with zero network request — see Header.astro for
+      the toggle control that writes this same localStorage key.
+    -->
+    <script is:inline>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme'); // 'light' | 'dark' | 'system' | null
+          if (t === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+          } else if (t !== 'system') {
+            document.documentElement.setAttribute('data-theme', 'light');
+          }
+          // t === 'system': leave data-theme unset so prefers-color-scheme decides.
+        } catch (e) {}
+      })();
+    </script>
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={pageUrl} />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="sitemap" href="/sitemap-index.xml" />
-    <meta name="theme-color" content="#2563eb" />
+    <!-- Content is kept in sync with the resolved theme by the pre-paint script below and by
+         the toggle in Header.astro — a single unconditional tag, rather than two `media`-gated
+         ones, since browsers don't apply those consistently once a manual override is involved. -->
+    <meta name="theme-color" content="#ffffff" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE.name} />
