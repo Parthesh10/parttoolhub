@@ -35,7 +35,7 @@ export const ADS = {
 
 export const ANALYTICS = {
   /** Google Analytics 4 measurement ID, e.g. "G-XXXXXXXXXX". Empty = disabled. */
-  ga4: '',
+  ga4: 'G-8M3K4P1SDC',
 } as const;
 
 // Header/footer navigation is generated from src/data/categories.ts and
