@@ -1,11 +1,13 @@
 import { SITE } from '../site.config';
 
 /**
- * Stable @id for the maintainer, so the WebSite on every page and the
- * SoftwareApplication on every tool page point at one Person entity instead
- * of each repeating it. seo-rules.md §2 / §4A.
+ * Stable @ids so every page's JSON-LD points at one Person and one WebSite
+ * entity instead of repeating them: the WebSite (Base.astro) and each tool
+ * page's WebPage (ToolLayout.astro) reference AUTHOR_ID; each page's WebPage /
+ * CollectionPage references WEBSITE_ID via isPartOf. seo-rules.md §2 / §4A.
  */
 export const AUTHOR_ID = `${SITE.url}/#author`;
+export const WEBSITE_ID = `${SITE.url}/#website`;
 
 export const authorSchema = {
   '@context': 'https://schema.org',

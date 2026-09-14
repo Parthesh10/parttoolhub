@@ -96,7 +96,7 @@ document and the code in step.
 ## SEO & content rules baked into the structure
 
 - **Per-page metadata**: `ToolLayout` derives `<title>`, `<meta description>`, canonical URL, OG/Twitter
-  tags and `SoftwareApplication` + `FAQPage` + `BreadcrumbList` JSON-LD from the tool's registry entry —
+  tags and `WebPage` + `FAQPage` + `BreadcrumbList` JSON-LD from the tool's registry entry —
   an individual page file only supplies unique content (intro paragraphs, one worked example, FAQ).
 - **Content depth**: every tool page has "How to use" steps, an explanatory section, a worked example
   generated from the engine at build time, "Options explained", "Edge cases and common errors", code

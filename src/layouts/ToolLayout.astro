@@ -20,7 +20,7 @@ import RelatedTools from '../components/RelatedTools.astro';
 import { SITE } from '../site.config';
 import { canonicalUrl } from '../lib/urls';
 import { formatDate } from '../lib/dates';
-import { AUTHOR_ID } from '../lib/schema';
+import { AUTHOR_ID, WEBSITE_ID } from '../lib/schema';
 import { categoryBySlug } from '../data/categories';
 import { toolPath, type Tool } from '../data/tools';
 
@@ -30,7 +30,7 @@ export interface Props {
   steps: string[];
   /** 3–6 real, searchable FAQ entries (seo-rules §3.3). */
   faq: { q: string; a: string }[];
-  /** Extra JSON-LD objects beyond WebSite/Person/SoftwareApplication/FAQPage/BreadcrumbList. */
+  /** Extra JSON-LD objects beyond WebSite/Person/WebPage/FAQPage/BreadcrumbList — must pass tests/structured-data.test.ts. */
   schema?: Record<string, unknown>[];
 }
 
@@ -44,22 +44,27 @@ if (faq.length < 3 || faq.length > 6) {
   throw new Error(`${tool.slug}: FAQ needs 3–6 entries, got ${faq.length} (seo-rules §3.3)`);
 }
 
+// WebPage, deliberately not SoftwareApplication: Google's Software App rich
+// result requires an aggregateRating or review, which this site will never
+// fabricate (seo-rules §2), so a SoftwareApplication item is reported as
+// invalid by every validator and earns nothing. WebPage has no rich-result
+// requirements and states only what the visitor can verify on the page.
+// tests/structured-data.test.ts enforces the type and property allowlists.
+const pageUrl = canonicalUrl(toolPath(tool));
 const toolSchema = {
   '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
+  '@type': 'WebPage',
+  '@id': pageUrl,
   // Must match what a visitor sees: the <h1> is tool.name, not the <title>.
   name: tool.name,
-  applicationCategory: 'UtilitiesApplication',
-  operatingSystem: 'Any',
-  browserRequirements: 'Requires JavaScript',
-  url: canonicalUrl(toolPath(tool)),
   description: tool.description,
+  url: pageUrl,
+  inLanguage: 'en',
   isAccessibleForFree: true,
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-  featureList: tool.features,
-  datePublished: SITE.launched,
+  // The visible "Last reviewed" date. No datePublished: nothing on the page shows one.
   dateModified: tool.reviewedOn,
   author: { '@id': AUTHOR_ID },
+  isPartOf: { '@id': WEBSITE_ID },
 };
 ---
 

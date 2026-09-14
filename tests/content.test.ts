@@ -136,17 +136,19 @@ for (const tool of TOOLS) {
     const html = read(route);
     const ld = jsonLd(html);
     const types = ld.map((o) => o['@type']);
-    for (const t of ['WebSite', 'Person', 'SoftwareApplication', 'BreadcrumbList', 'FAQPage']) {
+    for (const t of ['WebSite', 'Person', 'WebPage', 'BreadcrumbList', 'FAQPage']) {
       assert.ok(types.includes(t), `missing ${t} JSON-LD — have ${types.join(', ')}`);
     }
-    assert.ok(!types.includes('HowTo'), 'HowTo schema is banned (seo-rules §2)');
+    // Type/property allowlists (no HowTo, no SoftwareApplication, no ratings) live in structured-data.test.ts.
 
-    const app = ld.find((o) => o['@type'] === 'SoftwareApplication')!;
-    assert.equal(app.name, tool.name, 'SoftwareApplication.name must equal the visible <h1>');
-    assert.equal(app.url, `${SITE.url}${route}`);
-    assert.equal(app.dateModified, tool.reviewedOn);
-    assert.equal(app.operatingSystem, 'Any');
-    assert.deepEqual((app.author as { '@id': string })['@id'], `${SITE.url}/#author`);
+    const page = ld.find((o) => o['@type'] === 'WebPage')!;
+    assert.equal(page.name, tool.name, 'WebPage.name must equal the visible <h1>');
+    assert.equal(page.url, `${SITE.url}${route}`);
+    assert.equal(page['@id'], page.url, 'WebPage @id is its canonical URL');
+    assert.equal(page.description, tool.description);
+    assert.equal(page.dateModified, tool.reviewedOn, 'dateModified is the visible review date');
+    assert.deepEqual((page.author as { '@id': string })['@id'], `${SITE.url}/#author`);
+    assert.deepEqual((page.isPartOf as { '@id': string })['@id'], `${SITE.url}/#website`);
 
     const person = ld.find((o) => o['@type'] === 'Person')!;
     assert.equal(person.name, SITE.author);
@@ -294,11 +296,9 @@ test('every indexable page carries WebSite + Person JSON-LD naming the maintaine
   }
 });
 
-test('tool schema featureList equals the registry, and breadcrumb schema URLs resolve to built pages', { skip }, () => {
+test('breadcrumb schema URLs resolve to built pages', { skip }, () => {
   for (const t of TOOLS) {
     const ld = jsonLd(read(toolPath(t)));
-    const app = ld.find((o) => o['@type'] === 'SoftwareApplication')!;
-    assert.deepEqual(app.featureList, t.features, `${t.slug}: featureList drifted from registry`);
     const crumbs = ld.find((o) => o['@type'] === 'BreadcrumbList')!;
     for (const item of crumbs.itemListElement as { item?: string }[]) {
       if (!item.item) continue;

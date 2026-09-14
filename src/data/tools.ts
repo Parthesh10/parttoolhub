@@ -30,7 +30,13 @@ export interface Tool {
   /** One-line summary for directory cards and the sentence under the <h1> (≤ 25 words). */
   short: string;
   category: string;
-  /** Feature bullets for SoftwareApplication schema. */
+  /**
+   * 3–5 curated feature bullets, one short phrase each. Not rendered anywhere at
+   * the moment: they were the SoftwareApplication `featureList` until that
+   * schema type was dropped (seo-rules §2 — no rich result without a rating we
+   * won't fake). Kept because they are the obvious content for richer hub or
+   * directory cards; if rendered, each must match what the widget actually does.
+   */
   features: string[];
   /**
    * The one primary search query this page targets, in the searcher's words.

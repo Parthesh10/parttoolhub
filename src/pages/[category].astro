@@ -11,6 +11,7 @@ import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { CATEGORIES, categoryBySlug } from '../data/categories';
 import { toolsInCategory, toolPath } from '../data/tools';
 import { canonicalUrl } from '../lib/urls';
+import { WEBSITE_ID } from '../lib/schema';
 
 export function getStaticPaths() {
   return CATEGORIES.map((c) => ({ params: { category: c.slug } }));
@@ -27,6 +28,8 @@ const schema = [
     name: category.name,
     description: category.description,
     url: canonicalUrl(`/${category.slug}`),
+    inLanguage: 'en',
+    isPartOf: { '@id': WEBSITE_ID },
     // The visible list of tools, so the schema describes exactly what is on the page.
     mainEntity: {
       '@type': 'ItemList',

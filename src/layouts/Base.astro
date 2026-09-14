@@ -2,7 +2,7 @@
 import '../styles/global.css';
 import { SITE, ADS, ANALYTICS } from '../site.config';
 import { canonicalUrl } from '../lib/urls';
-import { AUTHOR_ID, authorSchema } from '../lib/schema';
+import { AUTHOR_ID, WEBSITE_ID, authorSchema } from '../lib/schema';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 
@@ -47,6 +47,7 @@ const baseSchema = [
   {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
+    '@id': WEBSITE_ID,
     name: SITE.name,
     url: SITE.url,
     description: SITE.tagline,

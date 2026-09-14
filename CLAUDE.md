@@ -51,9 +51,12 @@ checklist in order and do not skip a heading because "it's just a small page".
   `Base.astro` automatically — do not hand-write them.
 - Indexable (no `noindex` except 404) and present in the sitemap (automatic for any page under
   `src/pages/` except 404).
-- Structured data that describes only what is visible: tools get `SoftwareApplication` + `FAQPage` +
-  `BreadcrumbList` from `ToolLayout`; hubs get `CollectionPage` + `ItemList`; never `HowTo`, never a
-  rating, never anything the visitor cannot see.
+- Structured data that describes only what is visible: tools get `WebPage` + `FAQPage` +
+  `BreadcrumbList` from `ToolLayout`; hubs get `CollectionPage` + `ItemList`; never `HowTo`, never
+  `SoftwareApplication` (its rich result needs a rating we will not fake — a Semrush audit flagged
+  all 20 pages for exactly that on 2026-09-14), never a rating, never anything the visitor cannot
+  see. `tests/structured-data.test.ts` holds the type/property allowlist; a new schema type is added
+  there deliberately, after checking Google's rich-result requirements for it.
 - Breadcrumbs on every page except home; the `BreadcrumbList` schema matches them exactly.
 
 ### Content (`../seo-rules.md` §3 and §3A)
@@ -116,9 +119,11 @@ in the whole build resolves.
 ### Validation — run all of it, in this order
 1. `npm run build` — `astro check` (0 errors) then the static build. The layout throws on wrong
    step/FAQ counts.
-2. `npm test` — engine unit tests, `registry.test.ts`, `analytics.test.ts`, and `content.test.ts`
+2. `npm test` — engine unit tests, `registry.test.ts`, `analytics.test.ts`, `content.test.ts`
    over the fresh `dist/` (sections, order, canonical, OG, JSON-LD ↔ page, sitemap ↔ build,
-   robots, internal links, forbidden phrases, titles ≤ 60, descriptions sized).
+   robots, internal links, forbidden phrases, titles ≤ 60, descriptions sized) and
+   `structured-data.test.ts` (JSON-LD type/property allowlists, banned types and properties,
+   `@id` references, URL resolution, dates).
 3. Look at the page: desktop and a 390 px frame, light and dark, with the tool empty, with a sample,
    with broken input, with a huge paste, and with the analytics console log open in dev.
 4. Paste every JSON-LD block into the Rich Results Test if the schema shape changed.
@@ -164,8 +169,9 @@ does** (fake freshness is detectable and harmful).
 **Tool page anatomy.** Each `src/pages/tools/<slug>.astro` wraps `src/layouts/ToolLayout.astro`,
 passing `tool` (from the registry via `toolBySlug`), `steps` (3–5 one-line "How to use" steps, HTML
 allowed) and `faq` (3–6 entries) as props — the layout throws at build time if the counts are off.
-`ToolLayout` derives everything mechanical — breadcrumbs, `<h1>`/lead, canonical/OG, `SoftwareApplication`
-(name = the `<h1>`, `dateModified` = `reviewedOn`, author → the site-wide `Person` by `@id`) + `FAQPage` +
+`ToolLayout` derives everything mechanical — breadcrumbs, `<h1>`/lead, canonical/OG, `WebPage`
+(`@id`/`url` = canonical, name = the `<h1>`, `dateModified` = `reviewedOn`, author → the site-wide
+`Person` by `@id`, `isPartOf` → the `WebSite` by `@id`) + `FAQPage` +
 `BreadcrumbList` JSON-LD, the "How to use" list, the two ad slots (one *after* "How to use", one after
 the FAQ — never above the tool, hard 2-per-page budget), Related Tools, the trust/review line, and
 the `tool` prop to `Base` that exposes `data-tool-slug` / `data-tool-category` on `<body>` and fires
@@ -274,5 +280,6 @@ to `localhost` over IPv6 — use `http://localhost:<port>`, not `127.0.0.1`.
 5. Work through the **Mandatory rule** checklist above, then `npm run build && npm test`:
    `registry.test.ts` fails on a missing page file or a metadata rule; `analytics.test.ts` on missing
    instrumentation, a PII leak or an undocumented event; `content.test.ts` on a missing/misordered
-   section, a forbidden phrase, or JSON-LD that does not match the page. Then the maintainer does the
+   section, a forbidden phrase, or JSON-LD that does not match the page; `structured-data.test.ts`
+   on a schema type or property outside the allowlist. Then the maintainer does the
    seo-rules §3A read-aloud pass and sets `reviewedOn`, and the docs listed above are updated.
