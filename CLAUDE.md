@@ -25,37 +25,6 @@ pushed and deployed to real traffic. Before writing or restructuring anything:
 6. `src/site.config.ts` holds live secrets-adjacent IDs (AdSense publisher ID, GA4 measurement ID) —
    real values, not placeholders. Treat changes to it as production config changes.
 
-## ⏳ Active task: Search Console indexing requests (started 2026-09-13)
-
-Manual "Request Indexing" is capped at ~10–12 URLs/day per property, so this is spread across days.
-**Delete this whole section once all 18 rows below are checked off** — it is not a standing rule,
-just a resumable checklist. If you're reading this in a new session, remind the user where they left
-off and offer to keep going. First requested: home, `/converters`, `/text-tools`, `/encoders`, then
-tool pages in registry order.
-
-- [x] `/`
-- [x] `/converters`
-- [x] `/text-tools`
-- [x] `/encoders`
-- [x] `/tools/column-to-comma-separated-list`
-- [x] `/tools/comma-separated-list-to-column`
-- [x] `/tools/json-formatter`
-- [x] `/tools/python-dict-to-json`
-- [x] `/tools/title-case-converter`
-- [ ] `/tools/ai-text-cleaner`
-- [ ] `/tools/remove-duplicate-lines`
-- [ ] `/tools/jwt-decoder`
-- [ ] `/tools/base64-encode-decode`
-- [ ] `/tools/url-encode-decode`
-- [ ] `/about`
-- [ ] `/contact`
-- [ ] `/privacy-policy`
-- [ ] `/terms`
-
-**Not yet in this list:** the 7 tool pages and the `/generators` hub added 2026-09-13/14 (see
-DEV-LIFECYCLE.md) — add them to the queue above once the original 18 are done, rather than treating
-this checklist as covering the whole current site.
-
 ## Mandatory rule: a new or changed public page is not done until it passes every check below
 
 A route that renders and a widget that works are the *start* of a page, not the end. **Every new or
