@@ -120,6 +120,9 @@ code {
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 0.1em 0.35em;
+  /* A long token with no spaces (a data: URI, a Base64 run) may break mid-word
+     rather than run past a 320 px viewport. <pre> keeps white-space and scrolls. */
+  overflow-wrap: anywhere;
 }
 pre {
   font-family: var(--mono);
@@ -192,7 +195,7 @@ th { background: var(--surface-2); font-weight: 650; }
 
 .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 @media (max-width: 760px) { .panes { grid-template-columns: 1fr; } }
-.pane-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem; }
+.pane-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0 0.75rem; margin-bottom: 0.35rem; }
 .pane-head label { font-weight: 650; }
 .stat { font-size: 0.8rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .pane textarea, .single textarea {

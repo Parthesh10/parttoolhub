@@ -1,0 +1,156 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import Base64ToImageTool from '../../components/tools/Base64ToImageTool.astro';
+import { toolBySlug } from '../../data/tools';
+import { base64ToImage, formatBytes, SAMPLE_PNG_BASE64, SAMPLE_PNG_DATA_URI } from '../../lib/base64-image';
+
+const tool = toolBySlug('base64-to-image');
+
+// Every example and quoted message below is produced by the real engine at build time.
+const sample = base64ToImage(SAMPLE_PNG_DATA_URI);
+if (!sample.ok) throw new Error('sample image must decode');
+const info = sample.value.info;
+const sampleBytes = formatBytes(sample.value.bytes.length);
+
+const errText = (s: string) => {
+  const r = base64ToImage(s);
+  return r.ok ? '' : r.error.replace(/\.$/, ''); // quoted inline, so drop the message's own full stop
+};
+const textErr = errText(btoa('Hello, world!'));
+const pdfErr = errText(btoa('%PDF-1.4'));
+const binaryErr = errText('/w==');
+const danglingErr = errText(SAMPLE_PNG_BASE64 + 'A');
+const alphabetErr = errText('abc$def');
+const noCommaErr = errText('data:image/png;base64');
+
+const wrongPrefix = base64ToImage(`data:image/jpeg;base64,${SAMPLE_PNG_BASE64}`);
+const mismatch = wrongPrefix.ok ? wrongPrefix.value.mismatch : undefined;
+const truncated = base64ToImage(SAMPLE_PNG_BASE64.slice(0, 60));
+if (!truncated.ok || truncated.value.info.truncated !== true) throw new Error('page claims a cut-off sample is flagged truncated');
+const urlSafe = base64ToImage(SAMPLE_PNG_BASE64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''));
+if (!urlSafe.ok || !urlSafe.value.cleanup.urlSafe || !urlSafe.value.cleanup.padding) throw new Error('page claims URL-safe, unpadded input is repaired');
+if (!mismatch) throw new Error('page claims a wrong data: prefix is reported as a mismatch');
+const jsonForm = JSON.stringify(SAMPLE_PNG_DATA_URI.slice(0, 40)) + '…';
+const svgPercent = 'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%2220%22%3E%3C%2Fsvg%3E';
+const svg = base64ToImage(svgPercent);
+const svgSize = svg.ok ? `${svg.value.info.width} × ${svg.value.info.height}` : '';
+
+const htmlSnippet = `<img src="data:image/png;base64,iVBORw0KGgo…" alt="" width="32" height="32">
+
+.icon { background-image: url("data:image/png;base64,iVBORw0KGgo…"); }`;
+const jsSnippet = `// Browser: bytes for a Blob or a download
+const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+const blob = new Blob([bytes], { type: "image/png" });
+
+// Node.js: write the file
+import { writeFile } from "node:fs/promises";
+await writeFile("image.png", Buffer.from(base64, "base64"));`;
+const pySnippet = `import base64
+with open("image.png", "wb") as f:
+    f.write(base64.b64decode(data))   # data = the part after the comma`;
+const shSnippet = `echo 'iVBORw0KGgo…' | base64 -d > image.png    # Linux
+echo 'iVBORw0KGgo…' | base64 -D > image.png    # macOS`;
+
+const steps = [
+  'Paste the Base64 string, or the whole <code>data:image/…;base64,…</code> URI, into the left box. An <code>&lt;img&gt;</code> tag or a CSS <code>url()</code> wrapped around it is fine too.',
+  'The image appears on the right with its real format, pixel size and byte size. The line under it says anything that had to be cleaned up first.',
+  'Switch the <strong>Preview background</strong> to <strong>Light</strong> or <strong>Dark</strong> if the image has transparent or white areas.',
+  '<strong>Download image</strong> saves it with the right extension; <strong>Copy data URI</strong> gives you a clean <code>data:</code> string for HTML or CSS.',
+];
+
+const faq = [
+  {
+    q: 'Why does my Base64 image show as broken?',
+    a: 'Usually one of three things: the string was cut short (a database column limit or a chat window truncating it), the data: prefix names the wrong type (image/jpeg in front of PNG bytes), or the text was URL-encoded or JSON-escaped and never decoded. This page reports each case separately: a truncated file is flagged from its missing end-of-file marker, a wrong prefix is corrected from the bytes, and escapes are undone before decoding.',
+  },
+  {
+    q: 'Do I need the data:image/png;base64, prefix?',
+    a: 'No. The format is read from the first bytes of the decoded data, not from the prefix, so a bare Base64 string works. If a prefix is present it is stripped, and if it disagrees with the bytes the page tells you and the download uses the real type. The Copy data URI button always builds the prefix from the detected type.',
+  },
+  {
+    q: 'How do I know what image format a Base64 string is?',
+    a: 'Decode it here and read the line under the preview: PNG, JPEG, GIF, WebP, SVG, BMP, ICO or AVIF, taken from the file signature. As a shortcut, PNG Base64 starts with iVBOR, JPEG with /9j/, GIF with R0lGOD, WebP with UklGR and SVG with PHN2Zy or PD94bWw — those are the first bytes of each format encoded.',
+  },
+  {
+    q: 'Can I decode a Base64 PDF or other file here?',
+    a: 'The preview only renders images, but the Base64 is still decoded. If the bytes turn out to be a PDF, a ZIP or something the page cannot identify, a Download as file anyway button appears and saves them with the matching extension (.pdf, .zip, or .bin). Plain text is handed to the Base64 text decoder instead.',
+  },
+  {
+    q: 'Is the image uploaded anywhere?',
+    a: 'No. This page is a static file with no server behind it; decoding runs in your browser with the standard atob() function and the preview is an <img> element pointing at a data URI held in memory. Closing the tab discards it. Nothing you paste is sent or stored.',
+  },
+];
+---
+
+<ToolLayout {tool} {steps} {faq}>
+  <Base64ToImageTool />
+
+  <Fragment slot="content">
+    <h2>What this decoder does that a text decoder cannot</h2>
+    <p>
+      A Base64 string that came from an image decodes to binary, not text, so a general
+      <a href="/tools/base64-encode-decode">Base64 decoder</a> stops with “not valid UTF-8”. This page decodes the same
+      string to bytes, reads the file signature to find out which of eight image formats it is, reads the pixel size from
+      the header, and hands the bytes to your browser's own image decoder for the preview. The download is the original file,
+      byte for byte, named with the extension the bytes call for.
+    </p>
+    <p>
+      Before decoding it repairs the ways these strings get mangled in transit: a <code>data:</code> prefix, the
+      <code>&lt;img src="…"&gt;</code> or <code>url(…)</code> it was copied out of, JSON quotes and <code>\/</code> escapes,
+      line breaks added by an email client, percent-encoding from a query string, the URL-safe alphabet, and missing
+      <code>=</code> padding. Each repair is listed under the preview so you can see why another tool rejected the same
+      input. It does not resize, convert or optimise the image; the bytes out are the bytes in.
+    </p>
+
+    <h2>Example</h2>
+    <p><strong>Load sample</strong> inserts this {sampleBytes} PNG as a data URI:</p>
+    <pre><code>{SAMPLE_PNG_DATA_URI}</code></pre>
+    <p>
+      The page decodes it and reports <code>{info.format.toUpperCase()} · {info.width} × {info.height} px · {sampleBytes}</code>,
+      shows a blue square with a white dot, and enables <strong>Download image</strong> (saved as <code>image.{info.extension}</code>).
+      The status line reads “Cleaned up before decoding: removed the data: prefix.” Pasting only the part after the comma
+      gives the same result with no status line.
+    </p>
+
+    <h2>Options explained</h2>
+    <ul>
+      <li><strong>Load sample</strong> inserts the data URI above, the same string the Example section shows.</li>
+      <li><strong>Clear</strong> empties the box and the preview.</li>
+      <li><strong>Preview background</strong> — <strong>Checker</strong>, <strong>Light</strong> or <strong>Dark</strong> — changes only the backdrop behind the image, not the image. Transparent PNG corners show the pattern through them; a white icon on a transparent background is invisible on Light and obvious on Dark.</li>
+      <li><strong>Download image</strong> saves the decoded bytes as <code>image.png</code>, <code>image.jpg</code>, <code>image.gif</code>, <code>image.webp</code>, <code>image.svg</code>, <code>image.bmp</code>, <code>image.ico</code> or <code>image.avif</code>, according to the detected format. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the text box does the same.</li>
+      <li><strong>Copy data URI</strong> copies <code>data:&lt;type&gt;;base64,…</code> rebuilt from the detected type and freshly encoded bytes, so it is clean even if what you pasted had line breaks or the wrong prefix.</li>
+      <li><strong>Download as file anyway</strong> appears only when the Base64 decoded fine but the bytes are not an image; it saves them as <code>.pdf</code>, <code>.zip</code>, <code>.gz</code> or <code>.bin</code>.</li>
+      <li><strong>Decode as text instead →</strong> appears when the bytes are plain text and opens them in the <a href="/tools/base64-encode-decode">Base64 Encode / Decode</a> tool.</li>
+    </ul>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>A wrong prefix is corrected, not trusted.</strong> <code>data:image/jpeg;base64,</code> in front of the sample PNG decodes as a PNG and the status line says “The prefix said {mismatch.claimed} but the bytes are {mismatch.actual}; the download uses the real type.” <code>image/jpg</code> in front of a real JPEG is accepted as the common alias it is.</li>
+      <li><strong>Truncated strings are flagged.</strong> The first 60 characters of the sample still carry a valid PNG header, so the page reports {info.width} × {info.height} px but warns that the data stops before the PNG end-of-file marker. JPEG and GIF get the same check. If even the header is damaged, the browser's decoder fails and the page says so, with the download still available for inspection.</li>
+      <li><strong>Copied from JSON or a database.</strong> <code>{jsonForm}</code> with its quotes, or a value where every <code>/</code> became <code>\/</code>, decodes after the quotes and escapes are removed; the status line lists “removed quotes and JSON escapes”.</li>
+      <li><strong>Line-wrapped or space-broken Base64</strong> (email, PEM, a wrapped terminal) decodes as-is: whitespace inside the string is ignored.</li>
+      <li><strong>URL-safe alphabet and missing padding.</strong> The sample with <code>-</code> and <code>_</code> in place of <code>+</code> and <code>/</code> and no trailing <code>=</code> decodes, with both repairs noted. A string that was percent-encoded for a query string (<code>%2B</code>, <code>%2F</code>, <code>%3D</code>) is decoded first.</li>
+      <li><strong>SVG data URIs are often not Base64.</strong> <code>data:image/svg+xml,%3Csvg…</code> and <code>data:image/svg+xml;utf8,&lt;svg…</code> are percent-encoded or raw text; both are handled, and the size comes from the <code>width</code>/<code>height</code> attributes or the <code>viewBox</code> — the example above reports {svgSize} px. SVG is previewed through an <code>&lt;img&gt;</code>, which does not run scripts inside it.</li>
+      <li><strong>Text, not an image.</strong> <code>SGVsbG8sIHdvcmxkIQ==</code> reports “{textErr}” and offers the text decoder.</li>
+      <li><strong>Some other file.</strong> A Base64 PDF reports “{pdfErr}”; unrecognised bytes such as <code>/w==</code> report “{binaryErr}”. Both offer <strong>Download as file anyway</strong>.</li>
+      <li><strong>Invalid Base64.</strong> A stray character gives “{alphabetErr}”; a length Base64 cannot produce gives “{danglingErr}”; <code>data:image/png;base64</code> with nothing after it gives “{noCommaErr}”.</li>
+      <li><strong>Empty input</strong> shows the empty preview and no error. Multi-megabyte strings decode in well under a second; the preview is scaled to fit the box, and scrolls if you enlarge it.</li>
+    </ul>
+
+    <h2>Do the same thing in code</h2>
+    <h3>HTML and CSS</h3>
+    <pre><code>{htmlSnippet}</code></pre>
+    <h3>JavaScript</h3>
+    <pre><code>{jsSnippet}</code></pre>
+    <h3>Python</h3>
+    <pre><code>{pySnippet}</code></pre>
+    <h3>Shell</h3>
+    <pre><code>{shSnippet}</code></pre>
+    <p>
+      To go the other way — a file into a data URI — use <a href="/tools/image-to-base64">Image to Base64</a>. If the
+      Base64 came out of a JWT, the <a href="/tools/jwt-decoder">JWT decoder</a> splits and decodes all three segments
+      at once; if it was pasted from a URL, the <a href="/tools/url-encode-decode">URL decoder</a> shows the un-escaped
+      form.
+    </p>
+  </Fragment>
+</ToolLayout>

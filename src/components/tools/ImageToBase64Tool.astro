@@ -1,0 +1,83 @@
+---
+/** Image file → Base64 / data URI / <img> / CSS. Behaviour in ./image-to-base64.client.ts */
+---
+
+<section class="tool card" id="tool" data-tool="image-to-base64">
+  <div class="panes">
+    <div class="pane">
+      <div class="pane-head">
+        <label for="file">Image</label>
+        <span class="stat" id="input-stat" aria-live="polite">No file yet</span>
+      </div>
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-describedby="drop-hint">
+        <input type="file" id="file" accept="image/*,.svg,.ico,.bmp,.avif" hidden />
+        <img id="thumb" alt="" hidden />
+        <p class="drop-text" id="drop-hint">
+          <strong>Drop an image here</strong>, click to choose one, or paste it with <kbd>Ctrl</kbd>+<kbd>V</kbd>.
+          <span class="muted">PNG, JPEG, GIF, WebP, SVG, BMP, ICO or AVIF, up to 10 MB.</span>
+        </p>
+      </div>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-choose">Choose image</button>
+        <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+        <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+      </div>
+      <p class="status-banner" id="status" hidden></p>
+    </div>
+
+    <div class="pane outputs" id="outputs">
+      <div class="out">
+        <div class="pane-head">
+          <label for="out-datauri">Data URI</label>
+          <button type="button" class="btn btn-primary btn-sm" data-copy="data_uri">Copy</button>
+        </div>
+        <textarea id="out-datauri" rows="3" readonly spellcheck="false" placeholder="data:image/png;base64,…"></textarea>
+      </div>
+      <div class="out">
+        <div class="pane-head">
+          <label for="out-base64">Raw Base64</label>
+          <button type="button" class="btn btn-sm" data-copy="base64">Copy</button>
+        </div>
+        <textarea id="out-base64" rows="3" readonly spellcheck="false" placeholder="iVBORw0KGgo…"></textarea>
+      </div>
+      <div class="out">
+        <div class="pane-head">
+          <label for="out-html">HTML &lt;img&gt;</label>
+          <button type="button" class="btn btn-sm" data-copy="html">Copy</button>
+        </div>
+        <textarea id="out-html" rows="3" readonly spellcheck="false" placeholder='<img src="data:…" alt="" width="…" height="…">'></textarea>
+      </div>
+      <div class="out">
+        <div class="pane-head">
+          <label for="out-css">CSS background-image</label>
+          <button type="button" class="btn btn-sm" data-copy="css">Copy</button>
+        </div>
+        <textarea id="out-css" rows="3" readonly spellcheck="false" placeholder='background-image: url("data:…");'></textarea>
+      </div>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-handoff-decode" disabled>Check it in Base64 to Image →</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./image-to-base64.client.ts"></script>
+
+<style>
+  .dropzone {
+    min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem;
+    border: 2px dashed var(--border); border-radius: var(--radius-sm); background: var(--surface-2);
+    padding: 1rem; text-align: center; cursor: pointer;
+  }
+  .dropzone:hover, .dropzone:focus-visible, .dropzone.is-over { border-color: var(--accent); outline: none; }
+  .dropzone.is-over { background: var(--accent-soft); }
+  .dropzone img { max-width: 100%; max-height: 160px; object-fit: contain; image-rendering: auto; }
+  .drop-text { margin: 0; font-size: 0.9rem; line-height: 1.5; }
+  .drop-text .muted { display: block; font-size: 0.82rem; margin-top: 0.25rem; }
+  kbd { font-family: var(--mono); font-size: 0.8em; padding: 0.05em 0.35em; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); }
+  .outputs { display: flex; flex-direction: column; gap: 0.75rem; }
+  .out textarea { min-height: 0; }
+  .btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+</style>

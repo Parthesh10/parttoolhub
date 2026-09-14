@@ -86,7 +86,7 @@ const faq = [
       <li><strong>Line breaks and spaces</strong> inside Base64 are ignored when decoding, so a value wrapped at 76 columns by an email client or copied out of a PEM certificate decodes as-is.</li>
       <li><strong>Missing padding is fine</strong>: <code>YQ</code> decodes to <code>a</code>. A length Base64 cannot produce — one dangling character, such as <code>YQFFF</code> — is rejected with “{danglingErr}”.</li>
       <li><strong>A <code>data:</code> prefix is not Base64.</strong> Pasting <code>data:image/png;base64,…</code> whole gives “{alphabetErr}”. Paste only the part after the comma.</li>
-      <li><strong>Binary data has no text to show.</strong> Decoding an image, a PDF or <code>/w==</code> reports “{binaryErr}”. The decode itself is fine; for files use a command-line tool such as <code>base64 -d</code>.</li>
+      <li><strong>Binary data has no text to show.</strong> Decoding an image, a PDF or <code>/w==</code> reports “{binaryErr}”. The decode itself is fine: for an image, paste the same string into <a href="/tools/base64-to-image">Base64 to Image</a> to see and download it; for other files use a command-line tool such as <code>base64 -d</code>.</li>
       <li><strong>Newlines are bytes too.</strong> <code>a</code>, a line break and <code>b</code> encode together as <code>{encodeBase64('a\nb')}</code>, not as two separate values.</li>
       <li><strong>Empty input</strong> produces an empty output in both directions, with no error shown.</li>
       <li><strong>Half an emoji</strong> — a lone surrogate (a broken character left by a truncated paste) is encoded as U+FFFD, the replacement character, so <code>a</code> + a lone surrogate + <code>b</code> gives <code>{loneSurrogate}</code> rather than an error. Multi-megabyte inputs encode in well under a second.</li>
@@ -95,7 +95,7 @@ const faq = [
     <h2>Where you'll run into Base64</h2>
     <ul>
       <li><strong>HTTP Basic Authentication</strong> — the <code>Authorization: Basic …</code> header is <code>username:password</code> Base64-encoded (not encrypted — HTTPS is what protects it in transit).</li>
-      <li><strong>Data URIs</strong> — <code>data:image/png;base64,…</code> embeds an image directly inside HTML or CSS.</li>
+      <li><strong>Data URIs</strong> — <code>data:image/png;base64,…</code> embeds an image directly inside HTML or CSS. <a href="/tools/image-to-base64">Image to Base64</a> builds one from a file; <a href="/tools/base64-to-image">Base64 to Image</a> shows what one contains.</li>
       <li><strong>JWTs</strong> — each of the three dot-separated segments is Base64URL-encoded JSON; the <a href="/tools/jwt-decoder">JWT decoder</a> unpacks all three at once.</li>
       <li><strong>Email attachments</strong> — MIME encodes binary files as Base64 so they survive text-only mail transport.</li>
       <li><strong>Query strings</strong> — a Base64 value with <code>+</code> or <code>/</code> in it must be <a href="/tools/url-encode-decode">URL-encoded</a> as well, or use the URL-safe alphabet and skip that step.</li>

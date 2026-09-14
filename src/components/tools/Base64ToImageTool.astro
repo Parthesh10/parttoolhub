@@ -1,0 +1,83 @@
+---
+/** Base64 / data URI → image preview and download. Behaviour in ./base64-to-image.client.ts */
+---
+
+<section class="tool card" id="tool" data-tool="base64-to-image">
+  <div class="panes">
+    <div class="pane">
+      <div class="pane-head">
+        <label for="input">Base64 or data URI</label>
+        <span class="stat" id="input-stat" aria-live="polite">0 characters</span>
+      </div>
+      <textarea
+        id="input"
+        rows="12"
+        spellcheck="false"
+        autocomplete="off"
+        placeholder="iVBORw0KGgoAAAANSUhEUgAA…  or  data:image/png;base64,iVBORw0…"
+      ></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+        <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+      </div>
+    </div>
+
+    <div class="pane">
+      <div class="pane-head">
+        <span class="pane-label" id="preview-label">Image</span>
+        <span class="stat" id="output-stat" aria-live="polite"></span>
+      </div>
+      <div class="preview-box bg-checker" id="preview-box" role="img" aria-labelledby="preview-label" aria-describedby="output-stat">
+        <img id="preview" alt="" hidden />
+        <p class="preview-empty" id="preview-empty">The decoded image appears here.</p>
+      </div>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-download" disabled>Download image</button>
+        <button type="button" class="btn btn-sm" id="btn-copy" disabled>Copy data URI</button>
+        <button type="button" class="btn btn-sm" id="btn-download-file" hidden>Download as file anyway</button>
+        <button type="button" class="btn btn-sm" id="btn-handoff-text" hidden>Decode as text instead →</button>
+      </div>
+      <p class="status-banner" id="status" hidden></p>
+    </div>
+  </div>
+
+  <div class="options">
+    <fieldset>
+      <legend>Preview background</legend>
+      <div class="row" role="group" aria-label="Preview background">
+        <button type="button" class="chip" data-bg="checker" aria-pressed="true">Checker</button>
+        <button type="button" class="chip" data-bg="light" aria-pressed="false">Light</button>
+        <button type="button" class="chip" data-bg="dark" aria-pressed="false">Dark</button>
+      </div>
+      <p class="hint">Transparent areas and white-on-transparent icons only show up against the right background.</p>
+    </fieldset>
+  </div>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./base64-to-image.client.ts"></script>
+
+<style>
+  .pane-label { font-weight: 650; }
+  /* Fixed minimum height so the box does not jump when an image lands (CLS). */
+  .preview-box {
+    min-height: 200px; height: 288px; max-height: 60vh; resize: vertical; overflow: auto;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem;
+  }
+  .preview-box img { max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: auto; }
+  .preview-empty { color: var(--text-muted); font-size: 0.9rem; margin: 0; text-align: center; }
+  .bg-checker {
+    background-color: var(--surface);
+    background-image:
+      linear-gradient(45deg, #8884 25%, transparent 25%), linear-gradient(-45deg, #8884 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #8884 75%), linear-gradient(-45deg, transparent 75%, #8884 75%);
+    background-size: 16px 16px; background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  }
+  .bg-light { background: #ffffff; }
+  .bg-light .preview-empty { color: #5b6270; }
+  .bg-dark { background: #1a1d23; }
+  .bg-dark .preview-empty { color: #a8afbb; }
+  .btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+</style>

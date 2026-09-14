@@ -41,11 +41,11 @@ export const CATEGORIES: Category[] = [
   {
     slug: 'encoders',
     name: 'Encoders & Decoders',
-    description: 'Decode JWTs, encode and decode Base64 and URL strings instantly. Nothing you paste leaves your device.',
+    description: 'Decode JWTs, encode and decode Base64 and URL strings, and turn images into data URIs and back. Nothing you paste leaves your device.',
     blurb: 'Encode, decode and inspect tokens and strings.',
     intro: [
       'Encoding turns bytes or text into a form that survives a channel with rules about which characters are allowed — a URL, an HTTP header, a JSON string. None of it is encryption: every encoding here is reversible with no key, which is exactly why a decoder is safe to run in your browser and why it can never tell you whether a token is genuine, only what it says.',
-      'Decode a <a href="/tools/jwt-decoder">JWT</a> when an API call returns 401 and you want to see the claims and expiry the server saw. Use <a href="/tools/base64-encode-decode">Base64</a> for <code>Authorization: Basic</code> headers, data URIs and anything that arrived as a block of letters ending in <code>=</code>; a JWT\'s segments are Base64URL, so the two tools overlap deliberately. Use <a href="/tools/url-encode-decode">URL encode/decode</a> for query-string values — the most common mistake it prevents is running a whole URL through component encoding and escaping the slashes that make it a URL.',
+      'Decode a <a href="/tools/jwt-decoder">JWT</a> when an API call returns 401 and you want to see the claims and expiry the server saw. Use <a href="/tools/base64-encode-decode">Base64</a> for <code>Authorization: Basic</code> headers, data URIs and anything that arrived as a block of letters ending in <code>=</code>; a JWT\'s segments are Base64URL, so the two tools overlap deliberately. Use <a href="/tools/url-encode-decode">URL encode/decode</a> for query-string values — the most common mistake it prevents is running a whole URL through component encoding and escaping the slashes that make it a URL. When the Base64 is an image rather than text, the text decoder can only say “not UTF-8”: <a href="/tools/base64-to-image">Base64 to Image</a> shows the picture, names its real format and downloads it, and <a href="/tools/image-to-base64">Image to Base64</a> goes the other way, from a file to a data URI, <code>&lt;img&gt;</code> tag or CSS <code>url()</code>.',
     ],
   },
   {

@@ -1,4 +1,5 @@
 import { encodeBase64, decodeBase64 } from '../../lib/encoding';
+import { receiveTransfer } from '../../lib/transfer';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -167,4 +168,13 @@ input.addEventListener('keydown', (e) => {
   }
 });
 
-render();
+// Arriving from Base64 to Image's "Decode as text instead" button: the string is
+// handed over in sessionStorage and this page opens in decode mode with it loaded.
+const incoming = receiveTransfer();
+if (incoming) {
+  inputSource = 'transfer';
+  input.value = incoming;
+  setMode('decode');
+} else {
+  render();
+}

@@ -1,0 +1,151 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import ImageToBase64Tool from '../../components/tools/ImageToBase64Tool.astro';
+import { toolBySlug } from '../../data/tools';
+import { imageToBase64, base64ToImage, formatBytes, SAMPLE_PNG_BASE64 } from '../../lib/base64-image';
+
+const tool = toolBySlug('image-to-base64');
+
+// Every example and quoted message below is produced by the real engine at build time.
+const sampleBytes = Uint8Array.from(atob(SAMPLE_PNG_BASE64), (c) => c.charCodeAt(0));
+const sample = imageToBase64(sampleBytes);
+if (!sample.ok) throw new Error('sample image must encode');
+const e = sample.value;
+const growth = Math.round(((e.base64Length - e.bytes) / e.bytes) * 100);
+const statLine = `${e.info.format.toUpperCase()} · ${e.info.width} × ${e.info.height} px · ${formatBytes(e.bytes)} → ${e.base64Length.toLocaleString()} characters (+${growth}%)`;
+
+// A ".png" that is really a JPEG: the type comes from the bytes.
+const fakePng = imageToBase64(new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x04, 0x00, 0x00, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x01, 0xe0, 0x02, 0x80, 0x01, 0x01, 0x11, 0x00, 0xff, 0xd9]));
+if (!fakePng.ok || !fakePng.value.dataUri.startsWith('data:image/jpeg;')) throw new Error('page claims the MIME type comes from the bytes');
+const svgNoSize = imageToBase64(new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"><rect width="4" height="4"/></svg>'));
+if (!svgNoSize.ok || /width=/.test(svgNoSize.value.html)) throw new Error('page claims the <img> omits width/height when unknown');
+// The URL-safe alphabet is not valid inside a data URI — prove the decoder side sees it as a repair, not a format.
+const urlSafeRepaired = base64ToImage(`data:image/png;base64,${SAMPLE_PNG_BASE64.replace(/\+/g, '-').replace(/\//g, '_')}`);
+if (!urlSafeRepaired.ok || !urlSafeRepaired.value.cleanup.urlSafe) throw new Error('page claims URL-safe Base64 in a data URI is a repair case');
+
+const errText = (bytes: Uint8Array) => {
+  const r = imageToBase64(bytes);
+  return r.ok ? '' : r.error.replace(/\.$/, '');
+};
+const pdfErr = errText(new TextEncoder().encode('%PDF-1.4'));
+const textErr = errText(new TextEncoder().encode('hello'));
+const emptyErr = errText(new Uint8Array(0));
+
+const jsSnippet = `// Browser: from a File or Blob
+const dataUri = await new Promise((resolve) => {
+  const r = new FileReader();
+  r.onload = () => resolve(r.result);
+  r.readAsDataURL(file);
+});
+
+// Node.js
+import { readFile } from "node:fs/promises";
+const base64 = (await readFile("logo.png")).toString("base64");
+const uri = \`data:image/png;base64,\${base64}\`;`;
+const pySnippet = `import base64
+with open("logo.png", "rb") as f:
+    b64 = base64.b64encode(f.read()).decode("ascii")
+uri = f"data:image/png;base64,{b64}"`;
+const shSnippet = `base64 -w0 logo.png            # Linux (GNU coreutils): one line, no wrapping
+base64 -i logo.png             # macOS
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("logo.png"))   # PowerShell`;
+
+const steps = [
+  'Drop an image on the box, click it to choose a file, or copy an image (a screenshot, say) and press <kbd>Ctrl</kbd>+<kbd>V</kbd> anywhere on the page.',
+  'The four outputs fill in at once: the data URI, the raw Base64, an <code>&lt;img&gt;</code> tag and a CSS <code>background-image</code> declaration. The line above the preview shows the format, pixel size, and how much larger the Base64 is than the file.',
+  'Press <strong>Copy</strong> next to the one you need and paste it into your HTML, CSS, JSON or code.',
+  '<strong>Check it in Base64 to Image →</strong> opens the decoder with the result loaded, to confirm it round-trips.',
+];
+
+const faq = [
+  {
+    q: 'Should I embed images as Base64?',
+    a: 'Only small ones. A data URI is about a third larger than the file, cannot be cached separately from the page, and is parsed every time the page loads. It pays off for icons and tiny images that would otherwise cost an extra HTTP request, and in places that cannot reference a separate file: a single-file HTML report, an email signature, a JSON payload, a CSS file that must be self-contained. For a photo, link to the file.',
+  },
+  {
+    q: 'Why is the Base64 bigger than the image?',
+    a: 'Base64 represents every 3 bytes as 4 characters, so the encoded text is 4/3 the size of the file plus up to two = padding characters. The status line shows the exact figures for your image: the sample grows from 157 bytes to 212 characters. Gzip or Brotli on the server claws some of that back but never all of it.',
+  },
+  {
+    q: 'Why does my data URI show a broken image?',
+    a: 'The most common causes: the MIME type is wrong (image/png in front of JPEG bytes), the Base64 uses the URL-safe alphabet (- and _), which browsers do not accept inside a data URI, or the string was cut off. This tool reads the type from the file bytes and always emits the standard alphabet with padding, so its output avoids the first two. Paste the result into Base64 to Image to check the third.',
+  },
+  {
+    q: 'Which MIME type does the tool use?',
+    a: 'The one the bytes call for, not the one the file name claims. A .png that is really a JPEG is encoded as image/jpeg; an SVG is image/svg+xml, an ICO is image/x-icon. The tool recognises PNG, JPEG, GIF, WebP, SVG, BMP, ICO and AVIF. Anything else is refused rather than encoded with a guess.',
+  },
+  {
+    q: 'Is my image uploaded?',
+    a: 'No. The file is read into memory with the browser\'s File API (arrayBuffer()), encoded with the built-in btoa() function, and shown in the boxes. This page is a static file with no server; there is nowhere for the bytes to go. Reload the page and everything is gone.',
+  },
+];
+---
+
+<ToolLayout {tool} {steps} {faq}>
+  <ImageToBase64Tool />
+
+  <Fragment slot="content">
+    <h2>What inlining an image does</h2>
+    <p>
+      Base64 turns the bytes of an image into text that can sit inside another text file: an HTML page, a stylesheet, a
+      JSON body, an email, a Markdown file. The result is a data URI, <code>data:image/png;base64,…</code>, which a browser
+      treats like a URL that already contains the file. No second request, no path to break, no separate asset to deploy.
+      The cost is size and cacheability, which is why it suits icons and small graphics, not photographs.
+    </p>
+    <p>
+      This tool reads the file in your browser, works out what it is from its first bytes, and gives you the four forms
+      you might paste: the raw Base64 for a database column or API field, the data URI for an <code>src</code> or a
+      <code>url()</code>, a ready <code>&lt;img&gt;</code> tag with <code>width</code> and <code>height</code> filled
+      in so the page does not jump while it loads, and a CSS <code>background-image</code> declaration. It does not
+      compress, resize or convert the image. If the file is too large to inline sensibly, that is the moment to shrink it
+      in an image editor first, not after encoding.
+    </p>
+
+    <h2>Example</h2>
+    <p><strong>Load sample</strong> encodes a {formatBytes(e.bytes)}, {e.info.width} × {e.info.height} pixel PNG (a blue square with a white dot). The status line reports:</p>
+    <pre><code>{statLine}</code></pre>
+    <p>The <strong>Data URI</strong> box contains:</p>
+    <pre><code>{e.dataUri}</code></pre>
+    <p>and the <strong>HTML &lt;img&gt;</strong> box:</p>
+    <pre><code>{e.html}</code></pre>
+    <p>
+      The <strong>Raw Base64</strong> box is the same string without the <code>data:image/png;base64,</code> prefix, and
+      the <strong>CSS</strong> box wraps the data URI in <code>background-image: url("…");</code>.
+    </p>
+
+    <h2>Options explained</h2>
+    <ul>
+      <li><strong>Choose image</strong> opens the file picker; clicking or pressing Enter on the drop box does the same. Dropping a file on the box or pasting an image from the clipboard also works. Only the first file is used if several are dropped.</li>
+      <li><strong>Load sample</strong> encodes the built-in {formatBytes(e.bytes)} PNG shown in the Example, so you can see the four outputs without finding a file.</li>
+      <li><strong>Clear</strong> empties the preview and all four boxes.</li>
+      <li><strong>Copy</strong> (one per box) puts that box's text on the clipboard: <strong>Data URI</strong>, <strong>Raw Base64</strong>, <strong>HTML &lt;img&gt;</strong> or <strong>CSS background-image</strong>.</li>
+      <li><strong>Check it in Base64 to Image →</strong> hands the data URI to the <a href="/tools/base64-to-image">decoder</a>, which shows it as an image again with the detected type and size — a round-trip check before you paste it somewhere hard to debug.</li>
+    </ul>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>The file name is ignored; the bytes decide.</strong> A JPEG saved as <code>logo.png</code> is encoded as <code>{fakePng.ok ? fakePng.value.dataUri.slice(0, 23) : ''}…</code>, because a wrong MIME type is the usual reason a data URI renders as a broken image.</li>
+      <li><strong>Not an image.</strong> A PDF reports “{pdfErr}”; a text file reports “{textErr}”; an empty file reports “{emptyErr}”. Nothing is encoded in those cases. For a non-image file you actually want as Base64, use a command-line <code>base64</code> as in the code section.</li>
+      <li><strong>Over 10 MB</strong> is refused with the size shown. A data URI that large is not usable in a page, and holding four copies of it in the boxes is what makes tabs freeze.</li>
+      <li><strong>Base64 is not URL-safe.</strong> The output uses <code>+</code>, <code>/</code> and <code>=</code>, which is what a data URI requires; the URL-safe alphabet (<code>-</code> and <code>_</code>) breaks inside <code>src</code>. If the string has to travel in a query parameter, <a href="/tools/url-encode-decode">URL-encode</a> it there instead.</li>
+      <li><strong>Size and padding.</strong> Encoded length is ⌈bytes ÷ 3⌉ × 4: the sample's {e.bytes} bytes become {e.base64Length} characters, {growth}% more rather than the nominal 33%, because the last group is rounded up to a full four characters with <code>=</code> padding. The rounding matters less as files get bigger.</li>
+      <li><strong>SVG.</strong> An SVG is encoded as Base64 with <code>image/svg+xml</code> like any other file. Percent-encoding the SVG text instead (<code>data:image/svg+xml,%3Csvg…</code>) is often shorter and stays readable; both forms decode in <a href="/tools/base64-to-image">Base64 to Image</a>. When the SVG declares no <code>width</code>/<code>height</code> or <code>viewBox</code>, the <code>&lt;img&gt;</code> tag is emitted without size attributes.</li>
+      <li><strong>Previews your browser cannot show.</strong> AVIF on an older browser, or ICO in some, shows no thumbnail; the tool says so and the Base64 is still the file's bytes, unchanged.</li>
+      <li><strong>Where data URIs do not work.</strong> A Content-Security-Policy without <code>img-src data:</code> blocks them, and many email clients do not display them at all. Base64 in an HTTP <code>Authorization: Basic</code> header or a JWT is a different job: use <a href="/tools/base64-encode-decode">Base64 Encode / Decode</a> for text.</li>
+    </ul>
+
+    <h2>Do the same thing in code</h2>
+    <h3>JavaScript</h3>
+    <pre><code>{jsSnippet}</code></pre>
+    <h3>Python</h3>
+    <pre><code>{pySnippet}</code></pre>
+    <h3>Shell</h3>
+    <pre><code>{shSnippet}</code></pre>
+    <p>
+      The shell versions print raw Base64; add the <code>data:image/png;base64,</code> prefix yourself, using the real
+      type of the file. To check any result, paste it into <a href="/tools/base64-to-image">Base64 to Image</a>. If the
+      icon is going into a stylesheet next to a colour that has to match, the
+      <a href="/tools/color-converter">color converter</a> gives the HEX, RGB and HSL forms of it.
+    </p>
+  </Fragment>
+</ToolLayout>

@@ -36,12 +36,12 @@ event name in code; the test enforces the list.
 | Event | Trigger | Parameters | Purpose |
 | --- | --- | --- | --- |
 | `tool_view` | A `/tools/<slug>` page loads (`Base.astro`, from `ToolLayout`'s `tool` prop) | `tool_slug`, `tool_category` | Tool discovery; `page_view` with tool context for simple reports |
-| `tool_use` | **Once per page load**, the first time the engine runs on non-empty input | `action` (e.g. `format`, `minify`, `encode`, `decode`, `title:apa`, `join`), `success`, `input_source` (`typed` / `pasted` / `sample` / `transfer`), `input_size` (`xs` <100 chars … `xl` ≥100k) | Which tools are used, how input arrives, how big it is |
+| `tool_use` | **Once per page load**, the first time the engine runs on non-empty input | `action` (e.g. `format`, `minify`, `encode`, `decode`, `title:apa`, `join`), `success`, `input_source` (`typed` / `pasted` / `sample` / `transfer` / `file`), `input_size` (`xs` <100 chars … `xl` ≥100k; bytes for a file input) | Which tools are used, how input arrives, how big it is |
 | `tool_result` | **Once per page load**, the first successful run on non-empty input | `action` | **Primary conversion** — the tool did its job for a real input |
-| `tool_error` | **Once per page load**, the first failed run | `action`, `error_type` — a fixed category (`syntax`, `alphabet`, `length`, `utf8`, `bad_escape`, `segments`, `base64url`, `json`, `object`, `unsupported_name`, `unterminated_string`, …), never the message | Reliability; tools that attract input they cannot handle |
+| `tool_error` | **Once per page load**, the first failed run | `action`, `error_type` — a fixed category (`syntax`, `alphabet`, `length`, `utf8`, `bad_escape`, `segments`, `base64url`, `json`, `object`, `unsupported_name`, `unterminated_string`, `text`, `other_file`, `not_image`, `data_uri`, `render`, `too_large`, `empty`, …), never the message | Reliability; tools that attract input they cannot handle |
 | `tool_option` | A control is changed — once per control per page load | `option` (control id such as `opt-sort`, `mode`, `preset`, `swap`), `value` (the select's visible label, `true`/`false` for a checkbox, the preset id, or `(text)` for a free-text box) | Which options and presets earn their place in the UI |
-| `copy_result` | Copy button pressed with a non-empty result | `target` (`output`, `header`, `payload`) | Secondary conversion — output was useful enough to take |
-| `download_result` | Download button pressed with a non-empty result | `target` | Secondary conversion |
+| `copy_result` | Copy button pressed with a non-empty result | `target` (`output`, `header`, `payload`; on the image tools `data_uri`, `base64`, `html`, `css`) | Secondary conversion — output was useful enough to take |
+| `download_result` | Download button pressed with a non-empty result | `target` (`output`; on Base64 to Image `image`, or `file` for non-image bytes saved anyway) | Secondary conversion |
 | `reset_tool` | Clear button pressed | — | Re-use within one visit |
 | `navigation_click` | Any internal link click, captured by delegation in `Base.astro`; plus the two cross-tool hand-off buttons | `link_placement` (`header`, `footer`, `breadcrumb`, `related`, `home-directory`, `hub-cards`, `content`, `handoff`, `not-found`), `link_to` (path only, no query or hash) | Which internal pathways move people between tools |
 
@@ -59,6 +59,13 @@ immediately for a working first impression, but that isn't a "use" any more than
 starting state is). `input_source` is always `'sample'` for these tools — the closest existing enum
 value to "generated, not typed or pasted" — and `input_size` buckets the generated result's size
 instead of an input's, since there is no input to measure.
+
+**File-input tools** (Image to Base64) have no keystroke stream either, but unlike a generator each
+file is one transform of one input, so they keep the once-per-page-load dedup. `input_source` is
+`file` for the picker and drag-and-drop, `pasted` for a clipboard image, `sample` for the built-in
+one; `input_size` buckets the file's byte count. On Base64 to Image, `error_type: render` is the one
+error reported by the browser rather than the engine — the header was valid but the `<img>` could
+not decode the rest.
 
 Outbound links, scroll depth and file downloads are **not** custom events — GA4 enhanced measurement
 already reports them. Do not add `outbound_click` or `scroll_depth` events without first turning
