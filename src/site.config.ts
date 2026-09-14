@@ -24,13 +24,6 @@ export const SITE = {
   github: 'https://github.com/Parthesh10/parttoolhub',
   /** Maintainer's LinkedIn profile. Optional; feeds /about and Person.sameAs. Leave empty to hide. */
   linkedin: 'https://www.linkedin.com/in/parthesh-gupta/',
-  /**
-   * Contact address kept for account-level use (WHOIS, AdSense, GA4 admin) —
-   * deliberately NOT rendered on any public page (maintainer's choice, to
-   * avoid publishing a personal-looking address). Public contact instead
-   * goes through the GitHub issue tracker; see /contact and seo-rules.md §4A.
-   */
-  contactEmail: 'hello@parttoolhub.com',
   /** Default social preview image, relative to /public. */
   ogImage: '/og-default.png',
   /** ISO date the site launched — used in schema.org markup. */

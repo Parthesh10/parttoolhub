@@ -114,7 +114,7 @@ document and the code in step.
 
 ## Launch checklist
 
-1. **Domain** — set `SITE.url`, `SITE.name`, `SITE.contactEmail` in `src/site.config.ts`; update the
+1. **Domain** — set `SITE.url`, `SITE.name` in `src/site.config.ts`; update the
    `Sitemap:` line in `public/robots.txt`.
 2. **Deploy** — Vercel, Netlify and Cloudflare Pages all auto-detect Astro. Build command
    `npm run build`, output `dist`. `vercel.json` enables clean URLs (`/tools/foo`, not
