@@ -1,0 +1,87 @@
+---
+/**
+ * Unix timestamp <-> date/time converter. Behaviour in ./timestamp.client.ts
+ */
+---
+
+<section class="tool card" id="tool" data-tool="unix-timestamp-converter">
+  <div class="options">
+    <fieldset>
+      <legend>Direction</legend>
+      <div class="row" role="group" aria-label="Conversion direction">
+        <button type="button" class="btn btn-sm" id="mode-to-date" aria-pressed="true">Timestamp → Date</button>
+        <button type="button" class="btn btn-sm" id="mode-to-timestamp" aria-pressed="false">Date → Timestamp</button>
+      </div>
+    </fieldset>
+
+    <fieldset id="unit-field">
+      <legend>Unit</legend>
+      <div class="row">
+        <label class="field">
+          <span>Timestamp is in</span>
+          <select id="opt-unit">
+            <option value="auto">Auto-detect</option>
+            <option value="s">Seconds</option>
+            <option value="ms">Milliseconds</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset id="tz-field" hidden>
+      <legend>Interpret as</legend>
+      <div class="row">
+        <label class="field">
+          <span>When no time zone is given</span>
+          <select id="opt-tz">
+            <option value="utc">UTC</option>
+            <option value="local">Local time (this browser)</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+  </div>
+
+  <div class="single">
+    <div class="pane-head">
+      <label for="input" id="input-label">Unix timestamp</label>
+      <span class="stat" id="input-stat" aria-live="polite"></span>
+    </div>
+    <textarea id="input" rows="2" spellcheck="false" autocomplete="off" placeholder="1736937000"></textarea>
+    <div class="pane-actions">
+      <button type="button" class="btn btn-sm" id="btn-now">Use current time</button>
+      <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+      <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+    </div>
+  </div>
+
+  <p class="status-banner" id="status" hidden></p>
+
+  <div class="ts-result" id="result" hidden>
+    <div class="pane-head">
+      <label for="output" id="output-label">Date &amp; time (UTC)</label>
+    </div>
+    <textarea id="output" rows="2" readonly spellcheck="false"></textarea>
+    <div class="pane-actions">
+      <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy result</button>
+    </div>
+
+    <div class="ts-grid" id="grid"></div>
+  </div>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./timestamp.client.ts"></script>
+
+<style>
+  #mode-to-date[aria-pressed="true"], #mode-to-timestamp[aria-pressed="true"] {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+  .single textarea, .ts-result textarea { min-height: 60px; }
+  .ts-result { margin-top: 1rem; }
+  .ts-grid { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; margin-top: 1rem; font-size: 0.9rem; }
+  .ts-grid .item { display: flex; flex-direction: column; }
+  .ts-grid .item .k { color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .ts-grid .item .v { font-weight: 600; }
+</style>

@@ -1,0 +1,41 @@
+---
+/** Programming identifier case converter. Behaviour in ./case-convert.client.ts */
+---
+
+<section class="tool card" id="tool" data-tool="code-case-converter">
+  <div class="single">
+    <div class="pane-head">
+      <label for="input">Identifier or phrase</label>
+      <span class="stat" id="input-stat" aria-live="polite"></span>
+    </div>
+    <textarea id="input" rows="2" spellcheck="false" autocomplete="off" placeholder="userFirstName"></textarea>
+    <div class="pane-actions">
+      <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+      <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+    </div>
+  </div>
+
+  <p class="status-banner" id="status" hidden></p>
+
+  <div class="cc-grid" id="grid" hidden></div>
+
+  <p class="muted cc-note">Click any result to copy it.</p>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./case-convert.client.ts"></script>
+
+<style>
+  .single textarea { min-height: 60px; }
+  .cc-note { font-size: 0.85rem; margin-top: 0.75rem; }
+  .cc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.7rem; margin-top: 1rem; }
+  .cc-row {
+    display: flex; flex-direction: column; gap: 0.25rem; text-align: left; cursor: pointer;
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+    padding: 0.55rem 0.75rem; font: inherit; color: inherit; min-height: 44px;
+  }
+  .cc-row:hover, .cc-row:focus-visible { border-color: var(--accent); }
+  .cc-row .k { color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .cc-row .v { font-weight: 600; font-family: var(--mono); word-break: break-all; }
+</style>

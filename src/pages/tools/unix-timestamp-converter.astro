@@ -1,0 +1,109 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import TimestampTool from '../../components/tools/TimestampTool.astro';
+import { toolBySlug } from '../../data/tools';
+import { timestampToDate, dateToTimestamp, SAMPLE_EPOCH_SECONDS, SAMPLE_DATE_TIME } from '../../lib/timestamp';
+
+const tool = toolBySlug('unix-timestamp-converter');
+
+// Worked example and every error message below come from the real engine at build time.
+const sampleBreakdown = (timestampToDate(SAMPLE_EPOCH_SECONDS) as { ok: true; value: { iso: string; utc: string; epochSeconds: number } }).value;
+const reverseCheck = (dateToTimestamp(SAMPLE_DATE_TIME, 'utc') as { ok: true; value: { epochSeconds: number } }).value.epochSeconds;
+
+const autoMs = (timestampToDate('1736937000000') as { ok: true; value: { iso: string } }).value.iso;
+const autoS = (timestampToDate('1736937000') as { ok: true; value: { iso: string } }).value.iso;
+
+const utcInterpret = (dateToTimestamp('2025-01-15T10:30:00', 'utc') as { ok: true; value: { epochSeconds: number } }).value.epochSeconds;
+const localInterpret = (dateToTimestamp('2025-01-15T10:30:00', 'local') as { ok: true; value: { epochSeconds: number } }).value.epochSeconds;
+
+const rollover = (dateToTimestamp('2025-13-40', 'utc') as { ok: true; value: { iso: string } }).value.iso;
+
+const err = (fn: () => { ok: true } | { ok: false; error: string }) => {
+  const r = fn();
+  return r.ok ? '' : r.error.replace(/\.$/, '');
+};
+const formatErr = err(() => timestampToDate('1736937000s'));
+const overflowErr = err(() => timestampToDate('9'.repeat(30)));
+const rangeErr = err(() => timestampToDate('99999999999999999999', 'ms'));
+const parseErr = err(() => dateToTimestamp('not a date'));
+
+const steps = [
+  'Choose a direction: <strong>Timestamp → Date</strong> or <strong>Date → Timestamp</strong>.',
+  'Going from a timestamp, pick the unit — <em>Auto-detect</em> works for anything from the last ~55 years. Going from a date, pick <strong>Interpret as</strong> (UTC or your browser\'s local time) for dates with no time zone written in them.',
+  'Paste the value, or use <strong>Use current time</strong> to fill in right now.',
+  'Read the result: the box holds the primary answer, and the row below it shows every representation at once — Unix seconds and milliseconds, ISO 8601, UTC, your local time, and how long ago or from now it is.',
+  '<strong>Copy result</strong> to take the primary value.',
+];
+
+const faq = [
+  {
+    q: 'Is my timestamp in seconds or milliseconds?',
+    a: `With <strong>Auto-detect</strong>, this tool guesses from the number of digits: 10 digits or fewer (roughly 2001–2286) is treated as seconds, 13 digits as milliseconds — the two most common conventions (Unix <code>time()</code> vs. JavaScript's <code>Date.now()</code>). If you know which one you have, pick it explicitly in the Unit menu instead of relying on the guess.`,
+  },
+  {
+    q: 'Why do I get a different timestamp for the same date depending on the Interpret as option?',
+    a: `Because <code>2025-01-15T10:30:00</code> genuinely is a different instant in UTC than it is in, say, India Standard Time — there is no time zone written in the string, so something has to decide. This is also a real JavaScript quirk worth knowing on its own: the language's own <code>Date</code> parser treats a bare date like <code>2025-01-15</code> as UTC but a bare date-<em>time</em> like <code>2025-01-15T10:30:00</code> as local time — same missing time zone, opposite silent default. This tool asks you instead of guessing inconsistently.`,
+  },
+  {
+    q: 'Does it handle dates before 1970?',
+    a: 'Yes — Unix time is just negative before the epoch, and this tool accepts negative timestamps and dates as far back as JavaScript\'s <code>Date</code> can represent (about 273,790 years in either direction).',
+  },
+  {
+    q: 'What time zone is the Local value shown in?',
+    a: 'Whatever your browser and operating system are set to — the grid names it (for example "Local (Asia/Kolkata)") so it is never ambiguous. Since this runs entirely on your device, the same timestamp will show a different local line on a colleague\'s screen in another time zone; that is expected, not a bug.',
+  },
+];
+---
+
+<ToolLayout {tool} {steps} {faq}>
+  <TimestampTool />
+
+  <Fragment slot="content">
+    <h2>One number, several honest defaults</h2>
+    <p>
+      A Unix timestamp is a count of seconds (or milliseconds) since 1 January 1970 UTC — unambiguous as a number, but
+      useless to a human until it is turned back into a date. Going the other way has a hidden trap: a date and time with
+      no time zone attached is not one fixed instant, it is a different instant depending which zone you assume. Most
+      converters pick one silently; this one asks, and shows you both the number and every common representation of the
+      date side by side so nothing is hidden behind a single answer. Unix timestamps show up constantly in raw form — an
+      API response, a database column, a JWT's <code>exp</code> claim (readable directly on the
+      <a href="/tools/jwt-decoder">JWT Decoder</a>) — and this is the tool for converting one on its own.
+    </p>
+
+    <h2>Example</h2>
+    <p>The Unix timestamp <code>{SAMPLE_EPOCH_SECONDS}</code> (seconds) becomes:</p>
+    <pre><code>{sampleBreakdown.iso}
+{sampleBreakdown.utc}</code></pre>
+    <p>Going the other way, <code>{SAMPLE_DATE_TIME}</code> with <strong>Interpret as: UTC</strong> becomes the Unix timestamp <code>{reverseCheck}</code> — the same instant, both directions.</p>
+
+    <h2>Options explained</h2>
+    <ul>
+      <li><strong>Direction: Timestamp → Date / Date → Timestamp</strong> switches which side you type into and which side is computed.</li>
+      <li><strong>Unit (Timestamp → Date only): Auto-detect / Seconds / Milliseconds</strong> — <code>1736937000</code> (10 digits) auto-detects as seconds and resolves to <code>{autoS}</code>; <code>1736937000000</code> (13 digits) auto-detects as milliseconds and resolves to the same instant, <code>{autoMs}</code>.</li>
+      <li><strong>Interpret as (Date → Timestamp only): UTC / Local time</strong> only matters when the date you paste has no time zone of its own. <code>{SAMPLE_DATE_TIME}</code> becomes Unix time <code>{utcInterpret}</code> under UTC but <code>{localInterpret}</code> under this browser's local zone. Add an explicit <code>Z</code> or <code>+05:30</code> to the date and this option is ignored — the offset you wrote always wins.</li>
+      <li><strong>Use current time</strong> fills the input with right now, in whichever direction is active; <strong>Load sample</strong> inserts the worked example above; <strong>Clear</strong> empties the box.</li>
+    </ul>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>Not a plain number.</strong> <code>1736937000s</code> stops with "{formatErr}" — no letters, units or thousands separators are accepted; strip them before pasting.</li>
+      <li><strong>Astronomically large input is rejected, not silently wrapped.</strong> A 30-digit number of digits stops with "{overflowErr}"; a merely huge-but-finite one (say, treated as milliseconds when it should have been seconds) stops with "{rangeErr}" rather than returning a nonsense date far outside any calendar humans use.</li>
+      <li><strong>Unparseable dates.</strong> Free text that matches no recognised shape, like <code>not a date</code>, stops with "{parseErr}". ISO forms (<code>2025-01-15</code>, <code>2025-01-15T10:30:00</code>, with or without an offset) are always understood; anything else falls back to the browser's own date parser, which accepts many formats but — like the no-offset case above — reads them in local time.</li>
+      <li><strong>Out-of-range calendar fields roll over rather than error.</strong> <code>2025-13-40</code> (month 13, day 40) is not rejected: it becomes <code>{rollover}</code>, the same way native <code>Date</code> arithmetic works. Useful when a value is computed (e.g. "30 days from now") and genuinely inconvenient when it hides a typo — double-check the month and day if the result looks like the wrong year.</li>
+      <li><strong>Pre-1970 dates are negative, not an error</strong> — see the FAQ.</li>
+      <li><strong>Fractional seconds</strong> in a date (<code>2025-01-15T10:30:00.5</code>) are read as part of a second (500 ms), matching ISO 8601 rather than being misread as minutes or a separate field.</li>
+    </ul>
+
+    <h2>Do the same thing in code</h2>
+    <p>The exact conversions this page performs, in a few languages:</p>
+    <pre><code>// JavaScript
+new Date(1736937000 * 1000).toISOString();        // timestamp -> date
+Math.floor(Date.parse('2025-01-15T10:30:00Z') / 1000); // date -> timestamp (UTC, explicit offset)
+
+# Python
+import datetime
+datetime.datetime.fromtimestamp(1736937000, datetime.timezone.utc)
+int(datetime.datetime(2025, 1, 15, 10, 30, tzinfo=datetime.timezone.utc).timestamp())</code></pre>
+    <p class="muted">Both languages have the same no-offset ambiguity this tool routes around: JavaScript's <code>Date.parse</code> and Python's naive <code>datetime</code> objects assume different defaults depending on the exact string shape and platform — pass an explicit UTC offset (as above) whenever the zone actually matters.</p>
+  </Fragment>
+</ToolLayout>

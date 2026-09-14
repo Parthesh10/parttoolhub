@@ -1,0 +1,104 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import JsonToCsvTool from '../../components/tools/JsonToCsvTool.astro';
+import { toolBySlug } from '../../data/tools';
+import { jsonToCsv, SAMPLE_JSON } from '../../lib/csv-json';
+
+const tool = toolBySlug('json-to-csv-converter');
+
+// Worked example and every error message below come from the real engine at build time.
+const csvSample = (jsonToCsv(SAMPLE_JSON) as { ok: true; output: string }).output;
+
+const err = (fn: () => { ok: true } | { ok: false; error: string }) => {
+  const r = fn();
+  return r.ok ? '' : r.error.replace(/\.$/, '');
+};
+const notArrayErr = err(() => jsonToCsv('{"a": 1}'));
+const mixedErr = err(() => jsonToCsv('[1, {"a": 2}]'));
+
+const unionOut = (jsonToCsv(JSON.stringify([{ a: 1, b: 2 }, { b: 3, c: 4 }])) as { ok: true; output: string }).output;
+const nestedOut = (jsonToCsv(JSON.stringify([{ id: 1, tags: ['a', 'b'] }])) as { ok: true; output: string }).output;
+const arrayOfArraysOut = (jsonToCsv(JSON.stringify([[1, 2], [3, 4]])) as { ok: true; output: string }).output;
+const quotedOut = (jsonToCsv(JSON.stringify([{ note: 'hello, "world"' }])) as { ok: true; output: string }).output;
+
+const steps = [
+  'Paste a JSON array — of objects (most common), or of arrays.',
+  'Pick the <strong>Field separator</strong> if you need semicolon or tab instead of comma.',
+  'Read the result: the first row is the header (the union of every object\'s keys, in the order they first appear), one data row per array item.',
+  '<strong>Copy to clipboard</strong>, or <strong>Download .csv</strong> to open directly in a spreadsheet.',
+];
+
+const faq = [
+  {
+    q: 'What if the objects don’t all have the same keys?',
+    a: `The header becomes the union of every key across every object, in first-seen order; a row missing a key just gets an empty cell for it. <code>[{"a":1,"b":2},{"b":3,"c":4}]</code> becomes <code>${unionOut.replace(/\r\n/g, ' / ')}</code> — one row per object, in the shared header order.`,
+  },
+  {
+    q: 'What happens to a nested object or array value?',
+    a: `It is embedded as a JSON string inside that one cell, since CSV has no native way to represent nested structure. <code>[{"id":1,"tags":["a","b"]}]</code> becomes <code>${nestedOut.replace(/"/g, '&quot;')}</code> — reopen it with the <a href="/tools/csv-to-json-converter">CSV to JSON Converter</a> and that cell comes back as a JSON-string value, not automatically un-nested.`,
+  },
+  {
+    q: 'Can I convert an array of arrays instead of objects?',
+    a: `Yes — <code>[[1,2],[3,4]]</code> becomes <code>${arrayOfArraysOut.replace(/\r\n/g, ' / ')}</code> with no header row, since there are no keys to name one from.`,
+  },
+  {
+    q: 'Why is a field wrapped in quotes in the output?',
+    a: 'Only when it needs to be: a value containing the delimiter, a double quote, or a line break is wrapped in quotes with any internal quote doubled, following RFC 4180 — the same rule spreadsheet software expects when opening the file.',
+  },
+];
+---
+
+<ToolLayout {tool} {steps} {faq}>
+  <JsonToCsvTool />
+
+  <Fragment slot="content">
+    <h2>Turning nested JSON into flat rows</h2>
+    <p>
+      A JSON array of objects and a CSV file describe the same shape — one row per item, one column per field — but JSON
+      allows each object to have different keys, nested objects, and arrays, none of which CSV can represent directly.
+      This tool reconciles the two: it collects every key that appears anywhere in the array into one header row, fills
+      in a blank for any object missing a key, and serialises a nested object or array as a JSON string inside its cell
+      rather than dropping it. Going the other way, the <a href="/tools/csv-to-json-converter">CSV to JSON Converter</a>
+      turns a spreadsheet export back into structured JSON.
+    </p>
+
+    <h2>Example</h2>
+    <p>This JSON array:</p>
+    <pre><code>{SAMPLE_JSON}</code></pre>
+    <p>becomes:</p>
+    <pre><code>{csvSample}</code></pre>
+
+    <h2>Options explained</h2>
+    <ul>
+      <li><strong>Field separator: Comma / Semicolon / Tab</strong> — use semicolon for CSV meant to open correctly in
+        Excel set to a European locale (which treats comma as the decimal separator), or tab for a <code>.tsv</code> file.</li>
+      <li><strong>Load sample</strong> inserts the array above; <strong>Clear</strong> empties the box.</li>
+    </ul>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>The top level must be an array.</strong> A single object, <code>{'{"a": 1}'}</code>, stops with
+        "{notArrayErr}" — wrap it in <code>[ ]</code> if you meant one row.</li>
+      <li><strong>Every item must be the same shape.</strong> Mixing objects and non-objects, like <code>[1, {'{"a": 2}'}]</code>,
+        stops with "{mixedErr}" rather than guessing which rows to keep.</li>
+      <li><strong>An empty array</strong> (<code>[]</code>) produces empty output rather than an error — there is nothing
+        to derive a header from.</li>
+      <li><strong>Missing keys and nested values</strong> — see the FAQ.</li>
+      <li><strong>Quoting</strong> follows RFC 4180 exactly: <code>{'{"note": "hello, \\"world\\""}'}</code> becomes a
+        single correctly-quoted cell, <code>{quotedOut}</code>, not two broken columns.</li>
+    </ul>
+
+    <h2>Do the same thing in code</h2>
+    <pre><code>import csv, json, sys
+
+rows = json.load(open("data.json"))
+keys = list(dict.fromkeys(k for row in rows for k in row))
+w = csv.DictWriter(sys.stdout, fieldnames=keys)
+w.writeheader()
+w.writerows(rows)</code></pre>
+    <p class="muted">Python's <code>csv.DictWriter</code> needs the full field list up front (<code>dict.fromkeys</code>
+      above collects the same union-of-keys this tool computes automatically) and, like this tool, turns anything that
+      isn't already a string into its <code>str()</code> form rather than a JSON string — pre-serialise nested values with
+      <code>json.dumps</code> first if you need this tool's exact behaviour.</p>
+  </Fragment>
+</ToolLayout>

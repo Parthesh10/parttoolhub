@@ -1,0 +1,100 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import CaseConvertTool from '../../components/tools/CaseConvertTool.astro';
+import { toolBySlug } from '../../data/tools';
+import { tokenize, toCase, CASE_LABELS, SAMPLE_INPUT } from '../../lib/case-convert';
+
+const tool = toolBySlug('code-case-converter');
+
+// Worked example computed from the real engine at build time.
+const sampleTokens = tokenize(SAMPLE_INPUT);
+const camel = toCase(sampleTokens, 'camel');
+const pascal = toCase(sampleTokens, 'pascal');
+const snake = toCase(sampleTokens, 'snake');
+const constant = toCase(sampleTokens, 'constant');
+const kebab = toCase(sampleTokens, 'kebab');
+const dot = toCase(sampleTokens, 'dot');
+
+const xmlTokens = tokenize('XMLHttpRequest');
+const iosTokens = tokenize('iOS9Update');
+const twoFastTokens = tokenize('2FastCars');
+
+const steps = [
+  'Paste one identifier or short phrase — from <code>camelCase</code>, <code>snake_case</code>, <code>kebab-case</code>, plain words, or any mix.',
+  'Read the six results: camelCase, PascalCase, snake_case, CONSTANT_CASE, kebab-case and dot.case, computed together from the same word boundaries.',
+  'Click any result to copy it — no separate copy button to find.',
+  '<strong>Load sample</strong> inserts a worked example; <strong>Clear</strong> empties the box.',
+];
+
+const faq = [
+  {
+    q: 'How does it know where one word ends and the next begins?',
+    a: `It looks for the boundaries every common style already marks: an underscore, hyphen, dot or space, and — for already-camelCased or PascalCased input — a lowercase letter followed by an uppercase one. Acronym runs are handled too: <code>XMLHttpRequest</code> tokenises as ${xmlTokens.map((t) => `<code>${t}</code>`).join(', ')}, not one letter at a time.`,
+  },
+  {
+    q: 'Is this the same as the Title Case Converter?',
+    a: `No — the <a href="/tools/title-case-converter">Title Case Converter</a> capitalises prose headlines by a style guide's rules (which small words like "a" or "of" stay lowercase). This tool tokenises a single identifier and rebuilds it in a programming case style; neither tool applies the other's rules.`,
+  },
+  {
+    q: 'What happens to acronyms and numbers?',
+    a: `Numbers stay attached to whichever word they touch — <code>2FastCars</code> tokenises as ${twoFastTokens.map((t) => `<code>${t}</code>`).join(', ')}, so it converts as expected. Mixed brand-style casing like <code>iOS</code> has no reliable rule to detect automatically: <code>iOS9Update</code> tokenises as ${iosTokens.map((t) => `<code>${t}</code>`).join(', ')}, which is close but not perfect — check the result before using it verbatim.`,
+  },
+  {
+    q: 'Does it convert a whole file, or one identifier at a time?',
+    a: 'One identifier or phrase at a time. Pasting multiple lines does not convert them line by line — every line break is treated as just another word boundary, the same as a space, and the whole paste becomes one result per style.',
+  },
+];
+---
+
+<ToolLayout {tool} {steps} {faq}>
+  <CaseConvertTool />
+
+  <Fragment slot="content">
+    <h2>One phrase, every case style at once</h2>
+    <p>
+      Programming languages and style guides disagree on how to write a multi-word name: JavaScript variables are
+      <code>camelCase</code>, classes are <code>PascalCase</code>, Python and database columns are <code>snake_case</code>,
+      environment variables and constants are <code>CONSTANT_CASE</code>, URLs and CSS classes are <code>kebab-case</code>,
+      and config keys sometimes use <code>dot.case</code>. Converting between them by hand is mechanical and easy to get
+      subtly wrong around acronyms and numbers — this tool does the tokenising once and shows every style at the same time.
+    </p>
+
+    <h2>Example</h2>
+    <p>The phrase <code>{SAMPLE_INPUT}</code> becomes:</p>
+    <pre><code>{camel}
+{pascal}
+{snake}
+{constant}
+{kebab}
+{dot}</code></pre>
+
+    <h2>Reading the result</h2>
+    <ul>
+      <li><strong>camelCase</strong> — first word lowercase, each following word capitalised, no separator. The JavaScript/Java/C# convention for variables and function names.</li>
+      <li><strong>PascalCase</strong> — every word capitalised, no separator. The convention for classes, types and React components.</li>
+      <li><strong>snake_case</strong> — all lowercase, joined by underscores. Python's convention for variables and functions, and common for database columns.</li>
+      <li><strong>CONSTANT_CASE</strong> — all uppercase, joined by underscores. The convention for constants and environment variables.</li>
+      <li><strong>kebab-case</strong> — all lowercase, joined by hyphens. The convention for URLs, CSS class names and command-line flags.</li>
+      <li><strong>dot.case</strong> — all lowercase, joined by dots. Seen in some config file keys and namespaced identifiers.</li>
+    </ul>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>No recognisable words.</strong> Input made only of separators, like <code>___---...</code>, has nothing to tokenise and shows an error rather than six empty boxes.</li>
+      <li><strong>Already in the target style is a no-op.</strong> Converting <code>userFirstName</code> to camelCase returns <code>userFirstName</code> unchanged — the tool tokenises first and rebuilds, so a correctly-cased input round-trips exactly.</li>
+      <li><strong>Acronyms next to a lowercase letter split correctly</strong> (<code>getUserID</code> → <code>get</code>, <code>User</code>, <code>ID</code>), but brand-style casing with no lowercase-to-uppercase rule to detect, like <code>iOS</code>, does not — see the FAQ.</li>
+      <li><strong>A single word with no boundary is unaffected</strong> by camelCase, snake_case or kebab-case (there is nothing to split or join), but CONSTANT_CASE and PascalCase still change its letter case.</li>
+      <li><strong>Non-Latin letters and emoji</strong> are kept as their own token (split at the nearest separator) rather than dropped, but the acronym/camelCase boundary detection only understands the Latin-letter case rules used above — mixed-script identifiers may need a manual check.</li>
+    </ul>
+
+    <h2>Do the same thing in code</h2>
+    <pre><code>// lodash
+_.camelCase('user_first_name');   // 'userFirstName'
+_.snakeCase('userFirstName');     // 'user_first_name'
+_.kebabCase('userFirstName');     // 'user-first-name'
+
+# Python
+"user_first_name".title().replace("_", "")  # crude PascalCase, no acronym handling</code></pre>
+    <p class="muted">Most languages' standard libraries do not include a full case converter — lodash (JavaScript) is the closest widely-used equivalent, and even it does not handle every acronym case this tool does.</p>
+  </Fragment>
+</ToolLayout>

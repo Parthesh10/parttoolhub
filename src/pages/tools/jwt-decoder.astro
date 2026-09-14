@@ -40,7 +40,7 @@ const faq = [
   },
   {
     q: 'What do exp, iat and nbf mean?',
-    a: '<code>iat</code> is when the token was issued, <code>exp</code> is when it expires, and <code>nbf</code> ("not before") is when it becomes valid — all three are Unix timestamps in seconds since 1970, which this tool converts to a readable UTC date and a relative time like "in 2 hours".',
+    a: '<code>iat</code> is when the token was issued, <code>exp</code> is when it expires, and <code>nbf</code> ("not before") is when it becomes valid — all three are Unix timestamps in seconds since 1970, which this tool converts to a readable UTC date and a relative time like "in 2 hours". To convert one by hand outside a token, use the <a href="/tools/unix-timestamp-converter">Unix Timestamp Converter</a>.',
   },
   {
     q: 'Why do I see three sections separated by dots?',
@@ -87,7 +87,7 @@ const faq = [
     <ul>
       <li><strong>The signature is never checked.</strong> Tokens with <code>"alg": "none"</code>, an empty third segment, or a signature made of random letters all decode normally. This tool tells you what a token says, not whether to trust it.</li>
       <li><strong>Wrong number of segments</strong> — <code>aaa.bbb</code> is reported as “{twoParts}”. Five segments (“{fiveParts}”) usually means a JWE, an encrypted token, which cannot be read without the key.</li>
-      <li><strong><code>exp</code> in milliseconds.</strong> RFC 7519 defines the timing claims in seconds. A 13-digit value from a library that used milliseconds is read as seconds and shows a date tens of thousands of years away. An <code>exp</code> written as a string is ignored, and no expiry is shown.</li>
+      <li><strong><code>exp</code> in milliseconds.</strong> RFC 7519 defines the timing claims in seconds. A 13-digit value from a library that used milliseconds is read as seconds and shows a date tens of thousands of years away — paste the raw number into the <a href="/tools/unix-timestamp-converter">Unix Timestamp Converter</a> with <em>Auto-detect</em> to see which unit it actually is. An <code>exp</code> written as a string is ignored, and no expiry is shown.</li>
       <li><strong>No <code>exp</code> claim</strong> — Expires shows “—” and no valid/expired verdict, because the token has no expiry.</li>
       <li><strong>Segments that are not JSON objects</strong> — a header that decodes but is not JSON gives “{notJson}”; a payload that is a JSON array rather than an object gives “{arrayPayload}”.</li>
       <li><strong>Your clock decides “expired”.</strong> A device clock that is a few minutes off will mis-report a token that is about to expire or has just been issued. Check the absolute UTC time shown next to it.</li>

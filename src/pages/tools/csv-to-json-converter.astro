@@ -1,0 +1,113 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import CsvToJsonTool from '../../components/tools/CsvToJsonTool.astro';
+import { toolBySlug } from '../../data/tools';
+import { csvToJson, SAMPLE_CSV } from '../../lib/csv-json';
+
+const tool = toolBySlug('csv-to-json-converter');
+
+// Worked example and every error message below come from the real engine at build time.
+const jsonSample = (csvToJson(SAMPLE_CSV) as { ok: true; output: string }).output;
+
+const err = (fn: () => { ok: true } | { ok: false; error: string }) => {
+  const r = fn();
+  return r.ok ? '' : r.error.replace(/\.$/, '');
+};
+const emptyErr = err(() => csvToJson(''));
+
+const raggedOut = (csvToJson('a,b,c\n1,2\n1,2,3,4', { indent: 0 }) as { ok: true; output: string }).output;
+const dupOut = (csvToJson('a,a\n1,2', { indent: 0 }) as { ok: true; output: string }).output;
+const leadingZeroOut = (csvToJson('zip\n00501\n90210', { indent: 0 }) as { ok: true; output: string }).output;
+const noHeaderOut = (csvToJson('1,2\n3,4', { indent: 0, hasHeader: false }) as { ok: true; output: string }).output;
+const quotedOut = (csvToJson('note\n"line one\nline two"', { indent: 0 }) as { ok: true; output: string }).output;
+
+const steps = [
+  'Paste CSV — with or without a header row.',
+  'Pick the <strong>Field separator</strong> if it is not a comma (semicolon and tab are common exports from European Excel and TSV files).',
+  'Leave <strong>First row is a header</strong> on to get an array of objects; untick it for an array of arrays.',
+  '<strong>Detect numbers, booleans and blanks</strong> turns <code>"28"</code> into <code>28</code> and an empty cell into <code>null</code> — untick it to keep every value as text.',
+  '<strong>Copy to clipboard</strong>, or <strong>Download .json</strong>.',
+];
+
+const faq = [
+  {
+    q: 'Does it handle commas and quotes inside a field?',
+    a: `Yes — a field wrapped in double quotes may contain the delimiter, a line break, or an escaped quote written as <code>""</code>, following RFC 4180. <code>"line one\\nline two"</code> in a single cell becomes <code>${quotedOut}</code> rather than being split into two rows.`,
+  },
+  {
+    q: 'Why does a ZIP code like 00501 stay in quotes in the JSON?',
+    a: `Number detection deliberately skips values with a leading zero, because converting <code>"00501"</code> to <code>501</code> would silently discard a real digit. <code>zip\\n00501\\n90210</code> becomes <code>${leadingZeroOut}</code> — the first ZIP stays text, the second becomes a number, matching how each one is actually meant to be used.`,
+  },
+  {
+    q: 'What happens with duplicate column names?',
+    a: `The last column with that name wins for each row, the same way a JavaScript or Python object handles a repeated key — <code>a,a\\n1,2</code> becomes <code>${dupOut}</code>, not an array of two values. Rename duplicate columns before converting if you need both.`,
+  },
+  {
+    q: 'What if my CSV has no header row?',
+    a: `Untick <strong>First row is a header</strong> and every row becomes an array instead of an object: <code>1,2\\n3,4</code> becomes <code>${noHeaderOut}</code>.`,
+  },
+];
+---
+
+<ToolLayout {tool} {steps} {faq}>
+  <CsvToJsonTool />
+
+  <Fragment slot="content">
+    <h2>Why a real parser instead of splitting on commas</h2>
+    <p>
+      CSV looks simple enough to parse with <code>line.split(',')</code> until a field itself contains a comma — a full name
+      like "Hopper, Grace", an address, or a quoted number with a thousands separator. RFC 4180 handles this by allowing a
+      field to be wrapped in double quotes, inside which a comma, a line break, or an escaped <code>""</code> are all just
+      part of the value. A naive split breaks on all three.
+    </p>
+    <p>
+      This tool implements that quoting rule directly (not a regular expression, which cannot correctly track "am I
+      inside quotes right now" across a comma or a newline) and turns each row into a JSON object keyed by the header —
+      or a plain array, if your CSV has no header row. Going the other way, the
+      <a href="/tools/json-to-csv-converter">JSON to CSV Converter</a> turns a JSON array back into a spreadsheet-ready file.
+    </p>
+
+    <h2>Example</h2>
+    <p>This CSV, including a value that itself contains a comma:</p>
+    <pre><code>{SAMPLE_CSV}</code></pre>
+    <p>becomes:</p>
+    <pre><code>{jsonSample}</code></pre>
+
+    <h2>Options explained</h2>
+    <ul>
+      <li><strong>Field separator: Comma / Semicolon / Tab</strong> — semicolon is common in CSV exported by Excel in
+        European locales that use a comma as the decimal separator; tab is a plain TSV file.</li>
+      <li><strong>First row is a header</strong> — on, each row becomes an object keyed by the header row; off, each row
+        becomes a plain array in column order.</li>
+      <li><strong>Detect numbers, booleans and blanks</strong> — on, a cell that looks like a whole number or decimal
+        becomes a JSON number, <code>true</code>/<code>false</code> become booleans, and an empty cell becomes
+        <code>null</code>; off, every cell stays a JSON string exactly as written.</li>
+      <li><strong>Indent: 2 spaces / 4 spaces / Minified</strong> sets the output layout, the same as the JSON Formatter.</li>
+    </ul>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>No content at all</strong> stops with "{emptyErr}" rather than returning an empty array silently.</li>
+      <li><strong>Ragged rows are handled, not rejected.</strong> A row with fewer cells than the header fills the missing
+        ones with <code>null</code> (or an empty string, with type detection off); a row with more cells than the header
+        has the extra ones dropped. <code>a,b,c</code> with rows of 2 and 4 cells becomes <code>{raggedOut}</code>.</li>
+      <li><strong>Duplicate column names</strong> — see the FAQ.</li>
+      <li><strong>Leading-zero numbers are kept as text</strong> — see the FAQ; this is a deliberate choice, not a
+        limitation of the number detection.</li>
+      <li><strong>Blank lines are skipped</strong>, including a trailing blank line from a file that ends with a newline —
+        they do not become an empty object or an empty array in the output.</li>
+      <li><strong>Integers above 2<sup>53</sup> lose precision</strong>, the same JavaScript-number caveat as every other
+        JSON tool on this site: store very large IDs as quoted text (untick type detection, or quote the value in the CSV) if every digit matters.</li>
+    </ul>
+
+    <h2>Do the same thing in code</h2>
+    <pre><code>import csv, json
+
+with open("data.csv", newline="") as f:
+    rows = list(csv.DictReader(f))
+print(json.dumps(rows, indent=2))</code></pre>
+    <p class="muted">Python's <code>csv</code> module handles the same RFC 4180 quoting rules but keeps every value as a
+      string — you would add your own number/boolean conversion to match this tool's "Detect numbers, booleans and
+      blanks" option. In the browser, the closest widely-used equivalent is the <a href="https://www.papaparse.com/" rel="noopener">PapaParse</a> library.</p>
+  </Fragment>
+</ToolLayout>

@@ -49,6 +49,17 @@ event name in code; the test enforces the list.
 `tool_error` each fire at most once, so a page load can produce at most one of each regardless of
 how much the visitor types. That keeps event volume proportional to visits, not keystrokes.
 
+**Generator-shaped tools are the one deliberate exception.** A tool with no text input at all (the
+UUID Generator; any future tool that produces a value instead of transforming one) has no keystroke
+stream to dedupe against — clicking "Generate" again for a fresh batch is the entire point, and each
+click is as meaningful as the first, not a burst to collapse into one event. These tools drop the
+`fired`-set dedup on `tool_use`/`tool_result`/`tool_error` and fire on every deliberate click instead,
+while still never firing for their own automatic first paint on page load (an initial batch is shown
+immediately for a working first impression, but that isn't a "use" any more than another tool's empty
+starting state is). `input_source` is always `'sample'` for these tools — the closest existing enum
+value to "generated, not typed or pasted" — and `input_size` buckets the generated result's size
+instead of an input's, since there is no input to measure.
+
 Outbound links, scroll depth and file downloads are **not** custom events — GA4 enhanced measurement
 already reports them. Do not add `outbound_click` or `scroll_depth` events without first turning
 those off in the property, or every click will count twice.

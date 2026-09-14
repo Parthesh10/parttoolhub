@@ -1,0 +1,80 @@
+---
+/** CSV to JSON converter. Behaviour in ./csv-to-json.client.ts */
+---
+
+<section class="tool card" id="tool" data-tool="csv-to-json-converter">
+  <div class="panes">
+    <div class="pane">
+      <div class="pane-head">
+        <label for="input">Paste CSV</label>
+        <span class="stat" id="input-stat" aria-live="polite">0 characters</span>
+      </div>
+      <textarea
+        id="input"
+        rows="14"
+        spellcheck="false"
+        autocomplete="off"
+        placeholder={'name,age,city\nAda Lovelace,28,London'}
+      ></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+        <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+      </div>
+    </div>
+
+    <div class="pane">
+      <div class="pane-head">
+        <label for="output">JSON</label>
+        <span class="stat" id="output-stat" aria-live="polite"></span>
+      </div>
+      <textarea id="output" rows="14" readonly spellcheck="false" placeholder="Valid JSON appears here as you type"></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy to clipboard</button>
+        <button type="button" class="btn btn-sm" id="btn-download">Download .json</button>
+      </div>
+      <p class="status-banner" id="status" hidden></p>
+    </div>
+  </div>
+
+  <div class="options">
+    <fieldset>
+      <legend>Delimiter</legend>
+      <div class="row">
+        <label class="field">
+          <span>Field separator</span>
+          <select id="opt-delimiter">
+            <option value=",">Comma (,)</option>
+            <option value=";">Semicolon (;)</option>
+            <option value="tab">Tab</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Rows</legend>
+      <div class="checks">
+        <label><input type="checkbox" id="opt-header" checked /> First row is a header</label>
+        <label><input type="checkbox" id="opt-infer" checked /> Detect numbers, booleans and blanks</label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Indent</legend>
+      <div class="row">
+        <label class="field">
+          <span>Spacing</span>
+          <select id="opt-indent">
+            <option value="2">2 spaces</option>
+            <option value="4">4 spaces</option>
+            <option value="0">Minified</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+  </div>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./csv-to-json.client.ts"></script>

@@ -91,7 +91,7 @@ const faq = [
     <h2>Edge cases and common errors</h2>
     <ul>
       <li><strong>Object reprs are not literals.</strong> <code>datetime.datetime(2024, 1, 1)</code> stops with “{datetimeErr}”, <code>Decimal('1.5')</code> with “{decimalErr}”, and <code>&lt;User id=1&gt;</code> or the <code>&lt;class 'int'&gt;</code> inside a printed <code>defaultdict</code> at the <code>&lt;</code>. Convert those values to strings in Python before printing, or edit them out.</li>
-      <li><strong>Text that is already JSON fails</strong>: <code>{'{"a": true}'}</code> is reported as “{jsonInputErr}”, because <code>true</code> is not a Python name. Use the <a href="/tools/json-formatter">JSON Formatter</a> for that.</li>
+      <li><strong>Text that is already JSON fails</strong>: <code>{'{"a": true}'}</code> is reported as “{jsonInputErr}”, because <code>true</code> is not a Python name. Use the <a href="/tools/json-formatter">JSON Formatter</a> to work with it as JSON, or the <a href="/tools/json-to-python-dict">JSON to Python Dict</a> converter to go in the opposite direction.</li>
       <li><strong>Non-string keys follow <code>json.dumps</code>:</strong> <code>{"{1: 'a', 2.5: 'b', True: 'c', None: 'd'}"}</code> becomes <code>{mixedKeys}</code>. A tuple key such as <code>{"{(1, 2): 'a'}"}</code> is rejected with “{tupleKeyErr}”.</li>
       <li><strong><code>float('nan')</code>, <code>float('inf')</code>, <code>nan</code> and <code>inf</code> become <code>null</code></strong>, because JSON cannot express them. Python's own <code>json.dumps</code> would emit the non-standard <code>NaN</code> unless you pass <code>allow_nan=False</code>.</li>
       <li><strong>Duplicate keys keep the last value</strong>, exactly as Python does when it builds the dict.</li>

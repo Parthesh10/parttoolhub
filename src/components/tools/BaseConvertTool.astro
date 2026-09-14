@@ -1,0 +1,77 @@
+---
+/** Binary/octal/decimal/hex integer converter. Behaviour in ./base-convert.client.ts */
+---
+
+<section class="tool card" id="tool" data-tool="number-base-converter">
+  <div class="options">
+    <fieldset>
+      <legend>From base</legend>
+      <div class="row">
+        <label class="field">
+          <span>Input is</span>
+          <select id="opt-from">
+            <option value="auto">Auto-detect (0x / 0b / 0o prefix, else decimal)</option>
+            <option value="2">Binary</option>
+            <option value="8">Octal</option>
+            <option value="10">Decimal</option>
+            <option value="16">Hexadecimal</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Negative numbers</legend>
+      <div class="checks">
+        <label><input type="checkbox" id="opt-twos" /> Show as two's complement</label>
+      </div>
+      <div class="row" id="width-row" hidden>
+        <label class="field">
+          <span>Bit width</span>
+          <select id="opt-width">
+            <option value="8">8-bit</option>
+            <option value="16">16-bit</option>
+            <option value="32" selected>32-bit</option>
+            <option value="64">64-bit</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+  </div>
+
+  <div class="single">
+    <div class="pane-head">
+      <label for="input">Number</label>
+      <span class="stat" id="input-stat" aria-live="polite"></span>
+    </div>
+    <textarea id="input" rows="1" spellcheck="false" autocomplete="off" placeholder="0xCAFEBABE"></textarea>
+    <div class="pane-actions">
+      <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+      <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+    </div>
+  </div>
+
+  <p class="status-banner" id="status" hidden></p>
+
+  <div class="cc-grid" id="grid" hidden></div>
+
+  <p class="muted cc-note" id="note" hidden>Click any result to copy it.</p>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./base-convert.client.ts"></script>
+
+<style>
+  .single textarea { min-height: 44px; resize: none; }
+  .cc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.7rem; margin-top: 1rem; }
+  .cc-row {
+    display: flex; flex-direction: column; gap: 0.25rem; text-align: left; cursor: pointer;
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+    padding: 0.55rem 0.75rem; font: inherit; color: inherit; min-height: 44px;
+  }
+  .cc-row:hover, .cc-row:focus-visible { border-color: var(--accent); }
+  .cc-row .k { color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .cc-row .v { font-weight: 600; font-family: var(--mono); word-break: break-all; }
+  .cc-note { font-size: 0.85rem; margin-top: 0.75rem; }
+</style>

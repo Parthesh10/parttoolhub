@@ -52,6 +52,10 @@ tool pages in registry order.
 - [ ] `/privacy-policy`
 - [ ] `/terms`
 
+**Not yet in this list:** the 7 tool pages and the `/generators` hub added 2026-09-13/14 (see
+DEV-LIFECYCLE.md) — add them to the queue above once the original 18 are done, rather than treating
+this checklist as covering the whole current site.
+
 ## Mandatory rule: a new or changed public page is not done until it passes every check below
 
 A route that renders and a widget that works are the *start* of a page, not the end. **Every new or
@@ -258,7 +262,7 @@ tiny inline pre-paint `<script is:inline>` that reads `localStorage` and sets `d
 first paint, avoiding a flash of the wrong theme), and `Header.astro` (the toggle button, which cycles
 the three states, persists the choice, and keeps the `theme-color` meta tag in sync).
 
-**Category hub pages** (`/converters`, `/text-tools`, `/encoders`) are one dynamic route,
+**Category hub pages** (`/converters`, `/text-tools`, `/encoders`, `/generators`) are one dynamic route,
 `src/pages/[category].astro`, using `getStaticPaths()` over `CATEGORIES` — not one file per category.
 Adding a category means adding it to `categories.ts` *and* to the URL-structure list in `README.md`
 and this paragraph — `tests/registry.test.ts` checks both mention every hub.

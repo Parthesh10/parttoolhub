@@ -258,15 +258,31 @@ export function pythonToJson(src: string, opts: Partial<PyToJsonOptions> = {}): 
   }
 }
 
-/** The reverse direction: JSON text → Python literal source. */
-export function jsonToPython(src: string, indent: number = 4): { ok: true; output: string } | { ok: false; error: string } {
+export interface JsonToPyOptions {
+  indent: 2 | 4 | 'tab' | 0;
+  sortKeys: boolean;
+}
+
+export type JsonToPyResult = { ok: true; output: string } | { ok: false; error: string };
+
+/**
+ * The reverse direction: JSON text → Python literal source. `indent: 0` writes
+ * a single line (still valid Python, just not pretty-printed) rather than a
+ * byte-minified one — there is no equivalent of JSON minification for source code.
+ */
+export function jsonToPython(src: string, opts: Partial<JsonToPyOptions> = {}): JsonToPyResult {
+  const o: JsonToPyOptions = { indent: 4, sortKeys: false, ...opts };
+  if (!src.trim()) return { ok: false, error: 'Paste JSON to convert.' };
   let value: unknown;
   try {
     value = JSON.parse(src);
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
-  const pad = (d: number) => ' '.repeat(d * indent);
+  if (o.sortKeys) value = sortDeep(value);
+  const compact = o.indent === 0;
+  const unit = o.indent === 'tab' ? '\t' : ' '.repeat(compact ? 0 : o.indent);
+  const pad = (d: number) => unit.repeat(d);
   const repr = (v: unknown, d: number): string => {
     if (v === null) return 'None';
     if (v === true) return 'True';
@@ -278,10 +294,12 @@ export function jsonToPython(src: string, indent: number = 4): { ok: true; outpu
     }
     if (Array.isArray(v)) {
       if (!v.length) return '[]';
+      if (compact) return `[${v.map((x) => repr(x, 0)).join(', ')}]`;
       return `[\n${v.map((x) => pad(d + 1) + repr(x, d + 1)).join(',\n')}\n${pad(d)}]`;
     }
     const entries = Object.entries(v as Record<string, unknown>);
     if (!entries.length) return '{}';
+    if (compact) return `{${entries.map(([k, x]) => `${repr(k, 0)}: ${repr(x, 0)}`).join(', ')}}`;
     return `{\n${entries.map(([k, x]) => `${pad(d + 1)}${repr(k, d + 1)}: ${repr(x, d + 1)}`).join(',\n')}\n${pad(d)}}`;
   };
   return { ok: true, output: repr(value, 0) };

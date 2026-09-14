@@ -61,6 +61,35 @@ test('jsonToPython reverse direction', () => {
   assert.equal(r.output, "{\n    'a': [\n        1,\n        True,\n        None\n    ],\n    's': 'it\\'s'\n}");
 });
 
+test('jsonToPython: indent options (2, tab, single line)', () => {
+  const two = jsonToPython('{"a": 1}', { indent: 2 });
+  assert.ok(two.ok && two.output === "{\n  'a': 1\n}");
+  const tab = jsonToPython('{"a": [1, 2]}', { indent: 'tab' });
+  assert.ok(tab.ok && tab.output === "{\n\t'a': [\n\t\t1,\n\t\t2\n\t]\n}");
+  const single = jsonToPython('{"a": 1, "b": [1, 2]}', { indent: 0 });
+  assert.ok(single.ok && single.output === "{'a': 1, 'b': [1, 2]}");
+});
+
+test('jsonToPython: sortKeys sorts nested objects too', () => {
+  const r = jsonToPython('{"b": {"z": 1, "a": 2}, "a": 1}', { indent: 0, sortKeys: true });
+  assert.ok(r.ok && r.output === "{'a': 1, 'b': {'a': 2, 'z': 1}}");
+});
+
+test('jsonToPython: rejects invalid JSON and empty input', () => {
+  assert.ok(!jsonToPython("{'a': 1}").ok); // Python-style quotes are not valid JSON
+  assert.ok(!jsonToPython('{"a": 1,}').ok); // trailing comma is not valid JSON
+  const empty = jsonToPython('   ');
+  assert.ok(!empty.ok && /Paste JSON/.test(empty.error));
+});
+
+test('jsonToPython: JSON object key order can shift for integer-like keys', () => {
+  // JS reorders string keys that look like array indices ("1", "2", …) ahead of
+  // other keys, in ascending numeric order, regardless of how they were written
+  // in the source JSON — a quirk of JS objects, not of this tool's parser.
+  const r = jsonToPython('{"2": "b", "1": "a", "x": "c"}', { indent: 0 });
+  assert.ok(r.ok && r.output === "{'1': 'a', '2': 'b', 'x': 'c'}");
+});
+
 test('OrderedDict written as a list of pairs becomes an object', () => {
   assert.equal(mini("OrderedDict([('a', 1), ('b', 2)])"), '{"a":1,"b":2}');
   assert.equal(mini("OrderedDict([(1, 'x'), (None, 'y')])"), '{"1":"x","null":"y"}');

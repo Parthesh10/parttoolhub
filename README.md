@@ -20,8 +20,8 @@ and this README should stay consistent with it as the site grows.
 ## URL structure
 
 - `/` — full tool directory, grouped by category
-- `/<category>` — one hub page per category (`/converters`, `/text-tools`, `/encoders`), generated
-  from `src/data/categories.ts` by `src/pages/[category].astro`
+- `/<category>` — one hub page per category (`/converters`, `/text-tools`, `/encoders`,
+  `/generators`), generated from `src/data/categories.ts` by `src/pages/[category].astro`
 - `/tools/<slug>` — one page per tool. Every tool is reachable in at most 2 clicks from home
   (home → category hub → tool, or directly from the home directory).
 
@@ -46,6 +46,12 @@ src/
     dedupe-lines.ts          duplicate-line removal
     jwt-decode.ts            JWT header/payload/claims decoding (no verification)
     encoding.ts              Base64 and URL/percent encode-decode
+    timestamp.ts             Unix timestamp ↔ date/time, explicit UTC/local interpretation
+    csv-json.ts              CSV ↔ JSON (RFC 4180 quoting)
+    case-convert.ts          camelCase/PascalCase/snake_case/CONSTANT_CASE/kebab-case/dot.case
+    color-convert.ts         HEX/RGB/HSL parsing, conversion, WCAG contrast
+    base-convert.ts          binary/octal/decimal/hex (BigInt, exact past 2^53)
+    uuid-generate.ts         UUID v4/v7 generation (Web Crypto API)
   analytics.d.ts          ← type of window.pth, the site's one analytics entry point
   layouts/
     Base.astro             ← <head>: canonical/OG/Twitter/JSON-LD, header, footer, ad + GA loaders,

@@ -1,0 +1,57 @@
+---
+/** HEX/RGB/HSL color converter. Behaviour in ./color-convert.client.ts */
+---
+
+<section class="tool card" id="tool" data-tool="color-converter">
+  <div class="single">
+    <div class="pane-head">
+      <label for="input">Color (hex, rgb, or hsl)</label>
+      <span class="stat" id="input-stat" aria-live="polite"></span>
+    </div>
+    <div class="color-input-row">
+      <span class="swatch" id="swatch" hidden aria-hidden="true"></span>
+      <textarea id="input" rows="1" spellcheck="false" autocomplete="off" placeholder="#3366ff"></textarea>
+    </div>
+    <div class="pane-actions">
+      <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+      <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+    </div>
+  </div>
+
+  <p class="status-banner" id="status" hidden></p>
+
+  <div class="cc-grid" id="grid" hidden></div>
+
+  <p class="muted cc-note" id="note" hidden>Click any result to copy it.</p>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./color-convert.client.ts"></script>
+
+<style>
+  .single textarea { min-height: 44px; resize: none; }
+  .color-input-row { display: flex; align-items: stretch; gap: 0.6rem; }
+  .color-input-row textarea { flex: 1; }
+  .swatch {
+    display: block; width: 44px; height: 44px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); flex: none; background-image:
+      linear-gradient(45deg, #8884 25%, transparent 25%), linear-gradient(-45deg, #8884 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #8884 75%), linear-gradient(-45deg, transparent 75%, #8884 75%);
+    background-size: 12px 12px; background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+  }
+  .cc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.7rem; margin-top: 1rem; }
+  .cc-row {
+    display: flex; flex-direction: column; gap: 0.25rem; text-align: left; cursor: pointer;
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+    padding: 0.55rem 0.75rem; font: inherit; color: inherit; min-height: 44px;
+  }
+  .cc-row:hover, .cc-row:focus-visible { border-color: var(--accent); }
+  .cc-row.no-copy { cursor: default; }
+  .cc-row.no-copy:hover, .cc-row.no-copy:focus-visible { border-color: var(--border); }
+  .cc-row .k { color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .cc-row .v { font-weight: 600; font-family: var(--mono); word-break: break-all; }
+  .cc-row .v.pass { color: var(--success); }
+  .cc-row .v.fail { color: var(--danger); }
+  .cc-note { font-size: 0.85rem; margin-top: 0.75rem; }
+</style>

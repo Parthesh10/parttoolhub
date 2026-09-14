@@ -25,7 +25,7 @@ export const CATEGORIES: Category[] = [
     blurb: 'Reshape data from one form into another without leaving the browser.',
     intro: [
       'These tools take data that is already correct and change its <em>shape</em>: a column of IDs into a comma list for a SQL <code>IN</code> clause, a minified API response into indented JSON you can read, a printed Python dict into JSON a config file will accept. None of them alter the values themselves, and each one shows a counter or a status line so you can see what went in and what came out.',
-      'Which one you need depends on where the data is going. Moving values between a spreadsheet and code, use <a href="/tools/column-to-comma-separated-list">Column to Comma Separated List</a> or its reverse, <a href="/tools/comma-separated-list-to-column">Comma Separated List to Column</a> — they hand off to each other with one click. If a JSON payload will not parse, the <a href="/tools/json-formatter">JSON Formatter</a> reports the line and column of the fault. If the text only <em>looks</em> like JSON because it came from Python (single quotes, <code>True</code>, <code>None</code>), start with <a href="/tools/python-dict-to-json">Python Dict to JSON</a> instead.',
+      'Which one you need depends on where the data is going. Moving values between a spreadsheet and code, use <a href="/tools/column-to-comma-separated-list">Column to Comma Separated List</a> or its reverse, <a href="/tools/comma-separated-list-to-column">Comma Separated List to Column</a> — they hand off to each other with one click. If a JSON payload will not parse, the <a href="/tools/json-formatter">JSON Formatter</a> reports the line and column of the fault. If the text only <em>looks</em> like JSON because it came from Python (single quotes, <code>True</code>, <code>None</code>), start with <a href="/tools/python-dict-to-json">Python Dict to JSON</a> instead — or go the other way with <a href="/tools/json-to-python-dict">JSON to Python Dict</a>.',
     ],
   },
   {
@@ -46,6 +46,16 @@ export const CATEGORIES: Category[] = [
     intro: [
       'Encoding turns bytes or text into a form that survives a channel with rules about which characters are allowed — a URL, an HTTP header, a JSON string. None of it is encryption: every encoding here is reversible with no key, which is exactly why a decoder is safe to run in your browser and why it can never tell you whether a token is genuine, only what it says.',
       'Decode a <a href="/tools/jwt-decoder">JWT</a> when an API call returns 401 and you want to see the claims and expiry the server saw. Use <a href="/tools/base64-encode-decode">Base64</a> for <code>Authorization: Basic</code> headers, data URIs and anything that arrived as a block of letters ending in <code>=</code>; a JWT\'s segments are Base64URL, so the two tools overlap deliberately. Use <a href="/tools/url-encode-decode">URL encode/decode</a> for query-string values — the most common mistake it prevents is running a whole URL through component encoding and escaping the slashes that make it a URL.',
+    ],
+  },
+  {
+    slug: 'generators',
+    name: 'Generators',
+    description: 'Generate UUIDs and other values you need on demand, right in your browser — nothing predictable, nothing sent anywhere.',
+    blurb: 'Produce a random or structured value on demand, instead of converting one you already have.',
+    intro: [
+      'Everything else on this site starts from something you paste; these tools start from nothing and hand you a value instead — a random identifier for a new database row, a batch of test IDs, a placeholder to fill in a form. What they generate is either genuinely random (drawn from your browser\'s cryptographically secure random number generator, the same source TLS and password managers use) or built from a stated, checkable rule, never from a predictable counter.',
+      'Use the <a href="/tools/uuid-generator">UUID Generator</a> when you need a unique identifier: version 4 for a plain random ID with no hidden structure, or version 7 when the ID also needs to sort roughly by creation time, which matters for database primary keys and anywhere insertion order should still be recoverable from the ID itself.',
     ],
   },
 ];
