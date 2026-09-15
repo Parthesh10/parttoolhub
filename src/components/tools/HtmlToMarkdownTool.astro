@@ -1,0 +1,57 @@
+---
+/** HTML source → Markdown. Behaviour in ./html-to-markdown.client.ts */
+---
+
+<section class="tool card" id="tool" data-tool="html-to-markdown">
+  <div class="panes">
+    <div class="pane">
+      <div class="pane-head">
+        <label for="input">HTML</label>
+        <span class="stat" id="input-stat" aria-live="polite">0 characters</span>
+      </div>
+      <textarea
+        id="input"
+        rows="18"
+        spellcheck="false"
+        autocomplete="off"
+        placeholder={'<h2>Title</h2>\n<p>Some <strong>bold</strong> text and a <a href="https://example.com">link</a>.</p>\n<ul><li>first</li><li>second</li></ul>'}
+      ></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+        <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+      </div>
+    </div>
+
+    <div class="pane">
+      <div class="pane-head">
+        <label for="output">Markdown</label>
+        <span class="stat" id="output-stat" aria-live="polite"></span>
+      </div>
+      <textarea id="output" rows="18" readonly spellcheck="false" placeholder="Markdown appears here as you type"></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy Markdown</button>
+        <button type="button" class="btn btn-sm" id="btn-download">Download .md</button>
+      </div>
+      <p class="status-banner" id="status" hidden></p>
+    </div>
+  </div>
+
+  <div class="options">
+    <fieldset>
+      <legend>Lists</legend>
+      <div class="row">
+        <label class="field">
+          <span>Bullet character</span>
+          <select id="opt-bullet">
+            <option value="-">- (hyphen)</option>
+            <option value="*">* (asterisk)</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+  </div>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./html-to-markdown.client.ts"></script>

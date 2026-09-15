@@ -1,0 +1,136 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import HtmlToMarkdownTool from '../../components/tools/HtmlToMarkdownTool.astro';
+import { toolBySlug } from '../../data/tools';
+import { htmlToMarkdown, SAMPLE_HTML } from '../../lib/html-to-markdown';
+
+const tool = toolBySlug('html-to-markdown');
+
+// Every example below is produced by the real engine at build time.
+const md = (html: string) => htmlToMarkdown(html).markdown;
+const sample = htmlToMarkdown(SAMPLE_HTML);
+const s = sample.stats;
+
+const unclosed = md('<p>one<p>two<li>stray</li>three</b>');
+const junk = md('<style>p{color:red}</style><script>alert(1)</script><!-- note --><p>kept</p>');
+const whitespace = md('<p>\n  lots   of\n\n  space\n</p><pre>  keep\n   this</pre>');
+const escaped = md('<p>2 * 3, a_b, _x_, a[b], `t`, &lt;tag&gt;</p>');
+const lineStart = md('<p>- one<br>2. two<br># three</p>');
+const styled = md('<p><span style="font-weight:700">bold</span> <span style="font-style:italic">italic</span> <span style="font-family:Consolas">code</span></p>');
+const table = htmlToMarkdown('<table><tr><td>a</td><td>b</td></tr><tr><td>1</td><td>x | y</td></tr></table>');
+const langFence = md('<pre><code class="language-python">print("hi")</code></pre>');
+const innerTicks = md('<pre>echo ``` done</pre>');
+const unsafe = htmlToMarkdown('<p><a href="javascript:alert(1)">click</a></p>');
+const noSrc = htmlToMarkdown('<p><img alt="missing"></p>');
+const entities = md('<p>&amp; &lt; &copy; &#x1F600;</p>');
+const plain = htmlToMarkdown('no tags here');
+if (!/^\\- one  \n2\\\. two  \n\\# three$/.test(lineStart)) throw new Error('page claims line-start characters are escaped after <br>');
+if (!plain.plain) throw new Error('page claims tag-less input is detected');
+if (unsafe.markdown !== 'click') throw new Error('page claims javascript: links are dropped');
+
+const steps = [
+  'Paste HTML into the left box — page source, a CMS export, an email template, the output of a rich-text editor. A fragment is fine; it does not need <code>&lt;html&gt;</code> or <code>&lt;body&gt;</code>.',
+  'The Markdown appears on the right as you type. The line under it lists anything that was approximated (a table with no header row, an image with no address).',
+  'Pick a <strong>Bullet character</strong> if your style guide wants <code>*</code> rather than <code>-</code>.',
+  '<strong>Copy Markdown</strong> (or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the input box) or <strong>Download .md</strong>.',
+];
+
+const faq = [
+  {
+    q: 'Which HTML elements are converted?',
+    a: 'Headings h1–h6, paragraphs, line breaks, bold and italic (b, strong, i, em, and font-weight or font-style in a style attribute), strikethrough (s, del, line-through), inline code and pre blocks (with a language from a class="language-x"), links, images, ordered and unordered lists with nesting and start numbers, task-list checkboxes, tables with alignment, block quotes and horizontal rules. Everything else — div, span, section, article, font, center — is transparent: its text is kept, the tag is not.',
+  },
+  {
+    q: 'What happens to scripts, styles, comments and broken markup?',
+    a: 'script, style, noscript, svg, iframe and template elements are removed with their contents; comments and doctype declarations are dropped. Unclosed tags are closed where a browser would close them (a second <p> closes the first, a heading closes an open paragraph), stray closing tags are ignored, and attribute quotes may be missing. The output never contains a script even if the input did.',
+  },
+  {
+    q: 'Why are some characters escaped with a backslash?',
+    a: 'Because in Markdown they mean something. A literal asterisk would start italics, a square bracket a link, a hash at the start of a line a heading, a hyphen a bullet, “1.” a numbered list. The converter escapes those where they would be misread and leaves them where they would not — an underscore inside snake_case_name stays as it is, a hash in the middle of a sentence too.',
+  },
+  {
+    q: 'Does it convert a whole web page?',
+    a: 'It converts whatever HTML you give it, so a full page includes the navigation, sidebars and footer as text and lists. For an article, copy the HTML of the article element only, or paste the rendered page into Google Docs to Markdown, which reads the formatted copy rather than the source. Nothing is fetched by URL: the page has no server to fetch with.',
+  },
+  {
+    q: 'Is the HTML uploaded anywhere?',
+    a: 'No. Parsing and conversion run in JavaScript in this page; there is no server. Nothing you paste leaves your browser.',
+  },
+];
+---
+
+<ToolLayout {tool} {steps} {faq}>
+  <HtmlToMarkdownTool />
+
+  <Fragment slot="content">
+    <h2>What this converter does with real-world HTML</h2>
+    <p>
+      HTML in the wild is rarely the clean semantic kind. Rich-text editors emit
+      <code>&lt;span style="font-weight:700"&gt;</code> instead of <code>&lt;strong&gt;</code>, CMS exports leave
+      unclosed tags, page source carries scripts, styles and comments, and whitespace is scattered across lines the
+      browser would collapse. This converter parses HTML the tolerant way a browser does, reads inline styles as well
+      as tag names, drops what carries no content, and writes GitHub-flavored Markdown that keeps the structure:
+      headings, lists with their nesting, tables, code with its language, links, images and quotes.
+    </p>
+    <p>
+      The output is meant to be read back as written, so characters that Markdown would interpret are escaped only
+      where they would be interpreted. It is a converter, not a page cleaner: navigation and footers in a full page are
+      converted along with the article. For text copied from Google Docs, Word or a web page — where the formatting
+      lives on the clipboard, not in source you can see — <a href="/tools/google-docs-to-markdown">Google Docs to
+      Markdown</a> runs the same converter on a formatted paste.
+    </p>
+
+    <h2>Example</h2>
+    <p>
+      <strong>Load sample</strong> inserts release notes as semantic HTML: {s.headings} headings, a paragraph with
+      <code>&lt;strong&gt;</code>, <code>&lt;em&gt;</code>, <code>&lt;code&gt;</code> and a link, a nested list, a
+      numbered list, a quote, a fenced code block with a language class, a table and an image. It becomes:
+    </p>
+    <pre><code>{sample.markdown}</code></pre>
+
+    <h2>Options explained</h2>
+    <ul>
+      <li><strong>Bullet character</strong> — <code>-</code> (default) or <code>*</code> for unordered list items. Nested items are indented by two spaces under a bullet and by the width of the number under a numbered item.</li>
+      <li><strong>Load sample</strong> inserts the HTML described above; <strong>Clear</strong> empties both boxes.</li>
+      <li><strong>Copy Markdown</strong> and <strong>Download .md</strong> take the right-hand box as it is; <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the input box copies.</li>
+      <li>The <strong>status line</strong> reports approximations: a table with no <code>&lt;th&gt;</code> row (the first row is promoted), an image with no <code>src</code> (dropped), underline (kept as plain text), a Google Docs redirect link (unwrapped), a <code>javascript:</code> link (text kept, address dropped).</li>
+    </ul>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>Unclosed and stray tags.</strong> <code>&lt;p&gt;one&lt;p&gt;two&lt;li&gt;stray&lt;/li&gt;three&lt;/b&gt;</code> becomes <code>{unclosed.replace(/\n\n/g, ' ⏎ ')}</code>: the second <code>&lt;p&gt;</code> closes the first, the orphan <code>&lt;li&gt;</code> is a paragraph, the closing <code>&lt;/b&gt;</code> with no opener is ignored.</li>
+      <li><strong>Scripts, styles and comments</strong> vanish with their contents: a <code>&lt;style&gt;</code>, a <code>&lt;script&gt;</code> and a comment before <code>&lt;p&gt;kept&lt;/p&gt;</code> give <code>{junk}</code>.</li>
+      <li><strong>Whitespace</strong> collapses as in a browser, except inside <code>&lt;pre&gt;</code>: <code>{whitespace.replace(/\n/g, '⏎')}</code>.</li>
+      <li><strong>Inline styles count.</strong> <code>font-weight:700</code>, <code>font-style:italic</code> and a monospace <code>font-family</code> on a span give <code>{styled}</code> — the same result as <code>&lt;strong&gt;</code>, <code>&lt;em&gt;</code> and <code>&lt;code&gt;</code>. A weight of 600 or more is bold; 500 is not.</li>
+      <li><strong>Escaping.</strong> <code>2 * 3, a_b, _x_, a[b], `t`, &amp;lt;tag&amp;gt;</code> gives <code>{escaped}</code>. After a <code>&lt;br&gt;</code>, a line that would start a list, heading or quote is escaped too: <code>{lineStart.replace(/  \n/g, ' ⏎ ')}</code>.</li>
+      <li><strong>Tables without a header row.</strong> Markdown tables need one, so the first row is promoted and the status line says so: <code>{table.markdown.replace(/\n/g, ' ⏎ ')}</code>. A pipe inside a cell is escaped.</li>
+      <li><strong>Code blocks</strong> keep their language from <code>class="language-python"</code> (<code>{langFence.replace(/\n/g, '⏎')}</code>) and use a longer fence when the code itself contains three backticks: <code>{innerTicks.replace(/\n/g, '⏎')}</code>.</li>
+      <li><strong>Unsafe links</strong>: <code>&lt;a href="javascript:alert(1)"&gt;click&lt;/a&gt;</code> gives <code>{unsafe.markdown}</code> — the text without the address — and the status line says “{unsafe.notes[0]}”.</li>
+      <li><strong>An image with no <code>src</code></strong> is dropped and noted: “{noSrc.notes[0]}”.</li>
+      <li><strong>Entities</strong> are decoded, named and numeric: <code>&amp;amp; &amp;lt; &amp;copy; &amp;#x1F600;</code> gives <code>{entities}</code>. An entity the converter does not know is left as typed.</li>
+      <li><strong>No tags at all</strong> is treated as one paragraph of text with escaping applied, and the status line says so. <strong>Empty input</strong> gives empty output.</li>
+      <li><strong>Size</strong>: 300 KB of HTML (thousands of headings, lists and tables) converts in well under a second; a run of thousands of stray <code>&lt;</code> characters does not slow the parser.</li>
+    </ul>
+
+    <h2>Do the same thing in code</h2>
+    <h3>Shell (pandoc)</h3>
+    <pre><code>pandoc -f html -t gfm --wrap=none page.html -o page.md
+curl -s https://example.com/post | pandoc -f html -t gfm --wrap=none</code></pre>
+    <h3>JavaScript (Node.js)</h3>
+    <pre><code>{`import TurndownService from "turndown";
+import { gfm } from "turndown-plugin-gfm";
+
+const td = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced" });
+td.use(gfm); // tables, strikethrough, task lists
+const markdown = td.turndown(html);`}</code></pre>
+    <h3>Python</h3>
+    <pre><code>{`from markdownify import markdownify as md
+markdown = md(html, heading_style="ATX", bullets="-")`}</code></pre>
+    <p>
+      Those libraries read tag names; none of them treats <code>font-weight:700</code> as bold without a custom rule,
+      which is the difference that matters for editor and Docs output. To go the other way, from Markdown to a
+      formatted document, use <a href="/tools/markdown-to-google-docs">Markdown to Google Docs</a>; to remove the
+      formatting entirely, <a href="/tools/markdown-to-plain-text">Markdown to Plain Text</a>.
+    </p>
+  </Fragment>
+</ToolLayout>

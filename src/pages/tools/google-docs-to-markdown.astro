@@ -1,0 +1,154 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import GoogleDocsToMarkdownTool from '../../components/tools/GoogleDocsToMarkdownTool.astro';
+import { toolBySlug } from '../../data/tools';
+import { htmlToMarkdown, SAMPLE_DOCS_HTML } from '../../lib/html-to-markdown';
+
+const tool = toolBySlug('google-docs-to-markdown');
+
+// Every example below is produced by the real engine at build time.
+const md = (html: string) => htmlToMarkdown(html).markdown;
+const sample = htmlToMarkdown(SAMPLE_DOCS_HTML);
+const s = sample.stats;
+// The shape of what Docs puts on the clipboard, abridged from the sample: the wrapper, one styled run, the redirect link.
+const docsShape = `<b style="font-weight:normal;" id="docs-internal-guid-…">
+  <h1 dir="ltr" style="…"><span style="font-size:20pt;font-family:Arial;font-weight:400;…">Q3 launch plan</span></h1>
+  <p dir="ltr" style="…">
+    <span style="font-size:11pt;font-weight:400;…">We ship on </span>
+    <span style="font-size:11pt;font-weight:700;…">14 October</span>
+    …
+    <a href="https://www.google.com/url?q=https://example.com/wiki/billing-v2&amp;sa=D&amp;source=editors&amp;ust=…&amp;usg=…">
+      <span style="…text-decoration:underline;…">rollout page</span>
+    </a>
+  </p>
+  …
+</b>`;
+
+const wrapper = md('<b style="font-weight:normal"><p>plain</p></b>');
+const boldSplit = md('<p><span style="font-weight:700">Hello</span><span style="font-weight:700"> world</span><span style="font-weight:400">!</span></p>');
+const redirect = md('<p><a href="https://www.google.com/url?q=https://example.com/a%3Fx%3D1&amp;sa=D&amp;usg=AOvVaw0">link</a></p>');
+const ariaNested = md('<ul><li aria-level="1">Parent</li><ul><li aria-level="2">Child</li></ul></ul>');
+const courier = md('<p><span style="font-family:\'Courier New\',monospace">git status</span></p>');
+const underline = htmlToMarkdown('<p><u>underlined</u> and <span style="text-decoration:line-through">struck</span></p>');
+const bigTitle = md('<p><span style="font-size:26pt">Document title</span></p>');
+const escaped = md('<p>Version 2 * 3, a_b, and #hashtag</p>');
+const emptyParas = md('<p>one</p><p><span></span></p><p><span></span></p><p>two</p>');
+const checkbox = md('<ul><li>☑ done</li><li>☐ todo</li></ul>');
+const plainPaste = htmlToMarkdown('just words');
+if (wrapper !== 'plain') throw new Error('page claims the font-weight:normal wrapper is not bold');
+if (boldSplit !== '**Hello world**!') throw new Error('page claims split bold spans merge');
+if (redirect !== '[link](https://example.com/a?x=1)') throw new Error('page claims redirect links unwrap');
+if (!plainPaste.plain) throw new Error('page claims plain pastes are detected');
+
+const steps = [
+  'In Google Docs (or Word, Notion, Confluence, a web page), select the text you want and copy it with <kbd>Ctrl</kbd>+<kbd>C</kbd>.',
+  'Click the left box and paste with <kbd>Ctrl</kbd>+<kbd>V</kbd>. The box shows the paste with its formatting; the Markdown appears on the right at once.',
+  'Read the line under the Markdown: it lists what was unwrapped, dropped or approximated (redirect links, underline, a table with no header row).',
+  '<strong>Copy Markdown</strong> (or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the box) and paste into your README, wiki, issue or note. <strong>Download .md</strong> saves a file.',
+];
+
+const faq = [
+  {
+    q: 'Google Docs can copy as Markdown itself — why use this?',
+    a: 'It can, since July 2024: Tools → Preferences → Enable Markdown, then select text and right-click → Copy as Markdown, or File → Download → Markdown for a whole document. If that option is available to you, it is the shortest route. This page is for when it is not (an account or Workspace policy without it), for text copied from Word, Notion, Confluence or a web page, which Docs cannot help with, and for seeing the Markdown before it lands somewhere.',
+  },
+  {
+    q: 'Why does the output have no headings or bold when I paste?',
+    a: 'Because the paste carried no formatting. A copy from the document body carries an HTML version of the text with the styles in it; a copy from a plain-text field, a terminal, or a “paste without formatting” action carries only the words. The status line says so when that happens. Copy again from the document itself, and paste with a normal Ctrl+V, not Ctrl+Shift+V.',
+  },
+  {
+    q: 'Do tables, nested lists and links survive?',
+    a: 'Yes. Tables become Markdown tables; Docs marks header cells bold rather than as headers, so the first row is promoted and its bold removed. Nested lists keep their depth, whether the paste nests them properly or the Docs way (a list beside an item, with aria-level). Links are unwrapped from the google.com/url redirect Docs puts around every address, so the Markdown points at the real page.',
+  },
+  {
+    q: 'What gets lost?',
+    a: 'Anything Markdown cannot say: underline, colours, font sizes, alignment, and Docs’ Title and Subtitle styles (they arrive as large text, not as headings, so they become paragraphs — add a # yourself). Images are kept as links to the address Docs provides. Comments, footnotes and suggestions are not part of what Docs copies, so they never reach this page.',
+  },
+  {
+    q: 'Is my document uploaded anywhere?',
+    a: 'No. The paste goes into a box on this page and JavaScript in the page reads it; there is no server. Nothing you paste leaves your browser, and reloading the page discards it.',
+  },
+];
+---
+
+<ToolLayout {tool} {steps} {faq}>
+  <GoogleDocsToMarkdownTool />
+
+  <Fragment slot="content">
+    <h2>What a Google Docs copy really contains</h2>
+    <p>
+      Copy a paragraph in Google Docs and the clipboard holds two things: the plain words, and an HTML version of them
+      that Docs generates on the fly. That HTML is not the tidy <code>&lt;strong&gt;</code> and <code>&lt;h2&gt;</code>
+      a web page would use. Bold is a <code>&lt;span style="font-weight:700"&gt;</code>; the whole copy sits inside a
+      <code>&lt;b&gt;</code> tag whose style says <em>not</em> bold; every link goes through a
+      <code>google.com/url?q=</code> redirect; a nested list is a second list placed <em>beside</em> the parent item
+      with an <code>aria-level</code> attribute; and one bold phrase can arrive as three spans. A converter that only
+      looks at tag names sees none of it.
+    </p>
+    <p>
+      This tool reads the inline styles as well as the tags, so it produces the Markdown you would have written by hand:
+      <code>#</code> headings, <code>**bold**</code>, <code>*italic*</code>, <code>~~strikethrough~~</code>,
+      <code>`code`</code> for Courier New, real link addresses, nested bullets and numbers, tables with a header row.
+      It says what it had to approximate. The reverse trip is <a href="/tools/markdown-to-google-docs">Markdown to
+      Google Docs</a>; when the paste is going into a chat rather than a README,
+      <a href="/tools/markdown-to-plain-text">Markdown to Plain Text</a> takes the result from here.
+    </p>
+
+    <h2>Example</h2>
+    <p>
+      <strong>Load sample</strong> fills the box with what Docs puts on the clipboard for a short launch plan — {s.headings}
+      headings, a paragraph with bold, italic, monospace and a link, a nested list, and a table. Abridged, the HTML looks like:
+    </p>
+    <pre><code>{docsShape}</code></pre>
+    <p>The Markdown it becomes:</p>
+    <pre><code>{sample.markdown}</code></pre>
+    <p>
+      The status line for the sample reads: <em>{sample.notes.join(' ')}</em>
+    </p>
+
+    <h2>Options explained</h2>
+    <ul>
+      <li><strong>Paste from Google Docs</strong> is a formatted box, not a plain text field, which is what lets it receive the HTML flavour of a paste. You can also type or edit in it; the Markdown follows.</li>
+      <li><strong>Bullet character</strong> chooses <code>-</code> or <code>*</code> for unordered lists — both are valid Markdown; some style guides insist on one.</li>
+      <li><strong>Load sample</strong> inserts the Docs clipboard HTML shown above; <strong>Clear</strong> empties both sides.</li>
+      <li><strong>Copy Markdown</strong> and <strong>Download .md</strong> take the right-hand box as it is. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the paste box copies.</li>
+      <li>The <strong>status line</strong> lists every approximation: unwrapped redirect links, a first row promoted to table header, underline kept as plain text, Word list paragraphs converted by their glyph, an image with no address dropped.</li>
+    </ul>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>The Docs wrapper is not bold.</strong> Every Docs copy is wrapped in <code>&lt;b style="font-weight:normal"&gt;</code>. A tag-only converter bolds the whole document; here the style wins and <code>&lt;b style="font-weight:normal"&gt;&lt;p&gt;plain&lt;/p&gt;&lt;/b&gt;</code> gives <code>{wrapper}</code>.</li>
+      <li><strong>One bold phrase in several spans</strong> — <code>Hello</code> + <code> world</code> + <code>!</code> as three spans, the first two bold — merges into <code>{boldSplit}</code>, not <code>**Hello** **world**!</code>.</li>
+      <li><strong>Redirect links are unwrapped.</strong> <code>https://www.google.com/url?q=https://example.com/a%3Fx%3D1&amp;sa=D…</code> becomes <code>{redirect}</code>, with the address percent-decoded.</li>
+      <li><strong>Nested lists the Docs way.</strong> A <code>&lt;ul&gt;</code> placed beside an <code>&lt;li&gt;</code> with <code>aria-level="2"</code> becomes <code>{ariaNested.replace(/\n/g, ' ⏎ ')}</code>.</li>
+      <li><strong>Monospace is code.</strong> A span in Courier New (or Consolas, Menlo, Monaco, any font family containing “mono”) becomes <code>{courier}</code>. A whole paragraph in a monospace font becomes a fenced code block.</li>
+      <li><strong>Underline has no Markdown.</strong> <code>&lt;u&gt;underlined&lt;/u&gt;</code> and a line-through span give <code>{underline.markdown}</code>; the status line says “{underline.notes[0]}”.</li>
+      <li><strong>Title and Subtitle styles are not headings.</strong> Docs copies them as large text, so <code>{bigTitle}</code> comes out as a paragraph. Heading 1–6 styles do become <code>#</code> headings.</li>
+      <li><strong>Markdown-significant characters are escaped</strong> so the text reads as it did: <code>Version 2 * 3, a_b, and #hashtag</code> becomes <code>{escaped}</code> — the asterisk is escaped, the underscore inside a word is left alone, the hash mid-line needs nothing.</li>
+      <li><strong>Empty paragraphs collapse.</strong> Docs emits a <code>&lt;p&gt;</code> with an empty span for every blank line; <code>one</code>, two blank paragraphs, <code>two</code> become <code>{emptyParas.replace(/\n/g, '⏎')}</code>, one blank line.</li>
+      <li><strong>Checklists</strong> copied from Docs arrive as ☐ and ☑ characters and become <code>{checkbox.replace(/\n/g, ' ⏎ ')}</code>.</li>
+      <li><strong>Word pastes</strong> mark list items as paragraphs with a bullet glyph and an indent (<code>MsoListParagraph</code>); they are converted by that glyph and indent and flagged in the status line, since Word does not say where a list starts or ends.</li>
+      <li><strong>A paste with no formatting</strong> (from a plain text field, a terminal, or Ctrl+Shift+V) produces the words unchanged and a status line saying why.</li>
+      <li><strong>Size</strong>: a 300 KB paste (a long document) converts in well under a second. Comments, suggestions and footnotes are not copied by Docs, so they cannot appear here.</li>
+    </ul>
+
+    <h2>Do the same thing in code</h2>
+    <h3>In Google Docs itself</h3>
+    <pre><code>Tools → Preferences → tick "Enable Markdown"
+Select text → right-click → Copy as Markdown
+File → Download → Markdown (.md)         # the whole document</code></pre>
+    <h3>Shell (pandoc, from a downloaded .docx)</h3>
+    <pre><code>pandoc -f docx -t gfm --wrap=none document.docx -o document.md</code></pre>
+    <h3>JavaScript (browser)</h3>
+    <pre><code>{`// Read the HTML flavour of a paste, then convert it (turndown is the usual library).
+box.addEventListener("paste", (e) => {
+  const html = e.clipboardData.getData("text/html");
+  const markdown = new TurndownService({ headingStyle: "atx" }).turndown(html);
+});`}</code></pre>
+    <p>
+      None of those read Docs' inline styles: pandoc works from the .docx, not the clipboard, and turndown sees the
+      <code>font-weight:700</code> span as plain text unless you add a rule for it. For raw HTML source rather than a
+      paste, use <a href="/tools/html-to-markdown">HTML to Markdown</a>, which runs the same converter on text you type.
+    </p>
+  </Fragment>
+</ToolLayout>

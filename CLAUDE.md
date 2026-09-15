@@ -220,6 +220,17 @@ for Slack, WhatsApp and Google Chat, each checked against the app's own help pag
 (semantic tags plus the two inline styles Docs/Word keep: monospace on code, border on tables) and
 `summarize`. No Markdown dependency, by the one-script-per-tool rule.
 
+**`src/lib/html-to-markdown.ts` is the reverse direction**, shared by `Google Docs to Markdown` and
+`HTML to Markdown`: a tolerant HTML parser (auto-closing `<p>`/`<li>`/`<td>`, stray closers ignored,
+script/style/svg dropped) and a converter that reads inline *styles* as well as tags — bold is
+`font-weight ≥ 600`, code is a monospace `font-family`, and Google Docs' `<b style="font-weight:normal">`
+wrapper is therefore not bold. It unwraps `google.com/url?q=` redirect links, folds Docs' beside-the-
+item nested lists and `aria-level`, merges split spans, promotes a header-less table's first row, and
+returns `notes` the widgets show as the status line. `Google Docs to Markdown` takes its input from a
+`contenteditable` box: the browser's own paste inserts the clipboard's HTML flavour (handlers and
+scripts stripped by the browser), the script converts `innerHTML` on the next tick, and the box's
+colours are overridden in CSS because Docs stamps `color:#000000` on every run.
+
 Older tools (`ColumnToListTool.astro`, `ListToColumnTool.astro`) live directly under
 `src/components/` rather than `src/components/tools/` — a naming inconsistency from before the
 `tools/` subfolder convention was established, not a different pattern; new tools go in

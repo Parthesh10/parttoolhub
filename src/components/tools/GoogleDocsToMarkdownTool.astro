@@ -1,0 +1,89 @@
+---
+/** Formatted paste (Google Docs, Word, web) → Markdown. Behaviour in ./google-docs-to-markdown.client.ts */
+---
+
+<section class="tool card" id="tool" data-tool="google-docs-to-markdown">
+  <div class="panes">
+    <div class="pane">
+      <div class="pane-head">
+        <span class="pane-label" id="input-label">Paste from Google Docs (Ctrl+V)</span>
+        <span class="stat" id="input-stat" aria-live="polite">Nothing pasted yet</span>
+      </div>
+      <div
+        class="paste-box"
+        id="input"
+        contenteditable="true"
+        role="textbox"
+        aria-multiline="true"
+        aria-labelledby="input-label"
+        aria-describedby="paste-hint"
+        spellcheck="false"
+        data-placeholder="Select text in Google Docs, Word, Notion or a web page, copy it, click here and paste. The formatting comes with it."
+      ></div>
+      <p class="hint muted" id="paste-hint">The box keeps the formatting of your paste; the Markdown on the right is read from that formatting.</p>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+        <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+      </div>
+    </div>
+
+    <div class="pane">
+      <div class="pane-head">
+        <label for="output">Markdown</label>
+        <span class="stat" id="output-stat" aria-live="polite"></span>
+      </div>
+      <textarea id="output" rows="18" readonly spellcheck="false" placeholder="The Markdown appears here as soon as you paste"></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy Markdown</button>
+        <button type="button" class="btn btn-sm" id="btn-download">Download .md</button>
+      </div>
+      <p class="status-banner" id="status" hidden></p>
+    </div>
+  </div>
+
+  <div class="options">
+    <fieldset>
+      <legend>Lists</legend>
+      <div class="row">
+        <label class="field">
+          <span>Bullet character</span>
+          <select id="opt-bullet">
+            <option value="-">- (hyphen)</option>
+            <option value="*">* (asterisk)</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+  </div>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./google-docs-to-markdown.client.ts"></script>
+
+<style>
+  .pane-label { font-weight: 650; }
+  .paste-box {
+    min-height: 200px; height: 428px; max-height: 70vh; resize: vertical; overflow: auto;
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2);
+    padding: 0.75rem 0.9rem; font-size: 0.95rem; line-height: 1.5; cursor: text;
+  }
+  .paste-box:focus { outline: 2px solid var(--accent); outline-offset: -1px; background: var(--surface); }
+  .paste-box:empty::before { content: attr(data-placeholder); color: var(--text-muted); pointer-events: none; }
+  /* Pasted content keeps its inline styles for the converter to read, but Docs also stamps
+     color:#000000 and a white background on every run, which is unreadable in the dark theme.
+     Colours are display-only, so override them; the converter never looks at them. */
+  .paste-box :global(*) { color: inherit !important; background-color: transparent !important; }
+  .paste-box :global(a) { color: var(--accent) !important; }
+  /* Give the tags Docs leaves unstyled sensible sizes. */
+  .paste-box :global(h1) { font-size: 1.4rem; margin: 0.5em 0 0.3em; }
+  .paste-box :global(h2) { font-size: 1.2rem; margin: 0.5em 0 0.3em; }
+  .paste-box :global(h3), .paste-box :global(h4), .paste-box :global(h5), .paste-box :global(h6) { font-size: 1.05rem; margin: 0.5em 0 0.3em; }
+  .paste-box :global(p) { margin: 0 0 0.5em; }
+  .paste-box :global(ul), .paste-box :global(ol) { margin: 0 0 0.5em; padding-left: 1.5em; }
+  .paste-box :global(table) { border-collapse: collapse; margin: 0 0 0.5em; }
+  .paste-box :global(td), .paste-box :global(th) { border: 1px solid var(--border); padding: 0.2rem 0.5rem; }
+  .paste-box :global(img) { max-width: 100%; height: auto; }
+  .paste-box :global(pre) { white-space: pre-wrap; font-family: var(--mono); font-size: 0.85rem; }
+  .hint { font-size: 0.8rem; margin: 0.4rem 0 0; }
+</style>
