@@ -51,11 +51,11 @@ export const CATEGORIES: Category[] = [
   {
     slug: 'generators',
     name: 'Generators',
-    description: 'Generate UUIDs and other values you need on demand, right in your browser — nothing predictable, nothing sent anywhere.',
+    description: 'Generate UUIDs and strong passwords on demand, right in your browser — nothing predictable, nothing sent anywhere.',
     blurb: 'Produce a random or structured value on demand, instead of converting one you already have.',
     intro: [
-      'Everything else on this site starts from something you paste; these tools start from nothing and hand you a value instead — a random identifier for a new database row, a batch of test IDs, a placeholder to fill in a form. What they generate is either genuinely random (drawn from your browser\'s cryptographically secure random number generator, the same source TLS and password managers use) or built from a stated, checkable rule, never from a predictable counter.',
-      'Use the <a href="/tools/uuid-generator">UUID Generator</a> when you need a unique identifier: version 4 for a plain random ID with no hidden structure, or version 7 when the ID also needs to sort roughly by creation time, which matters for database primary keys and anywhere insertion order should still be recoverable from the ID itself.',
+      'Everything else on this site starts from something you paste; these tools start from nothing and hand you a value instead — a random identifier for a new database row, a password for a new account, a batch of test IDs. Everything here is genuinely random, drawn from your browser\'s cryptographically secure random number generator (the same source TLS and password managers use), never from <code>Math.random()</code> or a predictable counter.',
+      'Use the <a href="/tools/uuid-generator">UUID Generator</a> when you need a unique identifier: version 4 for a plain random ID with no hidden structure, or version 7 when the ID also needs to sort roughly by creation time, which matters for database primary keys and anywhere insertion order should still be recoverable from the ID itself. Use the <a href="/tools/password-generator">Password Generator</a> when the value is for a person to type or a password manager to store — it reports the real entropy in bits, not just a length, and can guarantee at least one of each character type you ask for.',
     ],
   },
 ];

@@ -325,3 +325,13 @@ test('robots.txt allows all crawlers and points at the sitemap on the canonical 
   assert.ok(robots.includes(`Sitemap: ${SITE.url}/sitemap-index.xml`), 'sitemap line');
   assert.ok(existsSync(resolve(dist, 'ads.txt')), 'ads.txt is published');
 });
+
+test('llms.txt lists every registered tool, linked to its canonical URL, grouped by category', { skip }, () => {
+  const llms = readFileSync(resolve(dist, 'llms.txt'), 'utf8');
+  assert.ok(llms.startsWith(`# ${SITE.name}`), 'starts with the site name as an H1');
+  for (const c of CATEGORIES) assert.ok(llms.includes(`## ${c.name}`), `llms.txt missing the ${c.name} section`);
+  for (const t of TOOLS) {
+    assert.ok(llms.includes(`(${SITE.url}${toolPath(t)})`), `llms.txt missing a link to ${t.slug}`);
+    assert.ok(llms.includes(t.short), `llms.txt missing ${t.slug}'s description`);
+  }
+});

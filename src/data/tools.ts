@@ -209,6 +209,18 @@ export const TOOLS: Tool[] = [
     reviewedOn: '2026-09-13',
     spec: { name: 'RFC 9562 (UUID)', url: 'https://www.rfc-editor.org/rfc/rfc9562' },
   },
+  {
+    slug: 'password-generator',
+    name: 'Password Generator',
+    title: 'Password Generator — Strong, Random & Private',
+    description: 'Generate strong, random passwords with the character types and length you choose, using a cryptographically secure source. Nothing is ever sent anywhere.',
+    short: 'Pick the length, character types and quantity, then generate cryptographically random passwords with a real entropy and strength readout.',
+    category: 'generators',
+    features: ['Cryptographically secure randomness (Web Crypto, not Math.random)', 'Uppercase, lowercase, numbers and symbols, individually toggled', 'Guarantees at least one of each selected type when length allows', 'Optional exclusion of ambiguous characters (0, O, 1, l, I)', 'Real entropy in bits and a strength label, not a cosmetic meter'],
+    intent: 'password generator',
+    reviewedBy: SITE.author,
+    reviewedOn: '2026-09-15',
+  },
 
   // ---- Text Tools ----------------------------------------------------------
   {

@@ -322,6 +322,15 @@ meta tag in sync — its initial value in `Base.astro`'s `<head>` is the dark su
 Adding a category means adding it to `categories.ts` *and* to the URL-structure list in `README.md`
 and this paragraph — `tests/registry.test.ts` checks both mention every hub.
 
+**`/llms.txt`** (`src/pages/llms.txt.ts`) is the one non-page route in `src/pages/`: an Astro API
+endpoint (`export const GET: APIRoute`) rather than a `.astro` file, returning a `Response` with a
+`text/plain` body. Astro's static build calls it once and writes the result as a plain file, the
+same as any other page — this is the pattern to reach for anywhere a route needs to emit something
+other than HTML (a generated `.txt`/`.json`/`.xml` file) from the registry at build time, rather than
+hand-maintaining a file under `public/` that can drift. Content is generated from `CATEGORIES` /
+`TOOLS` directly, so a new tool appears in it automatically; `tests/content.test.ts` asserts every
+registered tool is listed.
+
 **Build/deploy specifics that have bitten before** (see `DEV-LIFECYCLE.md` for the full incidents):
 `astro.config.mjs` sets `build: { format: 'file' }` (clean URLs like `/tools/foo`, not
 `/tools/foo/index.html`) and `image: { service: passthroughImageService() }` (no page uses
