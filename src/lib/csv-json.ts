@@ -9,7 +9,10 @@
 
 export type Delimiter = ',' | ';' | '\t';
 
-export type Result = { ok: true; output: string } | { ok: false; error: string };
+/** `count` is the number of records converted (CSV data rows, or JSON array items) — a character
+ *  count of the output string doesn't tell a visitor whether the conversion did what they expected,
+ *  since JSON is naturally longer than the CSV it came from; a record count does. */
+export type Result = { ok: true; output: string; count: number } | { ok: false; error: string };
 
 /** Parse CSV text into raw rows of strings — no header handling, no type inference. */
 export function parseCsv(text: string, delimiter: Delimiter = ','): string[][] {
@@ -76,7 +79,7 @@ export function csvToJson(text: string, opts: Partial<CsvToJsonOptions> = {}): R
     value = rows.map((r) => r.map((cell) => coerce(cell, o.inferTypes)));
   }
   const indent = o.indent === 0 ? undefined : o.indent;
-  return { ok: true, output: JSON.stringify(value, null, indent) };
+  return { ok: true, output: JSON.stringify(value, null, indent), count: (value as unknown[]).length };
 }
 
 export interface JsonToCsvOptions {
@@ -102,7 +105,7 @@ export function jsonToCsv(text: string, opts: Partial<JsonToCsvOptions> = {}): R
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
   if (!Array.isArray(value)) return { ok: false, error: 'The top level must be a JSON array — of objects, or of arrays.' };
-  if (!value.length) return { ok: true, output: '' };
+  if (!value.length) return { ok: true, output: '', count: 0 };
 
   const rows: string[] = [];
   if (value.every((r) => Array.isArray(r))) {
@@ -119,7 +122,7 @@ export function jsonToCsv(text: string, opts: Partial<JsonToCsvOptions> = {}): R
   } else {
     return { ok: false, error: 'Every item must be the same shape — all objects, or all arrays, not a mix.' };
   }
-  return { ok: true, output: rows.join('\r\n') };
+  return { ok: true, output: rows.join('\r\n'), count: value.length };
 }
 
 export const SAMPLE_CSV = 'name,age,city\nAda Lovelace,28,London\n"Grace Hopper, PhD",85,"New York, NY"';

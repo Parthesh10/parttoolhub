@@ -51,13 +51,22 @@ input.addEventListener('input', () => { inputSource = justPasted ? 'pasted' : 't
 
 function render() {
   const raw = input.value;
-  inputStat.textContent = plural(raw.length, 'character');
 
   if (!raw.trim()) {
+    inputStat.textContent = plural(raw.length, 'character');
     output.value = '';
     outputStat.textContent = '';
     status.hidden = true;
     return;
+  }
+
+  // A row/object count says whether the conversion did what was expected; a character count alone
+  // doesn't. Parsed only to count here — jsonToCsv below does its own parse and error handling.
+  try {
+    const parsed = JSON.parse(raw);
+    inputStat.textContent = Array.isArray(parsed) ? plural(parsed.length, 'object') : plural(raw.length, 'character');
+  } catch {
+    inputStat.textContent = plural(raw.length, 'character');
   }
 
   const delimiterValue = (delimiter.value === 'tab' ? '\t' : delimiter.value) as Delimiter;
@@ -74,7 +83,7 @@ function render() {
 
   if (result.ok) {
     output.value = result.output;
-    outputStat.textContent = plural(result.output.length, 'character');
+    outputStat.textContent = `${plural(result.count, 'row')} · ${plural(result.output.length, 'character')}`;
     status.hidden = true;
   } else {
     output.value = '';

@@ -1,4 +1,4 @@
-import { csvToJson, SAMPLE_CSV, type Delimiter } from '../../lib/csv-json';
+import { csvToJson, parseCsv, SAMPLE_CSV, type Delimiter } from '../../lib/csv-json';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -54,9 +54,9 @@ input.addEventListener('input', () => { inputSource = justPasted ? 'pasted' : 't
 
 function render() {
   const raw = input.value;
-  inputStat.textContent = plural(raw.length, 'character');
 
   if (!raw.trim()) {
+    inputStat.textContent = plural(raw.length, 'character');
     output.value = '';
     outputStat.textContent = '';
     status.hidden = true;
@@ -65,12 +65,17 @@ function render() {
 
   const delimiterValue = (delimiter.value === 'tab' ? '\t' : delimiter.value) as Delimiter;
   const indentValue = Number(indent.value) as 0 | 2 | 4;
+  const parsedRows = parseCsv(raw, delimiterValue).filter((r) => !(r.length === 1 && r[0] === ''));
+  const dataRowCount = Math.max(0, parsedRows.length - (header.checked ? 1 : 0));
+  inputStat.textContent = plural(dataRowCount, 'row');
   const result = csvToJson(raw, { delimiter: delimiterValue, hasHeader: header.checked, inferTypes: infer.checked, indent: indentValue });
   trackRun('convert', result.ok, result.ok ? undefined : /No rows/.test(result.error) ? 'empty' : 'syntax');
 
   if (result.ok) {
     output.value = result.output;
-    outputStat.textContent = plural(result.output.length, 'character');
+    // A row/object count says whether the conversion did what was expected; a character count
+    // alone doesn't, since JSON is naturally longer than the CSV it came from.
+    outputStat.textContent = `${plural(result.count, header.checked ? 'object' : 'row')} · ${plural(result.output.length, 'character')}`;
     status.hidden = true;
   } else {
     output.value = '';

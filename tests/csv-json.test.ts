@@ -115,3 +115,17 @@ test('round trip: the sample CSV and sample JSON describe the same data', () => 
   assert.ok(fromCsv.ok);
   assert.deepEqual(JSON.parse((fromCsv as { ok: true; output: string }).output), JSON.parse(SAMPLE_JSON));
 });
+
+test('csvToJson: count is the number of JSON records produced, not a character count', () => {
+  const withHeader = csvToJson('a,b\n1,2\n3,4\n5,6', { indent: 0 });
+  assert.ok(withHeader.ok && withHeader.count === 3);
+  const withoutHeader = csvToJson('1,2\n3,4', { indent: 0, hasHeader: false });
+  assert.ok(withoutHeader.ok && withoutHeader.count === 2);
+});
+
+test('jsonToCsv: count is the number of input array items, not a character count', () => {
+  const r = jsonToCsv(JSON.stringify([{ a: 1 }, { a: 2 }, { a: 3 }]));
+  assert.ok(r.ok && r.count === 3);
+  const empty = jsonToCsv('[]');
+  assert.ok(empty.ok && empty.count === 0);
+});
