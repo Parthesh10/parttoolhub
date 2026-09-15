@@ -30,7 +30,9 @@ export interface ColumnToListOptions {
 }
 
 export const DEFAULT_OPTIONS: ColumnToListOptions = {
-  delimiter: ', ',
+  // "Comma only" by default (changed 2026-09-15, maintainer's call): the most common
+  // destination is a CSV cell, a query parameter or an IN (...) list, none of which want the space.
+  delimiter: ',',
   itemPrefix: '',
   itemSuffix: '',
   listPrefix: '',
@@ -239,8 +241,8 @@ export interface Preset {
 const bare = { itemPrefix: '', itemSuffix: '', listPrefix: '', listSuffix: '' };
 
 export const PRESETS: Preset[] = [
-  { id: 'plain', label: 'Plain', hint: 'a, b, c', options: { ...bare, delimiter: ', ' } },
   { id: 'compact', label: 'No spaces', hint: 'a,b,c', options: { ...bare, delimiter: ',' } },
+  { id: 'plain', label: 'Plain', hint: 'a, b, c', options: { ...bare, delimiter: ', ' } },
   { id: 'sql', label: 'SQL IN', hint: "('a', 'b', 'c')", options: { delimiter: ', ', itemPrefix: "'", itemSuffix: "'", listPrefix: '(', listSuffix: ')' } },
   { id: 'json', label: 'JSON array', hint: '["a", "b", "c"]', options: { delimiter: ', ', itemPrefix: '"', itemSuffix: '"', listPrefix: '[', listSuffix: ']' } },
   { id: 'python', label: 'Python list', hint: "['a', 'b', 'c']", options: { delimiter: ', ', itemPrefix: "'", itemSuffix: "'", listPrefix: '[', listSuffix: ']' } },
@@ -251,8 +253,9 @@ export const PRESETS: Preset[] = [
 
 /** Delimiter choices for the UI select. `value` is used verbatim in the join. */
 export const DELIMITER_CHOICES = [
-  { value: ', ', label: 'Comma + space' },
+  // First entry is what the <select> starts on; it must equal DEFAULT_OPTIONS.delimiter.
   { value: ',', label: 'Comma only' },
+  { value: ', ', label: 'Comma + space' },
   { value: '; ', label: 'Semicolon + space' },
   { value: ';', label: 'Semicolon only' },
   { value: ' | ', label: 'Pipe with spaces' },

@@ -64,7 +64,7 @@ export const TOOLS: Tool[] = [
     features: ['Custom separators', 'Quote or wrap each item', 'Remove duplicates', 'Sort alphabetically or numerically', 'Presets for SQL, JSON and Python'],
     intent: 'column to comma separated list',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-13',
+    reviewedOn: '2026-09-15',
   },
   {
     slug: 'comma-separated-list-to-column',

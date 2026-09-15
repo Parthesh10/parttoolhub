@@ -1,51 +1,58 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { columnToList, listToColumn, detectDelimiter, PRESETS } from '../src/lib/list-convert.ts';
+import { columnToList, listToColumn, detectDelimiter, PRESETS, DEFAULT_OPTIONS, DELIMITER_CHOICES } from '../src/lib/list-convert.ts';
+
+test('the default separator is "Comma only", and the UI starts on it', () => {
+  // Maintainer's decision (2026-09-15): most destinations (CSV cells, query strings, IN lists) want no space.
+  assert.equal(DEFAULT_OPTIONS.delimiter, ',');
+  assert.equal(DELIMITER_CHOICES[0].value, DEFAULT_OPTIONS.delimiter, 'the <select> starts on its first option, which must be the default');
+  assert.equal(PRESETS[0].options.delimiter, DEFAULT_OPTIONS.delimiter, 'the first preset chip is the one highlighted at load');
+});
 
 test('basic column → comma list', () => {
   const r = columnToList('apple\nbanana\ncherry');
-  assert.equal(r.output, 'apple, banana, cherry');
+  assert.equal(r.output, 'apple,banana,cherry');
   assert.equal(r.count, 3);
 });
 
 test('handles CRLF and trims', () => {
   const r = columnToList('  a \r\nb\r\n c');
-  assert.equal(r.output, 'a, b, c');
+  assert.equal(r.output, 'a,b,c');
 });
 
 test('skips empty lines and reports dropped', () => {
   const r = columnToList('a\n\n\nb\n');
-  assert.equal(r.output, 'a, b');
+  assert.equal(r.output, 'a,b');
   assert.equal(r.count, 2);
   assert.equal(r.dropped, 3);
 });
 
 test('dedupe respects case flag', () => {
-  assert.equal(columnToList('A\na\nA', { dedupe: true }).output, 'A, a');
-  assert.equal(columnToList('A\na\nA', { dedupe: true, dedupeIgnoreCase: true }).output, 'A');
+  assert.equal(columnToList('A\na\nA', { delimiter: ', ', dedupe: true }).output, 'A, a');
+  assert.equal(columnToList('A\na\nA', { delimiter: ', ', dedupe: true, dedupeIgnoreCase: true }).output, 'A');
 });
 
 test('sorting modes', () => {
-  assert.equal(columnToList('b\nc\na', { sort: 'az' }).output, 'a, b, c');
-  assert.equal(columnToList('b\nc\na', { sort: 'za' }).output, 'c, b, a');
-  assert.equal(columnToList('item10\nitem9\nitem1', { sort: 'az' }).output, 'item1, item9, item10');
-  assert.equal(columnToList('10\n9\n100', { sort: 'num-asc' }).output, '9, 10, 100');
-  assert.equal(columnToList('$1,000\n$50', { sort: 'num-desc' }).output, '$1,000, $50');
-  assert.equal(columnToList('ccc\na\nbb', { sort: 'len-asc' }).output, 'a, bb, ccc');
+  assert.equal(columnToList('b\nc\na', { delimiter: ', ', sort: 'az' }).output, 'a, b, c');
+  assert.equal(columnToList('b\nc\na', { delimiter: ', ', sort: 'za' }).output, 'c, b, a');
+  assert.equal(columnToList('item10\nitem9\nitem1', { delimiter: ', ', sort: 'az' }).output, 'item1, item9, item10');
+  assert.equal(columnToList('10\n9\n100', { delimiter: ', ', sort: 'num-asc' }).output, '9, 10, 100');
+  assert.equal(columnToList('$1,000\n$50', { delimiter: ', ', sort: 'num-desc' }).output, '$1,000, $50');
+  assert.equal(columnToList('ccc\na\nbb', { delimiter: ', ', sort: 'len-asc' }).output, 'a, bb, ccc');
 });
 
 test('case transforms', () => {
-  assert.equal(columnToList('Hello World', { textCase: 'upper' }).output, 'HELLO WORLD');
-  assert.equal(columnToList('Hello World', { textCase: 'lower' }).output, 'hello world');
-  assert.equal(columnToList('hELLO wORLD', { textCase: 'title' }).output, 'Hello World');
+  assert.equal(columnToList('Hello World', { delimiter: ', ', textCase: 'upper' }).output, 'HELLO WORLD');
+  assert.equal(columnToList('Hello World', { delimiter: ', ', textCase: 'lower' }).output, 'hello world');
+  assert.equal(columnToList('hELLO wORLD', { delimiter: ', ', textCase: 'title' }).output, 'Hello World');
 });
 
 test('reverse is applied after sort', () => {
-  assert.equal(columnToList('b\nc\na', { sort: 'az', reverse: true }).output, 'c, b, a');
+  assert.equal(columnToList('b\nc\na', { delimiter: ', ', sort: 'az', reverse: true }).output, 'c, b, a');
 });
 
 test('item and list wrappers', () => {
-  const r = columnToList('a\nb', { itemPrefix: "'", itemSuffix: "'", listPrefix: '(', listSuffix: ')' });
+  const r = columnToList('a\nb', { delimiter: ', ', itemPrefix: "'", itemSuffix: "'", listPrefix: '(', listSuffix: ')' });
   assert.equal(r.output, "('a', 'b')");
 });
 
@@ -93,6 +100,6 @@ test('listToColumn explicit delimiter, dedupe and sort', () => {
 
 test('round trip is stable', () => {
   const original = 'alpha\nbeta\ngamma';
-  const joined = columnToList(original, { itemPrefix: '"', itemSuffix: '"', listPrefix: '[', listSuffix: ']' }).output;
+  const joined = columnToList(original, { delimiter: ', ', itemPrefix: '"', itemSuffix: '"', listPrefix: '[', listSuffix: ']' }).output;
   assert.equal(listToColumn(joined).output, original);
 });
