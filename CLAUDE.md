@@ -242,6 +242,29 @@ returns `notes` the widgets show as the status line. `Google Docs to Markdown` t
 scripts stripped by the browser), the script converts `innerHTML` on the next tick, and the box's
 colours are overridden in CSS because Docs stamps `color:#000000` on every run.
 
+**`src/lib/markdown-to-docx.ts` + `src/lib/zip-writer.ts` build a real `.docx` file**, for
+`Markdown to Word` — reuses `markdown.ts`'s `parseMarkdown` AST (not HTML) and walks it straight to
+WordprocessingML (OOXML) XML: headings become real `Heading1`-`6` paragraph styles, lists get real
+Word numbering (`word/numbering.xml`, one fresh `numId` per *ordered* list instance so separate
+numbered lists each restart at 1 — bullets all share a single numId since restart doesn't apply to
+them), tables are genuine `<w:tbl>` elements, hyperlinks are real relationships
+(`word/_rels/document.xml.rels`). Images are **not embedded**: an `<img>`/`![]()` becomes a
+labelled link instead, since fetching + embedding a media part is materially more scope than this
+pass covers (documented on the tool page's own edge-cases section, not silently dropped).
+`zip-writer.ts` is a from-scratch, store-only (no DEFLATE) ZIP writer — a `.docx` is a ZIP of these
+XML parts, and every OOXML reader accepts an uncompressed member exactly as well as a compressed
+one, so skipping compression keeps this dependency-free per the one-script-per-tool rule rather
+than reaching for a JS zip library. Both are pure/no-DOM and unit-tested with an independent
+from-scratch ZIP *reader* (proving round-trips through a second implementation of the format, not
+just that the writer agrees with itself) plus a stack-based XML well-formedness checker over every
+generated part. Validated beyond the test suite too: a real generated file was opened with
+`python-docx` (an independent, real-world OOXML library) and every heading/list/table/hyperlink
+came back correctly — worth re-doing that spot check if this module's XML templates ever change,
+since well-formed XML is necessary but not sufficient for Word to actually render it right.
+**Gotcha if you touch the run-building code**: `w:rStyle` can only appear once per run — a hyperlink
+whose text is also inline code needs the Hyperlink style plus the code font added directly (not via
+`CodeChar`'s own `rStyle`), not both `rStyle`s at once (see `textRun`'s `style.link` branch).
+
 Older tools (`ColumnToListTool.astro`, `ListToColumnTool.astro`) live directly under
 `src/components/` rather than `src/components/tools/` — a naming inconsistency from before the
 `tools/` subfolder convention was established, not a different pattern; new tools go in

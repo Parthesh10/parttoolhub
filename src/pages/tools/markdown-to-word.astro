@@ -1,0 +1,139 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import MarkdownToWordTool from '../../components/tools/MarkdownToWordTool.astro';
+import { toolBySlug } from '../../data/tools';
+import { parseMarkdown, renderHtml, summarize, SAMPLE_MARKDOWN } from '../../lib/markdown';
+import { markdownToDocx } from '../../lib/markdown-to-docx';
+
+const tool = toolBySlug('markdown-to-word');
+
+// Every fact below is produced by the real engine at build time.
+const sampleBytes = markdownToDocx(SAMPLE_MARKDOWN, { title: 'Sample document' });
+const sampleKb = Math.round((sampleBytes.length / 1024) * 10) / 10;
+const sampleBlocks = parseMarkdown(SAMPLE_MARKDOWN);
+const stats = summarize(sampleBlocks);
+const sampleHtmlPreview = renderHtml(sampleBlocks);
+if (sampleBytes.length < 5000) throw new Error('sample .docx looks implausibly small — engine may have produced an empty document');
+
+const nestedList = '- Parent item\n  - Child item\n    1. Grandchild, numbered\n    2. Second grandchild';
+const nestedBytes = markdownToDocx(nestedList);
+if (nestedBytes.length < 3000) throw new Error('nested-list .docx looks too small');
+
+const restartList = '1. First list, item one\n2. First list, item two\n\nSome text between them.\n\n1. Second list, item one\n2. Second list, item two';
+const restartBytes = markdownToDocx(restartList);
+if (restartBytes.length < 3000) throw new Error('restart-list .docx looks too small');
+
+const emptyBytes = markdownToDocx('');
+if (emptyBytes.length < 2000) throw new Error('page claims empty input still produces a valid, openable .docx');
+
+const steps = [
+  'Paste the Markdown into the left box. The preview on the right shows headings, bold, lists, tables, code and links as you type.',
+  'Click <strong>Download .docx</strong> (or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the input box).',
+  'Open the downloaded file directly in Word, LibreOffice, or drag it into Google Docs / drive.google.com to open it there — no copy-paste step, no intermediate format.',
+  'Need it on the clipboard instead of as a file? The companion <a href="/tools/markdown-to-google-docs">Markdown to Google Docs</a> tool pastes formatted text directly into an already-open document.',
+];
+
+const faq = [
+  {
+    q: 'How is this different from Markdown to Google Docs?',
+    a: 'That tool puts formatted text on your clipboard for you to paste into a document you already have open. This one builds an actual .docx file and downloads it — the thing to reach for when you need a file to attach to an email, upload somewhere, or hand to someone who expects a Word document rather than a pasted block of text.',
+  },
+  {
+    q: 'Is this a real Word document, or Markdown wrapped in a .docx extension?',
+    a: `A real one — the file is assembled by hand as a package of WordprocessingML XML (the same format Word itself writes), not text dumped into a renamed file. Headings use Word's own Heading 1-6 styles, lists use real Word numbering (so they show up in Word's own list tools, not just as plain text with a leading dash), and tables are genuine Word tables with borders, not an image or a monospace approximation. The sample Markdown below becomes a ${sampleKb} KB .docx with ${stats.headings} heading${stats.headings === 1 ? '' : 's'}, ${stats.lists} list${stats.lists === 1 ? '' : 's'} and ${stats.tables} table${stats.tables === 1 ? '' : 's'}, all real Word elements.`,
+  },
+  {
+    q: 'Does this upload my document anywhere to convert it?',
+    a: 'No. The entire .docx file — every XML part, the ZIP container itself — is assembled by JavaScript running in your browser. Nothing is sent to a server; this page could be disconnected from the network entirely and still produce a working file.',
+  },
+  {
+    q: 'Do nested and numbered lists come out right, not just visually indented?',
+    a: 'Yes — this was worth getting right on purpose. Two separate numbered lists in the same document each restart at 1 rather than continuing each other\'s count (a common bug in hand-rolled Word generators, since Word numbering is tracked by an ID that has to be allocated fresh per list); nested lists indent to their actual depth, with bullet lists cycling through different bullet characters by level the way Word\'s own nested-list styles do.',
+  },
+];
+---
+
+<ToolLayout {tool} {steps} {faq}>
+  <MarkdownToWordTool />
+
+  <Fragment slot="content">
+    <h2>A file, not a paste</h2>
+    <p>
+      Most "Markdown to Word" tools on the web actually convert to HTML and rely on your browser's or
+      Word's own paste-formatting to turn that into something Word-shaped once you paste it in — which
+      works, but only inside a document you already have open. This tool builds the <code>.docx</code>
+      file itself: a ZIP archive of WordprocessingML XML, the exact format Word saves, assembled entirely
+      in your browser with no external library and no server round trip.
+    </p>
+
+    <h2>Example</h2>
+    <p>The sample Markdown below converts to a {sampleKb} KB <code>.docx</code> — {stats.words} words,
+      {stats.headings} headings, {stats.lists} lists and {stats.tables} table across real Word styles and elements:</p>
+    <div class="example-preview" set:html={sampleHtmlPreview} />
+
+    <h2>Options explained</h2>
+    <ul>
+      <li><strong>Load sample</strong> fills the input with the Markdown shown above, so there's something to try immediately.</li>
+      <li><strong>Clear</strong> empties the input and resets the preview.</li>
+      <li><strong>Download .docx</strong> builds the file fresh from the current Markdown and saves it — there is no separate "convert" step, since the preview already reflects exactly what will download.</li>
+    </ul>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>Images become a labelled link, not an embedded picture.</strong> <code>![alt](url)</code>
+        produces a hyperlink reading "[Image: alt text]" rather than the actual picture — embedding a
+        fetched image as a real Word media part is real added scope (a network fetch, format sniffing, a
+        relationship and drawing XML per image) that this pass didn't take on. If you need the image
+        itself in the document, add it in Word after downloading.</li>
+      <li><strong>Nested numbered lists restart correctly.</strong> See the FAQ — this is the one thing
+        most hand-rolled Word generators get wrong, verified here with a dedicated test for exactly that
+        case.</li>
+      <li><strong>Footnotes, definition lists and Markdown extensions</strong> outside GitHub-flavored
+        Markdown (the same engine <a href="/tools/markdown-to-google-docs">Markdown to Google Docs</a>
+        and <a href="/tools/markdown-to-plain-text">Markdown to Plain Text</a> use) are not recognised —
+        headings, paragraphs, bold/italic/strikethrough/code, links, lists (including task list
+        checkboxes), block quotes, fenced code blocks, tables and horizontal rules all convert; anything
+        else is treated as plain text.</li>
+      <li><strong>Empty input still downloads a valid, openable file</strong> rather than erroring — a
+        blank one-page document, the same as opening Word and saving immediately.</li>
+      <li><strong>Nothing is kept after you close the tab.</strong> The file exists only as long as your
+        browser holds it in memory before the download completes; reload the page and it's gone, the same
+        as every other tool on this site.</li>
+    </ul>
+
+    <h2>Do the same thing in code</h2>
+    <pre><code>{`# Python (python-docx, a third-party library — pip install python-docx)
+from docx import Document
+doc = Document()
+doc.add_heading("Title", level=1)
+doc.add_paragraph("Some text.")
+doc.save("out.docx")
+
+// This tool takes a different approach on purpose: no dependency, built by hand
+// as a ZIP of WordprocessingML XML (see src/lib/markdown-to-docx.ts in the repo),
+// so it runs entirely client-side with nothing to install.`}</code></pre>
+
+    <p>
+      Already have the result in a document rather than Markdown? <a href="/tools/google-docs-to-markdown">Google Docs to Markdown</a>
+      converts the other way. Need the formatted text on your clipboard instead of a file? <a href="/tools/markdown-to-google-docs">Markdown to Google Docs</a> is the paste-first version of this same conversion.
+    </p>
+  </Fragment>
+</ToolLayout>
+
+<style>
+  .example-preview {
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+    padding: 0.9rem 1rem; font-size: 0.95rem; line-height: 1.55; margin: 0 0 1rem;
+  }
+  .example-preview :global(h1) { font-size: 1.5rem; margin: 0.6em 0 0.35em; }
+  .example-preview :global(h2) { font-size: 1.3rem; margin: 0.6em 0 0.35em; }
+  .example-preview :global(h1:first-child), .example-preview :global(h2:first-child) { margin-top: 0; }
+  .example-preview :global(p) { margin: 0 0 0.75em; }
+  .example-preview :global(ul), .example-preview :global(ol) { margin: 0 0 0.75em; padding-left: 1.5em; }
+  .example-preview :global(table) { margin: 0 0 0.75em; font-size: 0.9rem; }
+  .example-preview :global(th), .example-preview :global(td) { padding: 0.3rem 0.55rem; border: 1px solid var(--border); }
+  .example-preview :global(th) { background: var(--surface-2); text-align: left; }
+  .example-preview :global(pre) { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.6rem 0.8rem; font-size: 0.85rem; margin: 0 0 0.75em; overflow-x: auto; }
+  .example-preview :global(code) { font-size: 0.9em; background: var(--surface-2); border-radius: 3px; padding: 0.05em 0.3em; }
+  .example-preview :global(pre code) { background: none; padding: 0; }
+</style>
