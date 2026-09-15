@@ -124,6 +124,11 @@ doc.save("out.docx")
   .example-preview {
     border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
     padding: 0.9rem 1rem; font-size: 0.95rem; line-height: 1.55; margin: 0 0 1rem;
+    /* The injected sample can include a table wider than a narrow viewport — same fix as the
+       site's own .table-wrap utility, applied to the whole box since the content is one HTML
+       blob (heading + prose + table) rather than a table we could wrap in isolation. Found in
+       the 2026-09-16 mobile UX audit: a real ~80px horizontal overflow at 320px. */
+    overflow-x: auto;
   }
   .example-preview :global(h1) { font-size: 1.5rem; margin: 0.6em 0 0.35em; }
   .example-preview :global(h2) { font-size: 1.3rem; margin: 0.6em 0 0.35em; }
