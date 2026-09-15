@@ -416,6 +416,19 @@ controls). `Faq.astro`'s `<summary>` got the same treatment. If you add a new sh
 class, grep the codebase for `:hover` without a matching `:focus-visible` before shipping it — that
 regex is exactly how these three were found.
 
+**`src/lib/date-diff.ts` computes a real calendar breakdown (years/months/days), not a fixed 30-day
+average.** Reuses `timestamp.ts`'s `dateToTimestamp` for parsing both inputs (so it inherits the
+same UTC/local "Interpret as" handling for free rather than a second implementation of the same
+problem). The interesting part is `calendarBreakdown`: rather than subtracting date fields one at a
+time and borrowing from "the previous month" when a field goes negative (the naive approach, and
+the one that breaks on inputs like 31 January → 1 March — do you borrow January's 31 days or
+February's 28/29? there's no non-arbitrary answer), it finds the largest whole number of months
+that fit by advancing the start date month-by-month with the day clamped to what that month can
+actually hold (`addMonthsClamped` — Jan 31 + 1 month lands on Feb 28/29, never rolling into March
+the way plain `Date` arithmetic would), then decomposes whatever's left as a fixed, unambiguous
+duration. `tests/date-diff.test.ts` pins the Jan-31-to-Mar-1 case specifically, in both a leap and
+non-leap year, since that's exactly the input a naive implementation gets wrong.
+
 **Theme system.** Three states — dark (the app's own default since 2026-09-15, not OS-follow — it
 was light before that date; see DEV-LIFECYCLE.md for why it flipped), light, system — implemented
 across three places that must stay in sync: `global.css` (the `:root` / `:root[data-theme=dark]` /
