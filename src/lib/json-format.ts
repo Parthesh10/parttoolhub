@@ -1,6 +1,8 @@
 /**
  * JSON formatting and validation with useful error locations. Pure, no DOM.
  */
+import { parseJson as parseJsonShared } from './json-parse';
+
 export type Indent = 2 | 4 | 'tab';
 
 export interface JsonOk {
@@ -42,72 +44,9 @@ function kindOf(v: unknown): string {
   return typeof v;
 }
 
-/**
- * Translate an engine's SyntaxError message into a line/column, when possible.
- * Firefox and newer V8 include "line N column M"; older V8 gives "position N";
- * V8's "Unexpected token" form gives a context snippet of 10 characters either
- * side of the offending token, which we search for in the input.
- */
-function locate(message: string, input: string): { line?: number; column?: number; snippet?: string } {
-  let line: number | undefined;
-  let column: number | undefined;
-  let pos: number | undefined;
-
-  const lc = message.match(/line (\d+) column (\d+)/i);
-  const posMatch = message.match(/position (\d+)/i);
-  // `[\s\S]` rather than `.` for the token: V8 reports a literal newline
-  // as the offending token when a value is cut short at a line end.
-  const ctx = message.match(/^Unexpected token '([\s\S]+?)', (\.\.\.)?"([\s\S]*)"(?:\.\.\.)? is not valid JSON$/);
-
-  if (lc) {
-    line = Number(lc[1]);
-    column = Number(lc[2]);
-  } else if (posMatch) {
-    pos = Number(posMatch[1]);
-  } else if (ctx) {
-    const [, token, leading, context] = ctx;
-    if (leading) {
-      const i = input.indexOf(context);
-      if (i >= 0) pos = i + 10;
-    } else {
-      const i = input.indexOf(token);
-      if (i >= 0) pos = i;
-    }
-  } else if (/unexpected end of (?:json )?input/i.test(message)) {
-    pos = input.length;
-  }
-
-  if (pos !== undefined) {
-    const before = input.slice(0, pos);
-    line = before.split('\n').length;
-    column = pos - before.lastIndexOf('\n');
-  }
-  if (line === undefined) return {};
-  const snippet = input.split('\n')[line - 1];
-  return { line, column, snippet };
-}
-
-/** Strip the engine-specific prefix so the message reads the same in every browser. */
-function cleanMessage(message: string): string {
-  return message
-    .replace(/^JSON\.parse:\s*/i, '')
-    .replace(/\s*in JSON at position \d+.*$/i, '')
-    .replace(/\s*\(line \d+ column \d+\)\s*$/i, '')
-    .replace(/\s*at line \d+ column \d+ of the JSON data$/i, '')
-    // The quoted context V8 appends can itself contain quotes and newlines,
-    // so match greedily to the end rather than stopping at the first quote.
-    .replace(/,\s*(?:\.\.\.)?"[\s\S]*"(?:\.\.\.)?\s*is not valid JSON$/i, '')
-    .trim();
-}
-
+/** Re-exported so existing importers of this module are unaffected by the move to json-parse.ts. */
 export function parseJson(input: string): { ok: true; value: unknown } | JsonError {
-  if (!input.trim()) return { ok: false, error: 'Input is empty.' };
-  try {
-    return { ok: true, value: JSON.parse(input) };
-  } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    return { ok: false, error: cleanMessage(message), ...locate(message, input) };
-  }
+  return parseJsonShared(input, 'Input is empty.');
 }
 
 const TOO_DEEP: JsonError = { ok: false, error: 'The document is nested too deeply to format (several thousand levels).' };

@@ -7,12 +7,17 @@
  * underscores and 0x/0o/0b prefixes, floats, tuples and sets (→ arrays),
  * trailing commas, and # comments.
  */
+import { parseJson, offsetToLineColumn } from './json-parse';
+
+// `pos` is each token's starting character offset in the original source — needed so a parser
+// error (which only knows a *token index*) can still report a real line/column, not a
+// meaningless token count. Every PyError below carries a character offset, never a token index.
 type Token =
-  | { t: 'str'; v: string }
-  | { t: 'num'; v: number }
-  | { t: 'name'; v: string }
-  | { t: 'p'; v: string }
-  | { t: 'eof' };
+  | { t: 'str'; v: string; pos: number }
+  | { t: 'num'; v: number; pos: number }
+  | { t: 'name'; v: string; pos: number }
+  | { t: 'p'; v: string; pos: number }
+  | { t: 'eof'; pos: number };
 
 export class PyError extends Error {
   constructor(message: string, public position: number) {
@@ -32,6 +37,7 @@ function tokenize(src: string): Token[] {
 
   while (i < n) {
     const c = src[i];
+    const tokenStart = i;
 
     if (c === ' ' || c === '\t' || c === '\n' || c === '\r') { i++; continue; }
     if (c === '#') { while (i < n && src[i] !== '\n') i++; continue; }
@@ -64,7 +70,7 @@ function tokenize(src: string): Token[] {
         if (!triple && ch === '\n') throw new PyError('Unterminated string (newline inside quotes).', start);
         out += ch; i++;
       }
-      toks.push({ t: 'str', v: out });
+      toks.push({ t: 'str', v: out, pos: tokenStart });
       continue;
     }
 
@@ -78,19 +84,19 @@ function tokenize(src: string): Token[] {
       else if (/^0[oO]/.test(text)) v = parseInt(text.slice(2), 8);
       else if (/^0[bB]/.test(text)) v = parseInt(text.slice(2), 2);
       else v = Number(text);
-      toks.push({ t: 'num', v });
+      toks.push({ t: 'num', v, pos: tokenStart });
       i += num[0].length;
       continue;
     }
 
     const name = src.slice(i).match(/^[A-Za-z_][A-Za-z0-9_]*/);
-    if (name) { toks.push({ t: 'name', v: name[0] }); i += name[0].length; continue; }
+    if (name) { toks.push({ t: 'name', v: name[0], pos: tokenStart }); i += name[0].length; continue; }
 
-    if ('{}[](),:-+'.includes(c)) { toks.push({ t: 'p', v: c }); i++; continue; }
+    if ('{}[](),:-+'.includes(c)) { toks.push({ t: 'p', v: c, pos: tokenStart }); i++; continue; }
 
     throw new PyError(`Unexpected character "${c}".`, i);
   }
-  toks.push({ t: 'eof' });
+  toks.push({ t: 'eof', pos: n });
   return toks;
 }
 
@@ -101,14 +107,17 @@ class Parser {
   private peek(): Token { return this.toks[this.i]; }
   private next(): Token { return this.toks[this.i++]; }
   private isP(v: string): boolean { const t = this.peek(); return t.t === 'p' && t.v === v; }
+  /** The current token's real character offset in the source — `this.i` is only a token index,
+   *  which would be a meaningless "line/column" if fed straight into offsetToLineColumn. */
+  private pos(): number { return this.peek().pos; }
   private expectP(v: string) {
-    if (!this.isP(v)) throw new PyError(`Expected "${v}".`, this.i);
+    if (!this.isP(v)) throw new PyError(`Expected "${v}".`, this.pos());
     this.i++;
   }
 
   parseTop(): unknown {
     const v = this.parseValue();
-    if (this.peek().t !== 'eof') throw new PyError('Unexpected content after the end of the value.', this.i);
+    if (this.peek().t !== 'eof') throw new PyError('Unexpected content after the end of the value.', this.pos());
     return v;
   }
 
@@ -121,7 +130,7 @@ class Parser {
       if (t.v === '-' || t.v === '+') {
         this.next();
         const n = this.next();
-        if (n.t !== 'num') throw new PyError('Expected a number after the sign.', this.i);
+        if (n.t !== 'num') throw new PyError('Expected a number after the sign.', n.pos);
         return t.v === '-' ? -n.v : n.v;
       }
     }
@@ -160,7 +169,7 @@ class Parser {
             // OrderedDict([('a', 1), ('b', 2)]) — rebuild the object from them.
             else if (Array.isArray(v) && v.every((p) => Array.isArray(p) && p.length === 2)) {
               const obj: Record<string, unknown> = {};
-              for (const [k, val] of v as [unknown, unknown][]) obj[keyToString(k, this.i)] = val;
+              for (const [k, val] of v as [unknown, unknown][]) obj[keyToString(k, this.pos())] = val;
               inner = obj;
             }
             if (this.isP(',')) this.next();
@@ -169,11 +178,11 @@ class Parser {
           return inner;
         }
         default:
-          throw new PyError(`"${t.v}" is a variable or unsupported name — JSON can only hold literal values.`, this.i);
+          throw new PyError(`"${t.v}" is a variable or unsupported name — JSON can only hold literal values.`, t.pos);
       }
     }
-    if (t.t === 'eof') throw new PyError('Unexpected end of input.', this.i);
-    throw new PyError(`Unexpected "${(t as { v: string }).v}".`, this.i);
+    if (t.t === 'eof') throw new PyError('Unexpected end of input.', t.pos);
+    throw new PyError(`Unexpected "${(t as { v: string }).v}".`, t.pos);
   }
 
   private parseSequence(closer: string): unknown[] {
@@ -181,7 +190,7 @@ class Parser {
     while (!this.isP(closer)) {
       out.push(this.parseValue());
       if (this.isP(',')) { this.next(); continue; }
-      if (!this.isP(closer)) throw new PyError(`Expected "," or "${closer}".`, this.i);
+      if (!this.isP(closer)) throw new PyError(`Expected "," or "${closer}".`, this.pos());
     }
     this.next();
     return out;
@@ -195,13 +204,13 @@ class Parser {
       // dict
       this.next();
       const obj: Record<string, unknown> = {};
-      obj[keyToString(first, this.i)] = this.parseValue();
+      obj[keyToString(first, this.pos())] = this.parseValue();
       while (this.isP(',')) {
         this.next();
         if (this.isP('}')) break;
         const k = this.parseValue();
         this.expectP(':');
-        obj[keyToString(k, this.i)] = this.parseValue();
+        obj[keyToString(k, this.pos())] = this.parseValue();
       }
       this.expectP('}');
       return obj;
@@ -232,7 +241,9 @@ export interface PyToJsonOptions {
   sortKeys: boolean;
 }
 
-export type PyToJsonResult = { ok: true; output: string; value: unknown } | { ok: false; error: string; position?: number };
+export type PyToJsonResult =
+  | { ok: true; output: string; value: unknown }
+  | { ok: false; error: string; position?: number; line?: number; column?: number };
 
 function sortDeep(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sortDeep);
@@ -253,7 +264,7 @@ export function pythonToJson(src: string, opts: Partial<PyToJsonOptions> = {}): 
     const indent = o.indent === 'tab' ? '\t' : o.indent === 0 ? undefined : o.indent;
     return { ok: true, output: JSON.stringify(value, null, indent), value };
   } catch (e) {
-    if (e instanceof PyError) return { ok: false, error: e.message, position: e.position };
+    if (e instanceof PyError) return { ok: false, error: e.message, position: e.position, ...offsetToLineColumn(src, e.position) };
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
@@ -263,7 +274,7 @@ export interface JsonToPyOptions {
   sortKeys: boolean;
 }
 
-export type JsonToPyResult = { ok: true; output: string } | { ok: false; error: string };
+export type JsonToPyResult = { ok: true; output: string } | { ok: false; error: string; line?: number; column?: number };
 
 /**
  * The reverse direction: JSON text → Python literal source. `indent: 0` writes
@@ -272,13 +283,9 @@ export type JsonToPyResult = { ok: true; output: string } | { ok: false; error: 
  */
 export function jsonToPython(src: string, opts: Partial<JsonToPyOptions> = {}): JsonToPyResult {
   const o: JsonToPyOptions = { indent: 4, sortKeys: false, ...opts };
-  if (!src.trim()) return { ok: false, error: 'Paste JSON to convert.' };
-  let value: unknown;
-  try {
-    value = JSON.parse(src);
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : String(e) };
-  }
+  const parsed = parseJson(src, 'Paste JSON to convert.');
+  if (!parsed.ok) return parsed;
+  let value: unknown = parsed.value;
   if (o.sortKeys) value = sortDeep(value);
   const compact = o.indent === 0;
   const unit = o.indent === 'tab' ? '\t' : ' '.repeat(compact ? 0 : o.indent);

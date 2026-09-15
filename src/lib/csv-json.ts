@@ -7,12 +7,17 @@
  * rather than rejected, since real-world CSV exports are inconsistent about it.
  */
 
+import { parseJson } from './json-parse';
+
 export type Delimiter = ',' | ';' | '\t';
 
 /** `count` is the number of records converted (CSV data rows, or JSON array items) — a character
  *  count of the output string doesn't tell a visitor whether the conversion did what they expected,
- *  since JSON is naturally longer than the CSV it came from; a record count does. */
-export type Result = { ok: true; output: string; count: number } | { ok: false; error: string };
+ *  since JSON is naturally longer than the CSV it came from; a record count does.
+ *  `line`/`column` are set only on a JSON parse failure (jsonToCsv), for the same "where did it
+ *  go wrong" detail the JSON Formatter gives — CSV input errors are reported without a location,
+ *  since parseCsv doesn't reject malformed CSV the way JSON.parse rejects malformed JSON. */
+export type Result = { ok: true; output: string; count: number } | { ok: false; error: string; line?: number; column?: number };
 
 /** Parse CSV text into raw rows of strings — no header handling, no type inference. */
 export function parseCsv(text: string, delimiter: Delimiter = ','): string[][] {
@@ -97,13 +102,9 @@ function csvCell(v: unknown, delimiter: string): string {
 
 export function jsonToCsv(text: string, opts: Partial<JsonToCsvOptions> = {}): Result {
   const o: JsonToCsvOptions = { delimiter: ',', ...opts };
-  if (!text.trim()) return { ok: false, error: 'Paste JSON to convert.' };
-  let value: unknown;
-  try {
-    value = JSON.parse(text);
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : String(e) };
-  }
+  const parsed = parseJson(text, 'Paste JSON to convert.');
+  if (!parsed.ok) return parsed;
+  const value = parsed.value;
   if (!Array.isArray(value)) return { ok: false, error: 'The top level must be a JSON array — of objects, or of arrays.' };
   if (!value.length) return { ok: true, output: '', count: 0 };
 

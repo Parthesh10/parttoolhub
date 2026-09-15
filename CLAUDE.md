@@ -265,6 +265,25 @@ since well-formed XML is necessary but not sufficient for Word to actually rende
 whose text is also inline code needs the Hyperlink style plus the code font added directly (not via
 `CodeChar`'s own `rStyle`), not both `rStyle`s at once (see `textRun`'s `style.link` branch).
 
+**`src/lib/json-parse.ts` is the one place `JSON.parse` gets called** when a tool needs a helpful
+error, not a raw exception — `parseJson(input, emptyMessage)` returns `{ok:true,value}` or
+`{ok:false,error,line?,column?,snippet?}`, translating whatever a given JS engine's SyntaxError
+happens to say into a consistent "line N, column M". Pulled out of the JSON Formatter
+(`json-format.ts`, which now just re-exports `parseJson`) during a 2026-09-16 error-message audit,
+after finding CSV↔JSON's and JSON↔Python-dict's JSON-parsing steps leaked the raw, browser-specific
+exception text instead. Both now use it; the client scripts append `` (line ${n}, column ${m})``
+after `result.error`, the same display JSON Formatter already used. Also exports
+`offsetToLineColumn(text, offset)`, the character-offset → line/column math on its own, for any
+parser that tracks a position but not a line/column — `python-dict.ts`'s own hand-written Python
+literal parser uses it for `pythonToJson`'s errors.
+**Gotcha that bit this exact fix once**: a recursive-descent parser's "current index" is usually a
+*token* index, not a *character* offset — `python-dict.ts`'s `Parser.i` counts tokens, so feeding
+it straight into `offsetToLineColumn` produced a plausible-looking but *wrong* line/column (silently
+pointing at the wrong place, worse than not showing one at all). The fix was giving every `Token` a
+`pos: number` (its real starting character offset, recorded once in the tokenizer) and having every
+`PyError` in the parser report `token.pos` — never the token index itself. Any future hand-written
+parser in this codebase needs the same treatment before its position can drive a line/column display.
+
 Older tools (`ColumnToListTool.astro`, `ListToColumnTool.astro`) live directly under
 `src/components/` rather than `src/components/tools/` — a naming inconsistency from before the
 `tools/` subfolder convention was established, not a different pattern; new tools go in

@@ -55,6 +55,13 @@ test('helpful errors', () => {
   assert.ok(!pythonToJson('').ok);
 });
 
+test('pythonToJson: errors report a line/column, not just a raw character position', () => {
+  const r = pythonToJson("{\n  'a': 1,\n  'b': some_var,\n}");
+  assert.ok(!r.ok);
+  assert.equal(r.line, 3, `expected the error on line 3, got ${JSON.stringify(r)}`);
+  assert.ok(r.column !== undefined && r.column > 0);
+});
+
 test('jsonToPython reverse direction', () => {
   const r = jsonToPython('{"a": [1, true, null], "s": "it\'s"}');
   assert.ok(r.ok);
@@ -80,6 +87,12 @@ test('jsonToPython: rejects invalid JSON and empty input', () => {
   assert.ok(!jsonToPython('{"a": 1,}').ok); // trailing comma is not valid JSON
   const empty = jsonToPython('   ');
   assert.ok(!empty.ok && /Paste JSON/.test(empty.error));
+});
+
+test('jsonToPython: malformed JSON reports a line/column instead of a raw engine exception', () => {
+  const r = jsonToPython('{\n  "a": 1,\n  "b": ,\n}');
+  assert.ok(!r.ok);
+  assert.ok(r.line !== undefined, `expected a line number, got ${JSON.stringify(r)}`);
 });
 
 test('jsonToPython: JSON object key order can shift for integer-like keys', () => {

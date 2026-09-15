@@ -88,7 +88,8 @@ function render() {
     outputStat.textContent = 'Could not convert';
     status.hidden = false;
     status.className = 'status-banner is-error';
-    status.textContent = result.error;
+    const loc = result.line ? ` (line ${result.line}${result.column ? `, column ${result.column}` : ''})` : '';
+    status.textContent = `${result.error}${loc}`;
   }
 }
 

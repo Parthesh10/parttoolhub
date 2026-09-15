@@ -105,6 +105,12 @@ test('jsonToCsv: rejects non-array top level and mixed-shape arrays', () => {
   assert.ok(!jsonToCsv('').ok);
 });
 
+test('jsonToCsv: malformed JSON reports a line/column instead of a raw engine exception', () => {
+  const r = jsonToCsv('[\n  {"a": 1,}\n]');
+  assert.ok(!r.ok);
+  assert.ok(r.line !== undefined, `expected a line number, got ${JSON.stringify(r)}`);
+});
+
 test('jsonToCsv: empty array produces empty output, not an error', () => {
   const r = jsonToCsv('[]');
   assert.ok(r.ok && r.output === '');
