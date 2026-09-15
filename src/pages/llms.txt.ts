@@ -14,7 +14,12 @@ import { canonicalUrl } from '../lib/urls';
  * truth). tests/content.test.ts asserts every registered tool is listed.
  */
 export const GET: APIRoute = () => {
-  const lines: string[] = [`# ${SITE.name}`, '', `> ${SITE.tagline}. Every tool runs entirely in the browser — nothing pasted is uploaded to a server.`, ''];
+  const lines: string[] = [
+    `# ${SITE.name}`,
+    '',
+    `> ${SITE.tagline}. Every tool runs entirely in the browser — nothing pasted is uploaded to a server. For full page content (how to use each tool, options, edge cases, FAQ) rather than just links, see /llms-full.txt.`,
+    '',
+  ];
 
   for (const cat of CATEGORIES) {
     lines.push(`## ${cat.name}`);

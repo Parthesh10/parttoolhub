@@ -329,9 +329,35 @@ test('robots.txt allows all crawlers and points at the sitemap on the canonical 
 test('llms.txt lists every registered tool, linked to its canonical URL, grouped by category', { skip }, () => {
   const llms = readFileSync(resolve(dist, 'llms.txt'), 'utf8');
   assert.ok(llms.startsWith(`# ${SITE.name}`), 'starts with the site name as an H1');
+  assert.ok(llms.includes('/llms-full.txt'), 'points to the full-content companion file');
   for (const c of CATEGORIES) assert.ok(llms.includes(`## ${c.name}`), `llms.txt missing the ${c.name} section`);
   for (const t of TOOLS) {
     assert.ok(llms.includes(`(${SITE.url}${toolPath(t)})`), `llms.txt missing a link to ${t.slug}`);
     assert.ok(llms.includes(t.short), `llms.txt missing ${t.slug}'s description`);
   }
+});
+
+test('llms-full.txt inlines every tool\'s real page content (scripts/make-llms-full.mts), not just a link', { skip }, () => {
+  const path = resolve(dist, 'llms-full.txt');
+  assert.ok(existsSync(path), 'dist/llms-full.txt was not generated — check `npm run build`\'s post-build step ran');
+  const full = readFileSync(path, 'utf8');
+  assert.ok(full.startsWith(`# ${SITE.name}`), 'starts with the site name as an H1');
+  assert.ok(full.includes('/llms.txt'), 'points back to the short index for crawlers that only want that');
+  for (const t of TOOLS) {
+    assert.ok(full.includes(`### ${t.name}`), `llms-full.txt missing a heading for ${t.slug}`);
+    assert.ok(full.includes(`URL: ${SITE.url}${toolPath(t)}`), `llms-full.txt missing ${t.slug}'s canonical URL`);
+    assert.ok(full.includes('**How to use**'), `llms-full.txt missing How-to-use content near ${t.slug}`);
+  }
+  // The "How to use" section must appear exactly once per tool — a regression here previously
+  // duplicated it (the <section aria-labelledby="how-to-use"> strip silently failed to match
+  // Astro's scoped attribute, so the same steps were emitted twice; see CLAUDE.md).
+  const howToUseCount = (full.match(/\*\*How to use\*\*/g) ?? []).length;
+  assert.equal(howToUseCount, TOOLS.length, 'exactly one "How to use" per tool, not duplicated');
+  // No unconverted HTML structure should leak through the html-to-markdown pass. Checked outside
+  // backtick spans, since the HTML-to-Markdown and Markdown-to-Google-Docs tool pages legitimately
+  // quote raw tags like `<li>` as inline code when explaining HTML syntax — that's real content,
+  // not a leak.
+  const outsideCode = full.replace(/`[^`\n]*`/g, '').replace(/```[\s\S]*?```/g, '');
+  assert.ok(!/<div class="ad-slot/.test(outsideCode), 'ad-slot markup leaked into llms-full.txt');
+  assert.ok(!/<\/?(?:section|article)[\s>]/.test(outsideCode), 'raw block-level HTML leaked into llms-full.txt');
 });

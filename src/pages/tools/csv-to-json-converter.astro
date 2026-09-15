@@ -63,8 +63,7 @@ const faq = [
     <p>
       This tool implements that quoting rule directly (not a regular expression, which cannot correctly track "am I
       inside quotes right now" across a comma or a newline) and turns each row into a JSON object keyed by the header —
-      or a plain array, if your CSV has no header row. Going the other way, the
-      <a href="/tools/json-to-csv-converter">JSON to CSV Converter</a> turns a JSON array back into a spreadsheet-ready file.
+      or a plain array, if your CSV has no header row. Going the other way, the <a href="/tools/json-to-csv-converter">JSON to CSV Converter</a> turns a JSON array back into a spreadsheet-ready file.
     </p>
 
     <h2>Example</h2>
@@ -80,8 +79,7 @@ const faq = [
       <li><strong>First row is a header</strong> — on, each row becomes an object keyed by the header row; off, each row
         becomes a plain array in column order.</li>
       <li><strong>Detect numbers, booleans and blanks</strong> — on, a cell that looks like a whole number or decimal
-        becomes a JSON number, <code>true</code>/<code>false</code> become booleans, and an empty cell becomes
-        <code>null</code>; off, every cell stays a JSON string exactly as written.</li>
+        becomes a JSON number, <code>true</code>/<code>false</code> become booleans, and an empty cell becomes <code>null</code>; off, every cell stays a JSON string exactly as written.</li>
       <li><strong>Indent: 2 spaces / 4 spaces / Minified</strong> sets the output layout, the same as the JSON Formatter.</li>
     </ul>
 

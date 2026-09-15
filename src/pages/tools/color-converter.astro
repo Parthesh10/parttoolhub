@@ -88,13 +88,11 @@ const faq = [
         needs exactly three values (red, green, blue) and an optional fourth (alpha); <code>hsl()</code> needs hue,
         saturation and lightness the same way.</li>
       <li><strong>A bare hex-looking word is accepted as a color.</strong> Because the leading <code>#</code> is optional,
-        a 3, 4, 6 or 8-letter word made only of the letters a-f and digits — like <code>cafe</code>, <code>dead</code> or
-        <code>beef</code> — parses as a color rather than being rejected as text. This is intentional (it lets you paste a
+        a 3, 4, 6 or 8-letter word made only of the letters a-f and digits — like <code>cafe</code>, <code>dead</code> or <code>beef</code> — parses as a color rather than being rejected as text. This is intentional (it lets you paste a
         hex value straight from a tool that omits the <code>#</code>), but it means this box is not a safe way to detect
         "is this string definitely a color".</li>
       <li><strong>HSL round-trip rounding</strong> — see the FAQ.</li>
-      <li><strong>Percentage and slash syntax both work</strong> in <code>rgb()</code>: <code>rgb(100%, 0%, 0%)</code> and
-        <code>rgb(255 0 0 / 50%)</code> (the modern space-and-slash form, alongside the older comma form) both parse.</li>
+      <li><strong>Percentage and slash syntax both work</strong> in <code>rgb()</code>: <code>rgb(100%, 0%, 0%)</code> and <code>rgb(255 0 0 / 50%)</code> (the modern space-and-slash form, alongside the older comma form) both parse.</li>
       <li><strong>Alpha only shows where it matters.</strong> A fully opaque color's hex is 6 digits and its RGB/HSL have
         no fourth value; add any alpha below 1 (via <code>rgba()</code>, <code>hsla()</code>, or an 8-digit hex) and all
         three outputs grow an alpha component to match.</li>

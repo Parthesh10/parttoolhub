@@ -88,17 +88,14 @@ const faq = [
   <Fragment slot="content">
     <h2>What this decoder does that a text decoder cannot</h2>
     <p>
-      A Base64 string that came from an image decodes to binary, not text, so a general
-      <a href="/tools/base64-encode-decode">Base64 decoder</a> stops with “not valid UTF-8”. This page decodes the same
+      A Base64 string that came from an image decodes to binary, not text, so a general <a href="/tools/base64-encode-decode">Base64 decoder</a> stops with “not valid UTF-8”. This page decodes the same
       string to bytes, reads the file signature to find out which of eight image formats it is, reads the pixel size from
       the header, and hands the bytes to your browser's own image decoder for the preview. The download is the original file,
       byte for byte, named with the extension the bytes call for.
     </p>
     <p>
-      Before decoding it repairs the ways these strings get mangled in transit: a <code>data:</code> prefix, the
-      <code>&lt;img src="…"&gt;</code> or <code>url(…)</code> it was copied out of, JSON quotes and <code>\/</code> escapes,
-      line breaks added by an email client, percent-encoding from a query string, the URL-safe alphabet, and missing
-      <code>=</code> padding. Each repair is listed under the preview so you can see why another tool rejected the same
+      Before decoding it repairs the ways these strings get mangled in transit: a <code>data:</code> prefix, the <code>&lt;img src="…"&gt;</code> or <code>url(…)</code> it was copied out of, JSON quotes and <code>\/</code> escapes,
+      line breaks added by an email client, percent-encoding from a query string, the URL-safe alphabet, and missing <code>=</code> padding. Each repair is listed under the preview so you can see why another tool rejected the same
       input. It does not resize, convert or optimise the image; the bytes out are the bytes in.
     </p>
 

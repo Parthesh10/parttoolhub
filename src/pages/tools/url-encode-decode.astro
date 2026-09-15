@@ -57,8 +57,7 @@ const faq = [
       A URL can only safely contain a limited set of characters — letters, digits, and a handful of punctuation marks that
       have no special meaning in that position. Everything else (spaces, ampersands inside a value, non-English characters,
       slashes inside a value rather than as a path separator) has to be percent-encoded: replaced with <code>%</code> followed
-      by its byte value in hex, as laid out in RFC 3986 §2.1. A space becomes <code>%20</code>, an ampersand becomes
-      <code>%26</code>, and a character outside ASCII becomes one <code>%XX</code> group per UTF-8 byte.
+      by its byte value in hex, as laid out in RFC 3986 §2.1. A space becomes <code>%20</code>, an ampersand becomes <code>%26</code>, and a character outside ASCII becomes one <code>%XX</code> group per UTF-8 byte.
     </p>
     <p>
       Get this wrong and a URL either breaks outright or, worse, silently does the wrong thing — an unencoded <code>&amp;</code>

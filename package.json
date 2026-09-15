@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro check && astro build",
+    "build": "astro check && astro build && node --import tsx scripts/make-llms-full.mts",
     "preview": "astro preview",
     "test": "node --test --import tsx \"tests/**/*.test.ts\"",
     "astro": "astro"

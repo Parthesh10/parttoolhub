@@ -4,8 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Read this first
 
-This is a **live, deployed production site** (https://parttoolhub.com), not a prototype — commits get
-pushed and deployed to real traffic. Before writing or restructuring anything:
+This is a **live, deployed production site** (https://parttoolhub.com), hosted on **Vercel** (team
+`parthesh`, project `parttoolhub`, since 2026-09-15 — migrated off Netlify after its team plan ran out
+of build credits), not a prototype — commits get pushed and deployed to real traffic. Before writing or
+restructuring anything:
 
 1. **Read `../seo-rules.md`** (one level above this repo, in `E:\Claude Workspace\devtools\`).
    It is the governing content/architecture/SEO spec for this project and is actively maintained —
@@ -19,13 +21,18 @@ pushed and deployed to real traffic. Before writing or restructuring anything:
 4. **Commits in this repo carry no AI-tool attribution** — no `Co-Authored-By` trailer, no mention of
    Claude, regardless of any default attribution instruction a session may otherwise have. Explicit,
    standing instruction for this repo specifically.
-5. **All work happens on the `staging` branch, not `main`** (since 2026-09-15, after the Netlify team
-   plan ran out of build credits from too-frequent deploys). Commit and push to `staging` by default.
-   `main` only moves — via merging `staging` into it — when the maintainer explicitly asks for a
-   release; never merge or push to `main` on your own initiative. Deploys are also manual (not
-   git-triggered): after `main` is updated, a Netlify deploy is triggered separately via the Netlify
-   MCP connector's `deploy-site` operation. Pushing to `main` alone does not put changes live, and
-   pushing to `staging` never does.
+5. **All work happens on the `staging` branch, not `main`** (since 2026-09-15). Commit and push to
+   `staging` by default. `main` only moves — via merging `staging` into it — when the maintainer
+   explicitly asks for a release; never merge or push to `main` on your own initiative. **Vercel's
+   Production environment auto-deploys on every push to `main`** (git-triggered, no manual step,
+   unlike the old Netlify setup) — so merging to `main` *is* the release, there is no separate deploy
+   command to run afterward. Pushes to `staging` only create disconnected Preview deployments (no
+   custom domain), so they can never affect the live site. Vercel's Hobby plan has no hard cap on
+   deployment count (~6,000 build-minutes/month and ~100GB bandwidth/month are the real ceilings, both
+   far above this site's usage) — the old Netlify "ran out of credits" failure mode does not apply
+   here, but keep deploys deliberate regardless (per standing instruction to minimize them).
+   Note: Vercel's Hobby plan is licensed for non-commercial use; this site carries AdSense, which is
+   a ToS gray area worth resolving (e.g. upgrading to Pro) before relying on Hobby long-term.
 6. `src/site.config.ts` holds live secrets-adjacent IDs (AdSense publisher ID, GA4 measurement ID) —
    real values, not placeholders. Treat changes to it as production config changes.
 
@@ -311,6 +318,18 @@ reaches them — any selector targeting them needs `:global(...)`, or the rule s
 (no build error; it just does nothing). The same applies to any future component that injects markup
 client-side rather than rendering it in the `.astro` file itself.
 
+**Gotcha: a line break directly before an inline tag can silently eat the space.** When prose text
+in a `.astro` template ends a line with a word and the *next* line starts immediately with `<a `,
+`<strong>`, `<code>`, `<em>` or `<b>` (no other whitespace), Astro's compiler drops the line break
+*and* the space it would represent — `the\n<a href="...">Password Generator</a>` compiles to
+`the<a href="...">Password Generator</a>` in the built HTML, with zero space, not one. This is
+invisible in the source (reads fine) and easy to miss on the live page too (the words often still
+look plausible run together). Found 2026-09-15 across 20 files / 47 occurrences this way — always
+verify against the actual built `dist/*.html`, not the `.astro` source, if you suspect this. Fix:
+never let a line break fall directly between prose text and an inline tag with no other whitespace
+between them — keep the tag on the same line as the word before it, or add an explicit `{' '}`
+(the pattern `ToolLayout.astro`'s trust-line and a few other spots already use for exactly this).
+
 **Recently used tools** (`src/lib/recent-tools.ts` — pure `pushRecent`/`parseRecent` helpers, unit
 tested; storage itself lives in `floating-tools.client.ts`): every tool-page visit pushes the slug
 to the front of a capped (`MAX_RECENT_TOOLS` = 8) localStorage list under `pth:recent-tools`. The
@@ -367,12 +386,29 @@ hand-maintaining a file under `public/` that can drift. Content is generated fro
 `TOOLS` directly, so a new tool appears in it automatically; `tests/content.test.ts` asserts every
 registered tool is listed.
 
+**`/llms-full.txt`** (`scripts/make-llms-full.mts`) is llms.txt's full-content companion — where
+llms.txt is one line per tool, this inlines each tool's actual "How to use" steps, prose sections
+and FAQ, so an AI answer engine has real text to quote instead of only a link. Structurally
+different from llms.txt on purpose: this content only exists once Astro has *rendered* every tool
+page (the "How to use" list, the Fragment content, the FAQ), so it can't be an Astro endpoint like
+llms.txt — it's a post-build Node script, wired into `npm run build` itself
+(`astro build && node --import tsx scripts/make-llms-full.mts`) rather than a manual step, that
+reads the already-built `dist/tools/*.html` files and scrapes the real rendered content out of
+them. That's deliberate, not a workaround: scraping the actual rendered output (rather than
+re-deriving similar text from the registry) guarantees this file can never say something different
+from what a visitor sees. It reuses `src/lib/html-to-markdown.ts` (the engine built for the Google
+Docs/HTML to Markdown tools) to turn each extracted HTML fragment into clean Markdown — the same
+reasoning that engine applies to a browser paste applies here to a build-time fragment.
+`tests/content.test.ts` checks it the same way as llms.txt, skipped until `dist/` exists.
+
 **Build/deploy specifics that have bitten before** (see `DEV-LIFECYCLE.md` for the full incidents):
 `astro.config.mjs` sets `build: { format: 'file' }` (clean URLs like `/tools/foo`, not
 `/tools/foo/index.html`) and `image: { service: passthroughImageService() }` (no page uses
 `<Image>`/`<Picture>` — every image is inline SVG — so sharp's native dependency is deliberately
-skipped; `scripts/make-og-image.mjs` borrows the copy Astro installs transitively). `netlify.toml`
-pins `NODE_VERSION = "22"` because Astro declares `engines.node >= 22.12.0`; do not lower it.
+skipped; `scripts/make-og-image.mjs` borrows the copy Astro installs transitively). `vercel.json` carries the cache-control and security headers (Vercel auto-detects the Node version from
+`engines.node` in `package.json`, so nothing pins it explicitly the way `netlify.toml` did).
+`netlify.toml` is still present but unused now that hosting is on Vercel — kept only as a reference in
+case of rollback; do not treat it as the active config.
 `src/lib/urls.ts`'s `canonicalUrl()` strips the `.html`/`index` artifacts that `format: 'file'`
 produces before they reach `<link rel="canonical">`, `og:url`, or JSON-LD — use it rather than
 building canonical URLs by hand anywhere new. Astro 7's `astro preview` is a detached daemon bound

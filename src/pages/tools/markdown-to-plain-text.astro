@@ -96,8 +96,7 @@ const faq = [
     <p>
       Switch to <strong>Slack</strong> and the same input starts <code>{slackHead.split('\n')[0]}</code> — the heading as a bold
       line — with <code>*full test suite*</code> and <code>_two minutes_</code> in Slack's own markup, the table and the
-      command wrapped in <code>```</code> so they stay monospace. <strong>WhatsApp</strong> writes the task list as
-      <code>{whatsappTail.split('\n')[0]}</code>, using its "- " list syntax instead of the • character.
+      command wrapped in <code>```</code> so they stay monospace. <strong>WhatsApp</strong> writes the task list as <code>{whatsappTail.split('\n')[0]}</code>, using its "- " list syntax instead of the • character.
     </p>
 
     <h2>Options explained</h2>
@@ -144,10 +143,8 @@ import { convert } from "html-to-text";
 const plain = convert(marked.parse(text), { wordwrap: false });`}</code></pre>
     <p>
       Each of those goes through HTML and loses the chat-markup step; for Slack, WhatsApp or Google Chat markup use the
-      modes above. If the pasted text is not going into a chat but into a document,
-      <a href="/tools/markdown-to-google-docs">Markdown to Google Docs</a> keeps the formatting instead of removing it,
-      and if the text needs its curly quotes and dashes straightened as well, run it through the
-      <a href="/tools/ai-text-cleaner">AI Text Cleaner</a> afterwards. Lists that come out one item per line can be
+      modes above. If the pasted text is not going into a chat but into a document, <a href="/tools/markdown-to-google-docs">Markdown to Google Docs</a> keeps the formatting instead of removing it,
+      and if the text needs its curly quotes and dashes straightened as well, run it through the <a href="/tools/ai-text-cleaner">AI Text Cleaner</a> afterwards. Lists that come out one item per line can be
       joined with the <a href="/tools/column-to-comma-separated-list">column to comma separated list</a> tool.
     </p>
   </Fragment>

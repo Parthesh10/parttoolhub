@@ -79,19 +79,14 @@ const faq = [
     <p>
       Copy a paragraph in Google Docs and the clipboard holds two things: the plain words, and an HTML version of them
       that Docs generates on the fly. That HTML is not the tidy <code>&lt;strong&gt;</code> and <code>&lt;h2&gt;</code>
-      a web page would use. Bold is a <code>&lt;span style="font-weight:700"&gt;</code>; the whole copy sits inside a
-      <code>&lt;b&gt;</code> tag whose style says <em>not</em> bold; every link goes through a
-      <code>google.com/url?q=</code> redirect; a nested list is a second list placed <em>beside</em> the parent item
+      a web page would use. Bold is a <code>&lt;span style="font-weight:700"&gt;</code>; the whole copy sits inside a <code>&lt;b&gt;</code> tag whose style says <em>not</em> bold; every link goes through a <code>google.com/url?q=</code> redirect; a nested list is a second list placed <em>beside</em> the parent item
       with an <code>aria-level</code> attribute; and one bold phrase can arrive as three spans. A converter that only
       looks at tag names sees none of it.
     </p>
     <p>
-      This tool reads the inline styles as well as the tags, so it produces the Markdown you would have written by hand:
-      <code>#</code> headings, <code>**bold**</code>, <code>*italic*</code>, <code>~~strikethrough~~</code>,
-      <code>`code`</code> for Courier New, real link addresses, nested bullets and numbers, tables with a header row.
+      This tool reads the inline styles as well as the tags, so it produces the Markdown you would have written by hand: <code>#</code> headings, <code>**bold**</code>, <code>*italic*</code>, <code>~~strikethrough~~</code>, <code>`code`</code> for Courier New, real link addresses, nested bullets and numbers, tables with a header row.
       It says what it had to approximate. The reverse trip is <a href="/tools/markdown-to-google-docs">Markdown to
-      Google Docs</a>; when the paste is going into a chat rather than a README,
-      <a href="/tools/markdown-to-plain-text">Markdown to Plain Text</a> takes the result from here.
+      Google Docs</a>; when the paste is going into a chat rather than a README, <a href="/tools/markdown-to-plain-text">Markdown to Plain Text</a> takes the result from here.
     </p>
 
     <h2>Example</h2>
@@ -146,8 +141,7 @@ box.addEventListener("paste", (e) => {
   const markdown = new TurndownService({ headingStyle: "atx" }).turndown(html);
 });`}</code></pre>
     <p>
-      None of those read Docs' inline styles: pandoc works from the .docx, not the clipboard, and turndown sees the
-      <code>font-weight:700</code> span as plain text unless you add a rule for it. For raw HTML source rather than a
+      None of those read Docs' inline styles: pandoc works from the .docx, not the clipboard, and turndown sees the <code>font-weight:700</code> span as plain text unless you add a rule for it. For raw HTML source rather than a
       paste, use <a href="/tools/html-to-markdown">HTML to Markdown</a>, which runs the same converter on text you type.
     </p>
   </Fragment>

@@ -98,7 +98,6 @@ w.writeheader()
 w.writerows(rows)</code></pre>
     <p class="muted">Python's <code>csv.DictWriter</code> needs the full field list up front (<code>dict.fromkeys</code>
       above collects the same union-of-keys this tool computes automatically) and, like this tool, turns anything that
-      isn't already a string into its <code>str()</code> form rather than a JSON string — pre-serialise nested values with
-      <code>json.dumps</code> first if you need this tool's exact behaviour.</p>
+      isn't already a string into its <code>str()</code> form rather than a JSON string — pre-serialise nested values with <code>json.dumps</code> first if you need this tool's exact behaviour.</p>
   </Fragment>
 </ToolLayout>

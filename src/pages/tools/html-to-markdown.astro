@@ -65,8 +65,7 @@ const faq = [
   <Fragment slot="content">
     <h2>What this converter does with real-world HTML</h2>
     <p>
-      HTML in the wild is rarely the clean semantic kind. Rich-text editors emit
-      <code>&lt;span style="font-weight:700"&gt;</code> instead of <code>&lt;strong&gt;</code>, CMS exports leave
+      HTML in the wild is rarely the clean semantic kind. Rich-text editors emit <code>&lt;span style="font-weight:700"&gt;</code> instead of <code>&lt;strong&gt;</code>, CMS exports leave
       unclosed tags, page source carries scripts, styles and comments, and whitespace is scattered across lines the
       browser would collapse. This converter parses HTML the tolerant way a browser does, reads inline styles as well
       as tag names, drops what carries no content, and writes GitHub-flavored Markdown that keeps the structure:
@@ -82,8 +81,7 @@ const faq = [
 
     <h2>Example</h2>
     <p>
-      <strong>Load sample</strong> inserts release notes as semantic HTML: {s.headings} headings, a paragraph with
-      <code>&lt;strong&gt;</code>, <code>&lt;em&gt;</code>, <code>&lt;code&gt;</code> and a link, a nested list, a
+      <strong>Load sample</strong> inserts release notes as semantic HTML: {s.headings} headings, a paragraph with <code>&lt;strong&gt;</code>, <code>&lt;em&gt;</code>, <code>&lt;code&gt;</code> and a link, a nested list, a
       numbered list, a quote, a fenced code block with a language class, a table and an image. It becomes:
     </p>
     <pre><code>{sample.markdown}</code></pre>

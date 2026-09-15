@@ -67,13 +67,11 @@ const faq = [
     <p>
       When you copy text from a web page and paste it into Google Docs, the headings and bold come with it. When you
       copy Markdown from a chat window and paste it, they do not. The difference is not the editor, it is the clipboard:
-      the first copy carried an HTML flavour alongside the plain text; the second carried only text, and Markdown's
-      <code>**</code> and <code>#</code> are just characters to Docs. Docs' own <em>Paste from Markdown</em> option
+      the first copy carried an HTML flavour alongside the plain text; the second carried only text, and Markdown's <code>**</code> and <code>#</code> are just characters to Docs. Docs' own <em>Paste from Markdown</em> option
       exists for exactly this and is worth switching on if your account offers it.
     </p>
     <p>
-      This tool converts the Markdown to HTML in your browser, shows you that HTML rendered, and on
-      <strong>Copy for Google Docs</strong> writes both the HTML and a plain-text version to the clipboard. Any editor
+      This tool converts the Markdown to HTML in your browser, shows you that HTML rendered, and on <strong>Copy for Google Docs</strong> writes both the HTML and a plain-text version to the clipboard. Any editor
       that understands formatted paste — Google Docs, Microsoft Word, Gmail, Outlook, Teams, Notion, Confluence — reads
       the HTML and applies its native styles. A plain text box, a terminal or a code editor takes the text version. The
       HTML is deliberately simple: semantic tags, a monospace font on code, a border on tables, nothing else, so the
@@ -90,8 +88,7 @@ const faq = [
     <p>
       Pasted into Google Docs, that is a Heading 2, a paragraph with a bold phrase, monospace <code>npm test</code> and an
       italic phrase, then a numbered list with a nested bulleted list, a three-column table with a header row, an indented
-      quote, a monospace command and a two-item list beginning with ☑ and ☐. The table is
-      <code>{tableTag}</code> and the code block is <code>{preTag}</code>, which is what makes Docs keep the border and
+      quote, a monospace command and a two-item list beginning with ☑ and ☐. The table is <code>{tableTag}</code> and the code block is <code>{preTag}</code>, which is what makes Docs keep the border and
       the font.
     </p>
 
@@ -136,8 +133,7 @@ await navigator.clipboard.write([
   }),
 ]);`}</code></pre>
     <p>
-      When the destination is a chat box rather than a document, formatting is the problem, not the goal:
-      <a href="/tools/markdown-to-plain-text">Markdown to Plain Text</a> removes it while keeping the structure, or
+      When the destination is a chat box rather than a document, formatting is the problem, not the goal: <a href="/tools/markdown-to-plain-text">Markdown to Plain Text</a> removes it while keeping the structure, or
       rewrites it as Slack, WhatsApp or Google Chat markup. Text that came out of an AI assistant with curly quotes and
       em dashes can go through the <a href="/tools/ai-text-cleaner">AI Text Cleaner</a> first.
     </p>

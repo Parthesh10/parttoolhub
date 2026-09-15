@@ -76,8 +76,7 @@ const faq = [
 
     <h2>Options explained</h2>
     <ul>
-      <li><strong>From base: Auto-detect / Binary / Octal / Decimal / Hexadecimal</strong> — Auto-detect reads the
-        <code>0x</code>/<code>0b</code>/<code>0o</code> prefix if present and otherwise assumes decimal; pick a base
+      <li><strong>From base: Auto-detect / Binary / Octal / Decimal / Hexadecimal</strong> — Auto-detect reads the <code>0x</code>/<code>0b</code>/<code>0o</code> prefix if present and otherwise assumes decimal; pick a base
         explicitly for input with no prefix that is not decimal (plain <code>ff</code>, for instance, is ambiguous
         between hex and an invalid decimal number without it).</li>
       <li><strong>Show as two's complement</strong> and <strong>Bit width</strong> — see the FAQ. Only affects negative
@@ -90,8 +89,7 @@ const faq = [
       <li><strong>Digits that don't fit the base.</strong> <code>12</code> read as binary stops with "{badBinaryErr}" — a
         binary number can only contain 0 and 1.</li>
       <li><strong>Empty input</strong> stops with "{emptyErr}" rather than showing four blank results.</li>
-      <li><strong>Thousands separators and underscores are tolerated</strong>: <code>1,000,000</code> and
-        <code>1_000_000</code> both parse as one million, matching how many languages let you write a large literal.</li>
+      <li><strong>Thousands separators and underscores are tolerated</strong>: <code>1,000,000</code> and <code>1_000_000</code> both parse as one million, matching how many languages let you write a large literal.</li>
       <li><strong>Values beyond 2<sup>53</sup> convert exactly</strong> — see the FAQ; this is the one place a naive
         base-converter built on plain numbers would quietly give the wrong answer.</li>
       <li><strong>Two's complement out of range</strong> — see the FAQ.</li>
