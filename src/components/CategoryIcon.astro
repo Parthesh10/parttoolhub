@@ -1,0 +1,45 @@
+---
+/**
+ * One inline-SVG line icon per category, 24x24, stroke=currentColor, matching
+ * the header logomark's weight (stroke-width 2, round joins/caps). Used next
+ * to the category name on the home page and each hub's hero, so a category
+ * has a real visual landmark, not only a colored dot.
+ *
+ * Add a category: add its slug here and give it an icon in the same style —
+ * primitives (line/rect/circle/two-segment path) over hand-drawn curves, so
+ * it stays crisp at 20-24px without a design tool to check it in.
+ */
+export interface Props {
+  slug: string;
+  size?: number;
+}
+const { slug, size = 22 } = Astro.props;
+---
+
+{slug === 'converters' && (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M4 9h13M17 9l-3-3M17 9l-3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M20 15H7M7 15l3-3M7 15l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+)}
+{slug === 'text-tools' && (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <line x1="4" y1="7" x2="20" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <line x1="4" y1="12" x2="16" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <line x1="4" y1="17" x2="20" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+  </svg>
+)}
+{slug === 'encoders' && (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M9 7l-5 5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M15 7l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+)}
+{slug === 'generators' && (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <rect x="5" y="5" width="14" height="14" rx="3" stroke="currentColor" stroke-width="2" />
+    <circle cx="9" cy="9" r="1.3" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none" />
+    <circle cx="15" cy="15" r="1.3" fill="currentColor" stroke="none" />
+  </svg>
+)}

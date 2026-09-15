@@ -290,12 +290,15 @@ site-wide — a new tool page needs nothing extra to pick this up:
   `--shadow-lg` line first as a fallback for browsers without `color-mix()`, the tinted one after so
   it wins where supported. Keep that ordering if you touch it.
 
-**Theme system.** Three states — light (the app's actual default, not OS-follow), dark, system —
-implemented across three places that must stay in sync: `global.css` (the `:root` / `:root[data-theme=dark]`
-/ `@media (prefers-color-scheme: dark) :root:not([data-theme=light])` token blocks), `Base.astro` (a
+**Theme system.** Three states — dark (the app's own default since 2026-09-15, not OS-follow — it
+was light before that date; see DEV-LIFECYCLE.md for why it flipped), light, system — implemented
+across three places that must stay in sync: `global.css` (the `:root` / `:root[data-theme=dark]` /
+`@media (prefers-color-scheme: dark) :root:not([data-theme=light])` token blocks), `Base.astro` (a
 tiny inline pre-paint `<script is:inline>` that reads `localStorage` and sets `data-theme` before
-first paint, avoiding a flash of the wrong theme), and `Header.astro` (the toggle button, which cycles
-the three states, persists the choice, and keeps the `theme-color` meta tag in sync).
+first paint, avoiding a flash of the wrong theme — its own default and `Header.astro`'s toggle
+fallback must always agree, or the button shows the wrong icon on first load), and `Header.astro`
+(the toggle button, which cycles the three states, persists the choice, and keeps the `theme-color`
+meta tag in sync — its initial value in `Base.astro`'s `<head>` is the dark surface color to match).
 
 **Category hub pages** (`/converters`, `/text-tools`, `/encoders`, `/generators`) are one dynamic route,
 `src/pages/[category].astro`, using `getStaticPaths()` over `CATEGORIES` — not one file per category.

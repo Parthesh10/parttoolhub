@@ -91,21 +91,23 @@ const baseSchema = [
     <!--
       Pre-paint theme application — must run this early (before the
       stylesheet, before any body content) so there is no flash of the
-      wrong theme. Light is the app's own default whenever no explicit
-      choice is stored yet, even if the OS prefers dark; "system" is an
-      explicit opt-in the visitor picks from the toggle in the header.
-      Kept as a tiny inline script rather than an import so it can run
-      synchronously with zero network request — see Header.astro for
-      the toggle control that writes this same localStorage key.
+      wrong theme. Dark is the app's own default whenever no explicit
+      choice is stored yet, even if the OS prefers light (changed
+      2026-09-15 — dark is now the primary brand identity, not just an
+      option); "system" is an explicit opt-in the visitor picks from the
+      toggle in the header. Kept as a tiny inline script rather than an
+      import so it can run synchronously with zero network request — see
+      Header.astro for the toggle control that writes this same
+      localStorage key and must agree with the default written here.
     -->
     <script is:inline>
       (function () {
         try {
           var t = localStorage.getItem('theme'); // 'light' | 'dark' | 'system' | null
-          if (t === 'dark') {
-            document.documentElement.setAttribute('data-theme', 'dark');
-          } else if (t !== 'system') {
+          if (t === 'light') {
             document.documentElement.setAttribute('data-theme', 'light');
+          } else if (t !== 'system') {
+            document.documentElement.setAttribute('data-theme', 'dark');
           }
           // t === 'system': leave data-theme unset so prefers-color-scheme decides.
         } catch (e) {}
@@ -123,7 +125,7 @@ const baseSchema = [
     <!-- Content is kept in sync with the resolved theme by the pre-paint script below and by
          the toggle in Header.astro — a single unconditional tag, rather than two `media`-gated
          ones, since browsers don't apply those consistently once a manual override is involved. -->
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#151a22" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE.name} />

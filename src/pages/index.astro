@@ -4,6 +4,8 @@ import { SITE } from '../site.config';
 import { CATEGORIES } from '../data/categories';
 import { TOOLS, toolsInCategory, toolPath } from '../data/tools';
 import { categoryTintVar } from '../lib/category-tint';
+import CategoryIcon from '../components/CategoryIcon.astro';
+import HeroDemo from '../components/HeroDemo.astro';
 ---
 
 <Base
@@ -12,17 +14,22 @@ import { categoryTintVar } from '../lib/category-tint';
   canonical="/"
 >
   <section class="hero bg-grid">
-    <p class="eyebrow">Runs in your browser</p>
-    <h1>Small text tools that respect your data</h1>
-    <p class="lead">
-      Every tool on {SITE.name} runs entirely in your browser. There is no upload, no account and no waiting — paste,
-      adjust, copy.
-    </p>
-    <p class="meta-row">
-      <span>{TOOLS.length} tools</span><span aria-hidden="true">·</span>
-      <span>{CATEGORIES.length} categories</span><span aria-hidden="true">·</span>
-      <span>Nothing ever uploaded</span>
-    </p>
+    <div class="hero-text">
+      <p class="eyebrow">Runs in your browser</p>
+      <h1>Small text tools that respect your data</h1>
+      <p class="lead">
+        Every tool on {SITE.name} runs entirely in your browser. There is no upload, no account and no waiting — paste,
+        adjust, copy. The box on the right is a real one, not a screenshot.
+      </p>
+      <p class="meta-row">
+        <span>{TOOLS.length} tools</span><span aria-hidden="true">·</span>
+        <span>{CATEGORIES.length} categories</span><span aria-hidden="true">·</span>
+        <span>Nothing ever uploaded</span>
+      </p>
+    </div>
+    <div class="hero-demo-slot">
+      <HeroDemo />
+    </div>
   </section>
 
   <section id="tools" aria-label="All tools" data-nav="home-directory">
@@ -31,7 +38,10 @@ import { categoryTintVar } from '../lib/category-tint';
       return (
         <div class="category" style={`--tint: ${categoryTintVar(cat.slug)}`}>
           <div class="category-head">
-            <h2><span class="dot" aria-hidden="true" /><a href={`/${cat.slug}`}>{cat.name}</a></h2>
+            <h2>
+              <span class="icon-chip" aria-hidden="true"><CategoryIcon slug={cat.slug} size={19} /></span>
+              <a href={`/${cat.slug}`}>{cat.name}</a>
+            </h2>
             <p class="muted">{cat.blurb}</p>
           </div>
           <div class="grid">
@@ -69,25 +79,38 @@ import { categoryTintVar } from '../lib/category-tint';
 </Base>
 
 <style>
-  .hero { max-width: 72ch; margin-bottom: 2.25rem; padding-top: 0.5rem; }
-  .lead { font-size: 1.15rem; color: var(--text-muted); }
+  .hero {
+    display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 2.5rem; align-items: start;
+    margin-bottom: 2.75rem; padding-top: 0.5rem;
+  }
+  @media (max-width: 860px) { .hero { grid-template-columns: 1fr; } }
+  .hero-text { max-width: 58ch; }
+  .lead { font-size: 1.1rem; color: var(--text-muted); }
   .meta-row {
     display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
     font-family: var(--mono); font-size: 0.82rem; color: var(--text-muted);
     margin: 0.5rem 0 0;
   }
   .meta-row span[aria-hidden] { color: var(--border); }
+  .hero-demo-slot { max-width: 420px; width: 100%; justify-self: end; }
+  @media (max-width: 860px) { .hero-demo-slot { justify-self: stretch; max-width: none; } }
 
   .category { margin-bottom: 2.5rem; }
   .category-head { margin-bottom: 0.85rem; }
   .category-head h2 {
-    display: inline-flex; align-items: center; gap: 0.55rem;
+    display: inline-flex; align-items: center; gap: 0.6rem;
     margin: 0 0 0.15rem; font-size: 1.3rem;
   }
-  .dot { width: 0.6rem; height: 0.6rem; border-radius: 3px; background: var(--tint); flex: none; }
+  .icon-chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2rem; height: 2rem; border-radius: var(--radius-sm); flex: none;
+    background: color-mix(in srgb, var(--tint) 14%, transparent);
+    color: var(--tint);
+  }
   .category-head h2 a { color: var(--text); }
   .category-head h2 a:hover { color: var(--tint); text-decoration: none; }
-  .category-head p { margin: 0 0 0 1.15rem; }
+  .category-head p { margin: 0 0 0 2.6rem; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
   .tool-card {
     display: flex; flex-direction: column; padding: 1.1rem 1.3rem; color: var(--text);

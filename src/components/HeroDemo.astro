@@ -1,0 +1,105 @@
+---
+/**
+ * A live, working demo embedded in the homepage hero — the site says "paste,
+ * adjust, copy" in prose right next to it, so this proves it in the same
+ * breath rather than asking for trust. Runs the real code-case-convert engine
+ * (src/lib/case-convert.ts, the same one /tools/code-case-converter uses),
+ * updates on every keystroke, and links through to the full tool.
+ *
+ * Deliberately un-instrumented: this is a homepage decoration, not a tool
+ * page, so it doesn't extend the analytics taxonomy in docs/ANALYTICS.md for
+ * a click that isn't a real tool use — clicking through to the real tool
+ * fires that page's own tool_view/tool_use normally.
+ */
+import { CASE_LABELS, type CaseStyle } from '../lib/case-convert';
+
+const ORDER: CaseStyle[] = ['camel', 'pascal', 'snake', 'constant', 'kebab', 'dot'];
+const DEFAULT_INPUT = 'Part Tool Hub';
+---
+
+<div class="hero-demo" id="hero-demo">
+  <div class="demo-titlebar">
+    <span class="demo-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="demo-file">live · code-case-converter</span>
+  </div>
+  <div class="demo-body">
+    <label class="sr-only" for="demo-input">Type a word or phrase to see it converted live</label>
+    <input id="demo-input" type="text" autocomplete="off" spellcheck="false" value={DEFAULT_INPUT} />
+    <div class="demo-rows" id="demo-rows">
+      {ORDER.map((style) => (
+        <button type="button" class="demo-row" data-style={style} title="Click to copy">
+          <span class="demo-label">{CASE_LABELS[style]}</span>
+          <span class="demo-value" data-value></span>
+        </button>
+      ))}
+    </div>
+  </div>
+  <a class="demo-cta" href="/tools/code-case-converter" data-nav="handoff">
+    Open the full tool <span aria-hidden="true">→</span>
+  </a>
+  <p class="tool-toast" id="demo-toast" role="status" aria-live="polite" hidden></p>
+</div>
+
+<script src="./hero-demo.client.ts"></script>
+
+<style>
+  .hero-demo {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+  /* Viewfinder corner brackets — a small technical/instrument-panel cue, pure CSS. */
+  .hero-demo::before,
+  .hero-demo::after,
+  .demo-body::before,
+  .demo-body::after {
+    content: ""; position: absolute; width: 14px; height: 14px; pointer-events: none;
+    border-color: var(--accent); opacity: 0.55; z-index: 2;
+  }
+  .hero-demo::before { top: -1px; left: -1px; border-top: 2px solid; border-left: 2px solid; border-radius: var(--radius) 0 0 0; }
+  .hero-demo::after { top: -1px; right: -1px; border-top: 2px solid; border-right: 2px solid; border-radius: 0 var(--radius) 0 0; }
+  .demo-body::before { bottom: -1px; left: -1px; border-bottom: 2px solid; border-left: 2px solid; }
+  .demo-body::after { bottom: -1px; right: -1px; border-bottom: 2px solid; border-right: 2px solid; }
+
+  .demo-titlebar {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.55rem 0.85rem; background: var(--surface-2); border-bottom: 1px solid var(--border);
+  }
+  .demo-dots { display: inline-flex; gap: 0.32rem; }
+  .demo-dots i { width: 8px; height: 8px; border-radius: 50%; display: block; }
+  .demo-dots i:nth-child(1) { background: #ec6a5e; }
+  .demo-dots i:nth-child(2) { background: #f4bf4f; }
+  .demo-dots i:nth-child(3) { background: #61c454; }
+  .demo-file { font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.02em; }
+
+  .demo-body { position: relative; padding: 1rem 1.1rem 1.15rem; }
+  #demo-input {
+    width: 100%; font: inherit; font-family: var(--mono); font-size: 1rem; font-weight: 600;
+    padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--surface-2); color: var(--text); margin-bottom: 0.75rem;
+  }
+  #demo-input:focus { outline: 2px solid var(--accent); outline-offset: -1px; background: var(--surface); }
+
+  .demo-rows { display: grid; gap: 0.35rem; }
+  .demo-row {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem;
+    width: 100%; text-align: left; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm);
+    border: 1px solid transparent; background: none; font: inherit; color: var(--text); cursor: pointer;
+  }
+  .demo-row:hover { background: var(--surface-2); border-color: var(--border); }
+  .demo-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .demo-label { font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); flex: none; }
+  .demo-value { font-family: var(--mono); font-size: 0.85rem; font-weight: 600; overflow-wrap: anywhere; text-align: right; }
+  .demo-row.just-copied .demo-value { color: var(--success); }
+
+  .demo-cta {
+    display: block; text-align: center; padding: 0.7rem; font-size: 0.85rem; font-weight: 600;
+    color: var(--accent); border-top: 1px solid var(--border); background: var(--surface-2);
+  }
+  .demo-cta:hover { background: var(--accent-soft); text-decoration: none; }
+
+  @media (pointer: coarse) { .demo-row { min-height: 44px; } }
+</style>
