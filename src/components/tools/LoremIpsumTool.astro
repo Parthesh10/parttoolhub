@@ -1,0 +1,60 @@
+---
+/** Lorem Ipsum generator. Behaviour in ./lorem-ipsum.client.ts */
+---
+
+<section class="tool card" id="tool" data-tool="lorem-ipsum-generator">
+  <div class="options">
+    <fieldset>
+      <legend>Unit</legend>
+      <div class="row" role="group" aria-label="Unit">
+        <button type="button" class="btn btn-sm" id="unit-paragraphs" aria-pressed="true">Paragraphs</button>
+        <button type="button" class="btn btn-sm" id="unit-sentences" aria-pressed="false">Sentences</button>
+        <button type="button" class="btn btn-sm" id="unit-words" aria-pressed="false">Words</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Quantity</legend>
+      <div class="row">
+        <label class="field">
+          <span>How many</span>
+          <input type="number" id="opt-count" min="1" max="50" value="3" />
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Options</legend>
+      <div class="checks">
+        <label><input type="checkbox" id="opt-start-lorem" checked /> Start with "Lorem ipsum dolor sit amet…"</label>
+      </div>
+    </fieldset>
+  </div>
+
+  <p class="status-banner" id="status" hidden></p>
+
+  <div class="single">
+    <div class="pane-head">
+      <label for="output">Generated text</label>
+      <span class="stat" id="output-stat" aria-live="polite"></span>
+    </div>
+    <textarea id="output" rows="10" readonly spellcheck="false"></textarea>
+    <div class="pane-actions">
+      <button type="button" class="btn btn-primary btn-sm" id="btn-generate">Generate</button>
+      <button type="button" class="btn btn-sm" id="btn-copy">Copy to clipboard</button>
+      <button type="button" class="btn btn-sm" id="btn-download">Download .txt</button>
+    </div>
+  </div>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./lorem-ipsum.client.ts"></script>
+
+<style>
+  #unit-paragraphs[aria-pressed="true"], #unit-sentences[aria-pressed="true"], #unit-words[aria-pressed="true"] {
+    background: var(--accent-btn); border-color: var(--accent-btn); color: #fff;
+  }
+  #output { min-height: 220px; }
+  #opt-count { max-width: 6rem; }
+</style>

@@ -221,6 +221,18 @@ export const TOOLS: Tool[] = [
     reviewedBy: SITE.author,
     reviewedOn: '2026-09-15',
   },
+  {
+    slug: 'lorem-ipsum-generator',
+    name: 'Lorem Ipsum Generator',
+    title: 'Lorem Ipsum Generator — Words, Sentences & Paragraphs',
+    description: 'Generate classic Lorem Ipsum placeholder text by words, sentences or paragraphs, with or without the traditional opening line.',
+    short: 'Generate placeholder Latin text by words, sentences or paragraphs for mockups, layouts and templates.',
+    category: 'generators',
+    features: ['Words, sentences or paragraphs, 1–50 at once', 'Optional classic "Lorem ipsum dolor sit amet…" opening', 'Traditional word bank, not gibberish', 'Copy to clipboard or download as .txt'],
+    intent: 'lorem ipsum generator',
+    reviewedBy: SITE.author,
+    reviewedOn: '2026-09-15',
+  },
 
   // ---- Text Tools ----------------------------------------------------------
   {
