@@ -265,6 +265,31 @@ string. Both loaders carry `fetchpriority="low"` so they never compete with a to
 `AdSlot` additionally lazy-loads via `IntersectionObserver` so a below-the-fold ad never competes
 with a tool's own interactive load.
 
+**Design system (2026-09-15 visual refresh).** Tokens in `global.css`'s `:root` blocks, applied
+site-wide — a new tool page needs nothing extra to pick this up:
+- `--font-display` (Space Grotesk, loaded non-render-blocking in `Base.astro`) is used only by
+  `h1`/`h2`/`h3`, `.brand`/`.brand-mark` and `.eyebrow` — body text and every textarea stay on
+  `--font` (the system stack) for performance and small-size legibility.
+- `--accent` / `--accent-hover` are for **text** (links, the `.eyebrow` label) — deliberately pale
+  in dark mode for legibility on a dark page. `--accent-btn` / `--accent-btn-hover` are a separate,
+  darker pair for **solid fills with white text on top** (`.btn-primary`, `.chip[aria-pressed]`, a
+  tool's own pressed-mode buttons, the skip-link) — using `--accent` there fails 4.5:1 in dark mode
+  (measured 2.8:1). Any new "pressed / selected" button state must use `--accent-btn`, not `--accent`.
+- `--accent-2` (brass/copper) is a sparse second accent — a label dot, a hover glow — never a large
+  fill; also passes 4.5:1 as text (it doubles as `--tint-generators`, used as link/eyebrow text).
+- `--tint-<category-slug>` (four fixed hues: cobalt/teal/violet/brass) via `src/lib/category-tint.ts`
+  give each category hub and its cards on the home page a consistent identity (top card border,
+  eyebrow color, "Open tool →" color). Adding a category means adding its tint token *and* a case in
+  that file together. All four tints are verified ≥4.5:1 as text on `--bg` in both themes — check any
+  new tint the same way before adding it (`node -e` with the relative-luminance formula, or a browser
+  contrast checker) rather than picking a color by eye.
+- `.eyebrow` (small mono uppercase label with a colored dot) and `.bg-grid` (a CSS-only dot-grid
+  texture, no image request, used behind hero sections only — not on dense pages like the footer)
+  are the two reusable "hero" primitives; see `index.astro` and `[category].astro` for the pattern.
+- Card hover uses a layered `box-shadow: var(--shadow-lg), 0 0 0 1px color-mix(...)` — the plain
+  `--shadow-lg` line first as a fallback for browsers without `color-mix()`, the tinted one after so
+  it wins where supported. Keep that ordering if you touch it.
+
 **Theme system.** Three states — light (the app's actual default, not OS-follow), dark, system —
 implemented across three places that must stay in sync: `global.css` (the `:root` / `:root[data-theme=dark]`
 / `@media (prefers-color-scheme: dark) :root:not([data-theme=light])` token blocks), `Base.astro` (a

@@ -65,6 +65,30 @@ const baseSchema = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!--
+      Display face (headings, brand wordmark, .eyebrow labels only — body text and
+      every textarea stay on the system stack, per seo-rules §4's perf budget).
+      Loaded the standard non-render-blocking way: a preloaded stylesheet swapped
+      in on load via a `media="print"` trick, so it never blocks first paint; the
+      <noscript> fallback covers JS-disabled visits. font-display=swap in the
+      Google Fonts URL avoids invisible text while it loads.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" />
+    </noscript>
+    <!--
       Pre-paint theme application — must run this early (before the
       stylesheet, before any body content) so there is no flash of the
       wrong theme. Light is the app's own default whenever no explicit
@@ -175,7 +199,7 @@ const baseSchema = [
 <style>
   .skip-link {
     position: absolute; left: -999px; top: 0; z-index: 100;
-    background: var(--accent); color: #fff; padding: 0.5rem 1rem; border-radius: 0 0 var(--radius-sm) 0;
+    background: var(--accent-btn); color: #fff; padding: 0.5rem 1rem; border-radius: 0 0 var(--radius-sm) 0;
   }
   .skip-link:focus { left: 0; }
   main { padding-block: 1.5rem 3rem; }

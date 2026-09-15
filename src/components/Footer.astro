@@ -8,19 +8,19 @@ const year = new Date().getFullYear();
 <footer class="site-footer" data-nav="footer">
   <div class="container grid">
     <div class="about">
-      <strong>{SITE.name}</strong>
+      <span class="brand-mark">{SITE.name}</span>
       <p class="muted">{SITE.tagline}. Everything runs locally in your browser — nothing you paste is uploaded.</p>
     </div>
     {CATEGORIES.map((c) => (
       <div>
-        <strong><a href={`/${c.slug}`}>{c.name}</a></strong>
+        <span class="col-head"><a href={`/${c.slug}`}>{c.name}</a></span>
         <ul>
           {toolsInCategory(c.slug).slice(0, 5).map((t) => <li><a href={toolPath(t)}>{t.name}</a></li>)}
         </ul>
       </div>
     ))}
     <div>
-      <strong>Site</strong>
+      <span class="col-head">Site</span>
       <ul>
         <li><a href="/about">About</a></li>
         <li><a href="/contact">Contact</a></li>
@@ -38,9 +38,18 @@ const year = new Date().getFullYear();
 
 <style>
   .site-footer { border-top: 1px solid var(--border); background: var(--surface); margin-top: 2rem; font-size: 0.925rem; }
-  .grid { display: grid; grid-template-columns: 1.6fr repeat(auto-fit, minmax(140px, 1fr)); gap: 2rem; padding-block: 2rem 1rem; }
+  .grid { display: grid; grid-template-columns: 1.6fr repeat(auto-fit, minmax(140px, 1fr)); gap: 2rem; padding-block: 2.25rem 1rem; }
   .about p { max-width: 32ch; }
-  ul { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+  .brand-mark { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--text); }
+  /* Same small-caps technical-label treatment as .eyebrow, without the leading dot —
+     ties the footer's section headers into the rest of the type system. */
+  .col-head {
+    display: block; font-family: var(--mono); font-size: 0.75rem; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted);
+  }
+  .col-head a { color: inherit; }
+  .col-head a:hover { color: var(--accent); text-decoration: none; }
+  ul { list-style: none; padding: 0; margin: 0.6rem 0 0; }
   li { margin-bottom: 0.3rem; }
   a { color: var(--text-muted); }
   a:hover { color: var(--accent); }

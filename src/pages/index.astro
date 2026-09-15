@@ -2,7 +2,8 @@
 import Base from '../layouts/Base.astro';
 import { SITE } from '../site.config';
 import { CATEGORIES } from '../data/categories';
-import { toolsInCategory, toolPath } from '../data/tools';
+import { TOOLS, toolsInCategory, toolPath } from '../data/tools';
+import { categoryTintVar } from '../lib/category-tint';
 ---
 
 <Base
@@ -10,11 +11,17 @@ import { toolsInCategory, toolPath } from '../data/tools';
   description={`${SITE.tagline}. Free online converters, text tools and encoders that never upload your data.`}
   canonical="/"
 >
-  <section class="hero">
+  <section class="hero bg-grid">
+    <p class="eyebrow">Runs in your browser</p>
     <h1>Small text tools that respect your data</h1>
     <p class="lead">
       Every tool on {SITE.name} runs entirely in your browser. There is no upload, no account and no waiting — paste,
       adjust, copy.
+    </p>
+    <p class="meta-row">
+      <span>{TOOLS.length} tools</span><span aria-hidden="true">·</span>
+      <span>{CATEGORIES.length} categories</span><span aria-hidden="true">·</span>
+      <span>Nothing ever uploaded</span>
     </p>
   </section>
 
@@ -22,9 +29,9 @@ import { toolsInCategory, toolPath } from '../data/tools';
     {CATEGORIES.map((cat) => {
       const tools = toolsInCategory(cat.slug);
       return (
-        <div class="category">
+        <div class="category" style={`--tint: ${categoryTintVar(cat.slug)}`}>
           <div class="category-head">
-            <h2><a href={`/${cat.slug}`}>{cat.name}</a></h2>
+            <h2><span class="dot" aria-hidden="true" /><a href={`/${cat.slug}`}>{cat.name}</a></h2>
             <p class="muted">{cat.blurb}</p>
           </div>
           <div class="grid">
@@ -62,19 +69,38 @@ import { toolsInCategory, toolPath } from '../data/tools';
 </Base>
 
 <style>
-  .hero { max-width: 72ch; margin-bottom: 2rem; }
+  .hero { max-width: 72ch; margin-bottom: 2.25rem; padding-top: 0.5rem; }
   .lead { font-size: 1.15rem; color: var(--text-muted); }
-  .category { margin-bottom: 2.25rem; }
+  .meta-row {
+    display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
+    font-family: var(--mono); font-size: 0.82rem; color: var(--text-muted);
+    margin: 0.5rem 0 0;
+  }
+  .meta-row span[aria-hidden] { color: var(--border); }
+
+  .category { margin-bottom: 2.5rem; }
   .category-head { margin-bottom: 0.85rem; }
-  .category-head h2 { margin: 0 0 0.15rem; font-size: 1.3rem; }
+  .category-head h2 {
+    display: inline-flex; align-items: center; gap: 0.55rem;
+    margin: 0 0 0.15rem; font-size: 1.3rem;
+  }
+  .dot { width: 0.6rem; height: 0.6rem; border-radius: 3px; background: var(--tint); flex: none; }
   .category-head h2 a { color: var(--text); }
-  .category-head h2 a:hover { color: var(--accent); text-decoration: none; }
-  .category-head p { margin: 0; }
+  .category-head h2 a:hover { color: var(--tint); text-decoration: none; }
+  .category-head p { margin: 0 0 0 1.15rem; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
-  .tool-card { display: flex; flex-direction: column; padding: 1.1rem 1.3rem; color: var(--text); transition: border-color 0.15s, transform 0.15s; }
-  .tool-card:hover { text-decoration: none; border-color: var(--accent); transform: translateY(-2px); }
+  .tool-card {
+    display: flex; flex-direction: column; padding: 1.1rem 1.3rem; color: var(--text);
+    border-top: 3px solid var(--tint);
+    transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+  }
+  .tool-card:hover {
+    text-decoration: none; transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-lg), 0 0 0 1px color-mix(in srgb, var(--tint) 45%, transparent);
+  }
   .tool-card h3 { margin: 0 0 0.35rem; font-size: 1.05rem; }
   .tool-card p { color: var(--text-muted); font-size: 0.9rem; flex: 1; }
-  .cta { color: var(--accent); font-weight: 600; font-size: 0.85rem; }
+  .cta { color: var(--tint); font-weight: 600; font-size: 0.85rem; }
   .why { margin-top: 1rem; }
 </style>

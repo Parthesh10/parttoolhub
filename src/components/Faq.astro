@@ -38,10 +38,12 @@ const schema = {
 <script is:inline type="application/ld+json" set:html={JSON.stringify(schema)} />
 
 <style>
-  details { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); margin-bottom: 0.6rem; }
+  details { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); margin-bottom: 0.6rem; transition: border-color 0.15s; }
+  details[open] { border-color: var(--accent); }
   summary { cursor: pointer; padding: 0.8rem 1rem; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 1rem; }
+  summary:hover { color: var(--accent); }
   summary::-webkit-details-marker { display: none; }
   summary::after { content: '+'; color: var(--text-muted); font-weight: 400; }
-  details[open] summary::after { content: '−'; }
+  details[open] summary::after { content: '−'; color: var(--accent); }
   details p { padding: 0 1rem 0.9rem; margin: 0; color: var(--text-muted); }
 </style>

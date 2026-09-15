@@ -12,59 +12,110 @@
    ------------------------------------------------------------------ */
 :root {
   color-scheme: light;
-  --bg: #f7f8fa;
+  --bg: #f6f7fb;
   --surface: #ffffff;
-  --surface-2: #f0f2f5;
-  --border: #dfe3e8;
-  --text: #1a1d23;
-  --text-muted: #5b6270;
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --accent-soft: #e8efff;
+  --surface-2: #eef0f6;
+  --border: #dee1eb;
+  --text: #161a24;
+  --text-muted: #5c6274;
+  /* Cobalt, not the framework-default blue-600 — a touch more saturated and cooler. */
+  --accent: #3450e6;
+  --accent-hover: #2740c9;
+  --accent-soft: #e7ebfd;
+  /* Solid-fill variant for button backgrounds. Equal to --accent in light mode
+     (white text on it already clears 4.5:1); dark mode defines its own darker
+     shade below, because --accent there is deliberately pale for link legibility
+     on a dark page, which fails white-on-fill contrast at button size. */
+  --accent-btn: var(--accent);
+  --accent-btn-hover: var(--accent-hover);
+  /* Warm counter-accent (brass/copper — the "tool" half of the brand), used sparingly:
+     a label, a dot, a hover glow — never a large fill. Darkened from the swatch's
+     first pass (#c2680c, 3.7:1 on --bg) so it also clears 4.5:1 as the Generators
+     tint's link/eyebrow text color, not just as a decorative dot. */
+  --accent-2: #9c5209;
+  --accent-2-soft: #fbeadb;
   --success: #15803d;
   --danger: #b91c1c;
+  /* Per-category tints (see src/lib/category-tint.ts) — a small, fixed palette,
+     not a rainbow: cobalt / teal / violet / brass, each muted enough to sit next
+     to the others without competing, and each ≥4.5:1 on --bg since they're used
+     as "Open tool →" and eyebrow text, not only as decoration. */
+  --tint-converters: var(--accent);
+  --tint-text-tools: #0a6055;
+  --tint-encoders: #7c3aed;
+  --tint-generators: var(--accent-2);
   --radius: 10px;
   --radius-sm: 6px;
   --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.1);
+  --shadow-lg: 0 8px 24px -8px rgba(16, 24, 40, 0.18), 0 2px 6px rgba(16, 24, 40, 0.08);
+  /* System stack for body copy and every textarea (perf, legibility at small sizes —
+     seo-rules §4). The display face below is headings-only. */
   --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Space Grotesk", var(--font);
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   --max-w: 1120px;
+  /* Blueprint dot-grid used behind hero sections — pure CSS, themed via currentcolor-free
+     radial-gradient so it needs no image and stays in sync with the border token. */
+  --grid-dot: rgba(52, 80, 230, 0.16);
 }
 
 /* "System" preference: only applies when data-theme isn't forced to light. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: #0f1216;
-    --surface: #171b21;
-    --surface-2: #1f242c;
-    --border: #2c333d;
-    --text: #e6e9ee;
-    --text-muted: #9aa3b2;
-    --accent: #60a5fa;
-    --accent-hover: #93c5fd;
-    --accent-soft: #1e2a44;
+    --bg: #0d1117;
+    --surface: #151a22;
+    --surface-2: #1c2230;
+    --border: #2b3341;
+    --text: #e9ecf4;
+    --text-muted: #9ba3b7;
+    --accent: #7c93ff;
+    --accent-hover: #a3b4ff;
+    --accent-soft: #1c2550;
+    /* --accent is intentionally pale for link legibility on a dark page; white text on
+       it as a button fill only measures 2.8:1. This pair is a darker, still-recognisably-
+       cobalt shade sized for that job (white-on-fill 6.2:1 / 8.3:1 on hover). */
+    --accent-btn: #3f52d6;
+    --accent-btn-hover: #2f3fb8;
+    --accent-2: #f0a53d;
+    --accent-2-soft: #3a2a12;
+    --tint-converters: var(--accent);
+    --tint-text-tools: #2dd4bf;
+    --tint-encoders: #b794f6;
+    --tint-generators: var(--accent-2);
     --success: #4ade80;
     --danger: #f87171;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 12px 28px -8px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
+    --grid-dot: rgba(124, 147, 255, 0.14);
   }
 }
 
 /* Explicit "Dark" choice: wins regardless of OS setting. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0f1216;
-  --surface: #171b21;
-  --surface-2: #1f242c;
-  --border: #2c333d;
-  --text: #e6e9ee;
-  --text-muted: #9aa3b2;
-  --accent: #60a5fa;
-  --accent-hover: #93c5fd;
-  --accent-soft: #1e2a44;
+  --bg: #0d1117;
+  --surface: #151a22;
+  --surface-2: #1c2230;
+  --border: #2b3341;
+  --text: #e9ecf4;
+  --text-muted: #9ba3b7;
+  --accent: #7c93ff;
+  --accent-hover: #a3b4ff;
+  --accent-soft: #1c2550;
+  --accent-btn: #3f52d6;
+  --accent-btn-hover: #2f3fb8;
+  --accent-2: #f0a53d;
+  --accent-2-soft: #3a2a12;
+  --tint-converters: var(--accent);
+  --tint-text-tools: #2dd4bf;
+  --tint-encoders: #b794f6;
+  --tint-generators: var(--accent-2);
   --success: #4ade80;
   --danger: #f87171;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 28px -8px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
+  --grid-dot: rgba(124, 147, 255, 0.14);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -107,11 +158,36 @@ body {
 a { color: var(--accent); text-decoration: none; }
 a:hover { color: var(--accent-hover); text-decoration: underline; }
 
-h1, h2, h3 { line-height: 1.25; margin: 0 0 0.5em; letter-spacing: -0.01em; }
-h1 { font-size: clamp(1.75rem, 3.5vw, 2.5rem); font-weight: 800; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.2; margin: 0 0 0.5em; letter-spacing: -0.015em; }
+h1 { font-size: clamp(1.85rem, 3.7vw, 2.75rem); font-weight: 700; }
 h2 { font-size: clamp(1.35rem, 2.5vw, 1.75rem); font-weight: 700; margin-top: 2.5rem; }
-h3 { font-size: 1.15rem; font-weight: 650; margin-top: 1.75rem; }
+h3 { font-size: 1.15rem; font-weight: 700; margin-top: 1.75rem; }
 p { margin: 0 0 1em; }
+
+/* A small uppercase technical label — used above a hero <h1> or a section heading.
+   Mono, not display: it reads as a system readout, not a second headline. */
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  font-family: var(--mono); font-size: 0.78rem; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent);
+  margin: 0 0 0.75rem;
+}
+.eyebrow::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 2px; background: var(--accent-2); flex: none; }
+
+/* Blueprint dot-grid — pure CSS, no image request. Fades out toward the bottom so it
+   reads as a texture behind the hero, not a tiled pattern with a hard edge. */
+.bg-grid {
+  position: relative;
+}
+.bg-grid::before {
+  content: ""; position: absolute; inset: -1.5rem -1rem auto -1rem; height: 220px;
+  background-image: radial-gradient(var(--grid-dot) 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+  -webkit-mask-image: linear-gradient(to bottom, black, transparent);
+  mask-image: linear-gradient(to bottom, black, transparent);
+  pointer-events: none; z-index: 0;
+}
+.bg-grid > * { position: relative; z-index: 1; }
 
 code {
   font-family: var(--mono);
@@ -164,12 +240,16 @@ th { background: var(--surface-2); font-weight: 650; }
   background: var(--surface);
   color: var(--text);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
 }
 .btn:hover { background: var(--surface-2); text-decoration: none; }
+.btn:active { transform: translateY(1px); }
 .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
+.btn-primary {
+  background: var(--accent-btn); border-color: var(--accent-btn); color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+.btn-primary:hover { background: var(--accent-btn-hover); border-color: var(--accent-btn-hover); color: #fff; }
 .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.85rem; }
 
 /* Cards ------------------------------------------------------------- */
@@ -246,7 +326,7 @@ th { background: var(--surface-2); font-weight: 650; }
   cursor: pointer; font-family: var(--mono);
 }
 .chip:hover { border-color: var(--accent); color: var(--accent); }
-.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chip[aria-pressed="true"] { background: var(--accent-btn); border-color: var(--accent-btn); color: #fff; }
 
 .tool-toast {
   position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%);

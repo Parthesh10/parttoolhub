@@ -65,7 +65,7 @@ const current = Astro.url.pathname;
   };
 
   const LIGHT_COLOR = '#ffffff';
-  const DARK_COLOR = '#171b21';
+  const DARK_COLOR = '#151a22';
 
   const btn = document.getElementById('theme-toggle') as HTMLButtonElement;
   const themeColorMeta = document.querySelector('meta[name="theme-color"]');
@@ -106,7 +106,7 @@ const current = Astro.url.pathname;
     position: sticky; top: 0; z-index: 50;
   }
   .inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 58px; flex-wrap: wrap; }
-  .brand { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 800; font-size: 1.1rem; color: var(--text); }
+  .brand { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; letter-spacing: -0.01em; color: var(--text); }
   .brand:hover { text-decoration: none; color: var(--accent); }
   .nav-group { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
   nav > ul { list-style: none; display: flex; gap: 0.25rem; margin: 0; padding: 0; }

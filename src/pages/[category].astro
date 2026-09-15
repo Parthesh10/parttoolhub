@@ -12,6 +12,7 @@ import { CATEGORIES, categoryBySlug } from '../data/categories';
 import { toolsInCategory, toolPath } from '../data/tools';
 import { canonicalUrl } from '../lib/urls';
 import { WEBSITE_ID } from '../lib/schema';
+import { categoryTintVar } from '../lib/category-tint';
 
 export function getStaticPaths() {
   return CATEGORIES.map((c) => ({ params: { category: c.slug } }));
@@ -20,6 +21,7 @@ export function getStaticPaths() {
 const { category: slug } = Astro.params;
 const category = categoryBySlug(slug!);
 const tools = toolsInCategory(category.slug);
+const tint = categoryTintVar(category.slug);
 
 const schema = [
   {
@@ -47,7 +49,8 @@ const schema = [
 <Base title={category.name} description={category.description} schema={schema}>
   <Breadcrumbs items={[{ label: category.name }]} />
 
-  <header class="hero">
+  <header class="hero bg-grid" style={`--tint: ${tint}`}>
+    <p class="eyebrow">{tools.length} tool{tools.length === 1 ? '' : 's'} in this category</p>
     <h1>{category.name}</h1>
     <p class="lead">{category.blurb}</p>
   </header>
@@ -57,7 +60,7 @@ const schema = [
   </div>
 
   <h2 class="grid-heading">Tools in this category</h2>
-  <div class="grid" data-nav="hub-cards">
+  <div class="grid" data-nav="hub-cards" style={`--tint: ${tint}`}>
     {tools.map((t) => (
       <a class="card tool-card" href={toolPath(t)}>
         <h3>{t.name}</h3>
@@ -69,14 +72,24 @@ const schema = [
 </Base>
 
 <style>
-  .hero { max-width: 72ch; margin-bottom: 1.5rem; }
+  .hero { max-width: 72ch; margin-bottom: 1.75rem; padding-top: 0.25rem; }
+  .hero .eyebrow { color: var(--tint); }
+  .hero .eyebrow::before { background: var(--tint); }
   .lead { font-size: 1.1rem; color: var(--text-muted); }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
-  .tool-card { display: flex; flex-direction: column; padding: 1.25rem 1.4rem; color: var(--text); transition: border-color 0.15s, transform 0.15s; }
-  .tool-card:hover { text-decoration: none; border-color: var(--accent); transform: translateY(-2px); }
+  .tool-card {
+    display: flex; flex-direction: column; padding: 1.25rem 1.4rem; color: var(--text);
+    border-top: 3px solid var(--tint);
+    transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+  }
+  .tool-card:hover {
+    text-decoration: none; transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-lg), 0 0 0 1px color-mix(in srgb, var(--tint) 45%, transparent);
+  }
   .intro { margin-bottom: 1.75rem; }
   .grid-heading { font-size: 1.2rem; margin: 0 0 0.85rem; }
   .tool-card h3 { margin: 0 0 0.4rem; font-size: 1.1rem; }
   .tool-card p { color: var(--text-muted); font-size: 0.95rem; flex: 1; }
-  .cta { color: var(--accent); font-weight: 600; font-size: 0.9rem; }
+  .cta { color: var(--tint); font-weight: 600; font-size: 0.9rem; }
 </style>
