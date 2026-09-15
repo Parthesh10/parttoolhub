@@ -1,0 +1,78 @@
+---
+/** Markdown → formatted text on the clipboard (Google Docs, Word, Gmail). Behaviour in ./markdown-to-docs.client.ts */
+---
+
+<section class="tool card" id="tool" data-tool="markdown-to-google-docs">
+  <div class="panes">
+    <div class="pane">
+      <div class="pane-head">
+        <label for="input">Markdown</label>
+        <span class="stat" id="input-stat" aria-live="polite">0 characters</span>
+      </div>
+      <textarea
+        id="input"
+        rows="18"
+        spellcheck="false"
+        autocomplete="off"
+        placeholder={'# Title\n\nSome **bold** text.\n\n| Column | Value |\n|---|---|\n| a | 1 |'}
+      ></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+        <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+      </div>
+    </div>
+
+    <div class="pane">
+      <div class="pane-head">
+        <span class="pane-label" id="preview-label">Preview (what will be pasted)</span>
+        <span class="stat" id="output-stat" aria-live="polite"></span>
+      </div>
+      <div class="md-preview" id="preview" aria-labelledby="preview-label" tabindex="0">
+        <p class="preview-empty" id="preview-empty">The formatted result appears here as you type.</p>
+      </div>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-copy" disabled>Copy for Google Docs</button>
+        <a class="btn btn-sm" href="https://docs.new" target="_blank" rel="noopener" id="link-docs">Open a new Google Doc ↗</a>
+        <button type="button" class="btn btn-sm" data-copy="html" disabled>Copy HTML</button>
+        <button type="button" class="btn btn-sm" id="btn-download" disabled>Download .html</button>
+      </div>
+      <p class="status-banner" id="status" hidden></p>
+    </div>
+  </div>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./markdown-to-docs.client.ts"></script>
+
+<style>
+  .pane-label { font-weight: 650; }
+  .md-preview {
+    min-height: 200px; height: 428px; max-height: 70vh; resize: vertical; overflow: auto;
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+    padding: 0.9rem 1rem; font-size: 0.95rem; line-height: 1.55;
+  }
+  .md-preview:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .preview-empty { color: var(--text-muted); margin: 0; }
+  /* Readable defaults for the rendered fragment. The fragment's own inline styles (monospace
+     code, table borders) are what survive the paste; these are only for the preview. */
+  .md-preview :global(h1) { font-size: 1.5rem; margin: 0.6em 0 0.35em; }
+  .md-preview :global(h2) { font-size: 1.3rem; margin: 0.6em 0 0.35em; }
+  .md-preview :global(h3) { font-size: 1.12rem; margin: 0.6em 0 0.3em; }
+  .md-preview :global(h4), .md-preview :global(h5), .md-preview :global(h6) { font-size: 1rem; margin: 0.6em 0 0.3em; }
+  .md-preview :global(h1:first-child), .md-preview :global(h2:first-child), .md-preview :global(h3:first-child) { margin-top: 0; }
+  .md-preview :global(p) { margin: 0 0 0.75em; }
+  .md-preview :global(ul), .md-preview :global(ol) { margin: 0 0 0.75em; padding-left: 1.5em; }
+  .md-preview :global(li) { margin: 0.15em 0; }
+  .md-preview :global(blockquote) { margin: 0 0 0.75em; padding: 0.2em 0 0.2em 0.9em; border-left: 3px solid var(--border); color: var(--text-muted); }
+  .md-preview :global(pre) { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.6rem 0.8rem; font-size: 0.85rem; margin: 0 0 0.75em; overflow-x: auto; }
+  .md-preview :global(code) { font-size: 0.9em; background: var(--surface-2); border-radius: 3px; padding: 0.05em 0.3em; }
+  .md-preview :global(pre code) { background: none; padding: 0; }
+  .md-preview :global(table) { margin: 0 0 0.75em; font-size: 0.9rem; }
+  .md-preview :global(th), .md-preview :global(td) { padding: 0.3rem 0.55rem; border: 1px solid var(--border); }
+  .md-preview :global(th) { background: var(--surface-2); text-align: left; }
+  .md-preview :global(img) { max-width: 100%; height: auto; }
+  .md-preview :global(hr) { border: 0; border-top: 1px solid var(--border); margin: 1em 0; }
+  .md-preview :global(a) { color: var(--accent); }
+  .btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+</style>

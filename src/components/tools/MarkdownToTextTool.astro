@@ -1,0 +1,68 @@
+---
+/** Markdown → plain text / chat markup. Behaviour in ./markdown-to-text.client.ts */
+---
+
+<section class="tool card" id="tool" data-tool="markdown-to-plain-text">
+  <div class="options">
+    <fieldset>
+      <legend>Output for</legend>
+      <div class="row" role="group" aria-label="Output format">
+        <button type="button" class="chip" data-mode="plain" aria-pressed="true">Plain text</button>
+        <button type="button" class="chip" data-mode="slack" aria-pressed="false">Slack</button>
+        <button type="button" class="chip" data-mode="whatsapp" aria-pressed="false">WhatsApp</button>
+        <button type="button" class="chip" data-mode="google-chat" aria-pressed="false">Google Chat</button>
+      </div>
+      <p class="hint" id="mode-hint">Formatting removed; bullets, numbering, quotes and tables kept as text.</p>
+    </fieldset>
+    <fieldset>
+      <legend>Links</legend>
+      <div class="row">
+        <label class="field">
+          <span>Write each link as</span>
+          <select id="opt-links">
+            <option value="text-url">Text (URL)</option>
+            <option value="url">URL only</option>
+            <option value="text">Text only</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+  </div>
+
+  <div class="panes">
+    <div class="pane">
+      <div class="pane-head">
+        <label for="input">Markdown</label>
+        <span class="stat" id="input-stat" aria-live="polite">0 characters</span>
+      </div>
+      <textarea
+        id="input"
+        rows="16"
+        spellcheck="false"
+        autocomplete="off"
+        placeholder={'## Title\n\nSome **bold** text with a [link](https://example.com).\n\n- first point\n- second point'}
+      ></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+        <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+      </div>
+    </div>
+
+    <div class="pane">
+      <div class="pane-head">
+        <label for="output" id="output-label">Plain text</label>
+        <span class="stat" id="output-stat" aria-live="polite"></span>
+      </div>
+      <textarea id="output" rows="16" readonly spellcheck="false" placeholder="The converted text appears here as you type"></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy to clipboard</button>
+        <button type="button" class="btn btn-sm" id="btn-download">Download .txt</button>
+      </div>
+      <p class="status-banner" id="status" hidden></p>
+    </div>
+  </div>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./markdown-to-text.client.ts"></script>

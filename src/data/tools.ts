@@ -248,6 +248,32 @@ export const TOOLS: Tool[] = [
     reviewedBy: SITE.author,
     reviewedOn: '2026-09-13',
   },
+  {
+    slug: 'markdown-to-plain-text',
+    name: 'Markdown to Plain Text',
+    title: 'Markdown to Plain Text Converter — Chat-Ready',
+    description: 'Turn Markdown into plain text that keeps bullets, numbering, tables and links, or into Slack, WhatsApp and Google Chat markup. Paste AI answers anywhere.',
+    short: 'Strip Markdown from an AI answer but keep its structure, or rewrite it as Slack, WhatsApp or Google Chat markup.',
+    category: 'text-tools',
+    features: ['Keeps bullets, numbering, nesting, quotes and tables as readable text', 'Links as "text (url)", the URL only, or the text only', 'Slack, WhatsApp and Google Chat markup modes', 'Tables aligned in columns', 'Nothing is uploaded — conversion runs in the browser'],
+    intent: 'markdown to plain text',
+    reviewedBy: SITE.author,
+    reviewedOn: '2026-09-15',
+    spec: { name: 'GitHub Flavored Markdown', url: 'https://github.github.com/gfm/' },
+  },
+  {
+    slug: 'markdown-to-google-docs',
+    name: 'Markdown to Google Docs',
+    title: 'Markdown to Google Docs — Copy & Paste',
+    description: 'Paste Markdown, copy it as formatted text, paste into Google Docs with headings, bold, lists, tables, links and code intact. Works for Word and Gmail too.',
+    short: 'Convert Markdown to formatted text you can paste straight into Google Docs, Word, Gmail or Teams.',
+    category: 'text-tools',
+    features: ['Headings, bold, italic, strikethrough, links, lists, tables, code and quotes', 'Copy as rich text: one paste into Google Docs, Word, Gmail, Outlook, Teams or Notion', 'Live preview of exactly what will be pasted', 'Copy or download the HTML', 'Nothing is uploaded — conversion runs in the browser'],
+    intent: 'markdown to google docs',
+    reviewedBy: SITE.author,
+    reviewedOn: '2026-09-15',
+    spec: { name: 'GitHub Flavored Markdown', url: 'https://github.github.com/gfm/' },
+  },
 
   // ---- Encoders & Decoders -------------------------------------------------
   {

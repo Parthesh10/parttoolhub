@@ -206,7 +206,19 @@ a Blob download; both still follow the three-file pattern and the same analytics
 `input_source: 'file'` and byte-count `input_size` where there is no typed text (see
 `docs/ANALYTICS.md`). The two hand off to each other via `src/lib/transfer.ts` (sessionStorage, never a
 URL parameter), and `Base64 to Image` hands plain-text bytes on to `Base64 Encode / Decode`, which
-receives them in decode mode.
+receives them in decode mode. `Markdown to Google Docs` renders into a `<div>` preview (`innerHTML`
+of a fragment our own renderer built from escaped text — input HTML never reaches the DOM as markup)
+and writes `text/html` + `text/plain` to the clipboard via `ClipboardItem`, falling back to copying a
+selection of the preview; `copy_result` `target` is `rich` or `html` there. A pane that holds
+something with intrinsic width (that preview's table) relies on the global `.pane { min-width: 0 }`.
+
+**`src/lib/markdown.ts` is the one engine shared by both Markdown tools** — a CommonMark/GFM parser
+for the subset AI assistants and READMEs produce (headings, emphasis with the delimiter-run rules,
+code spans and fences, links/images/autolinks, quotes, nested/task lists with tight vs loose, GFM
+tables, rules, escapes, entities) with three renderers: `renderText` (plain or a per-app `TextStyle`
+for Slack, WhatsApp and Google Chat, each checked against the app's own help page), `renderHtml`
+(semantic tags plus the two inline styles Docs/Word keep: monospace on code, border on tables) and
+`summarize`. No Markdown dependency, by the one-script-per-tool rule.
 
 Older tools (`ColumnToListTool.astro`, `ListToColumnTool.astro`) live directly under
 `src/components/` rather than `src/components/tools/` — a naming inconsistency from before the

@@ -195,6 +195,10 @@ th { background: var(--surface-2); font-weight: 650; }
 
 .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 @media (max-width: 760px) { .panes { grid-template-columns: 1fr; } }
+/* A grid item defaults to min-width:auto, so a pane holding something with intrinsic width (a
+   rendered table, a wide <pre>) would widen its column past the viewport. Let panes shrink; the
+   wide thing scrolls inside its own overflow container instead. */
+.pane { min-width: 0; }
 .pane-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0 0.75rem; margin-bottom: 0.35rem; }
 .pane-head label { font-weight: 650; }
 .stat { font-size: 0.8rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }

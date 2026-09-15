@@ -31,11 +31,11 @@ export const CATEGORIES: Category[] = [
   {
     slug: 'text-tools',
     name: 'Text Tools',
-    description: 'Free text utilities: convert titles to the correct case, clean AI-generated text, and remove duplicate lines — fast and private.',
+    description: 'Free text utilities: fix title case, clean AI text, remove duplicate lines, and turn Markdown into plain text or a Google Docs paste — fast and private.',
     blurb: 'Fix, clean and tidy plain text in one paste.',
     intro: [
       'Plain-text chores that a find-and-replace almost handles but not quite: capitalising a headline by a style guide\'s rules rather than every word, stripping the Markdown and typographic punctuation a chat assistant leaves in pasted text, or reducing a merged list to one copy of each line. Each tool applies a fixed rule set as you type, so the same input always gives the same result.',
-      'Use the <a href="/tools/title-case-converter">Title Case Converter</a> when a title has to follow APA, Chicago, AP or MLA capitalisation, or when you need sentence case, UPPERCASE or lowercase. Use the <a href="/tools/ai-text-cleaner">AI Text Cleaner</a> on anything copied out of ChatGPT, Claude or Gemini before it goes into an email, a CMS field or a document. Use <a href="/tools/remove-duplicate-lines">Remove Duplicate Lines</a> on exports, mailing lists and log excerpts; if the duplicates are in a comma-separated line rather than a column, the <a href="/tools/comma-separated-list-to-column">list to column</a> converter has a dedupe option too.',
+      'Use the <a href="/tools/title-case-converter">Title Case Converter</a> when a title has to follow APA, Chicago, AP or MLA capitalisation, or when you need sentence case, UPPERCASE or lowercase. Use the <a href="/tools/ai-text-cleaner">AI Text Cleaner</a> on anything copied out of ChatGPT, Claude or Gemini before it goes into an email, a CMS field or a document. Use <a href="/tools/remove-duplicate-lines">Remove Duplicate Lines</a> on exports, mailing lists and log excerpts; if the duplicates are in a comma-separated line rather than a column, the <a href="/tools/comma-separated-list-to-column">list to column</a> converter has a dedupe option too. When the AI answer is going somewhere that does not render Markdown, <a href="/tools/markdown-to-plain-text">Markdown to Plain Text</a> keeps the bullets, numbering and tables as readable text (or as Slack, WhatsApp and Google Chat markup); when it is going into a document, <a href="/tools/markdown-to-google-docs">Markdown to Google Docs</a> puts formatted text on the clipboard so headings, lists and tables paste intact.',
     ],
   },
   {
