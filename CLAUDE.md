@@ -404,6 +404,18 @@ Also watch source order within one scoped block: a `@media` rule declared *befor
 the same specificity loses to it regardless of viewport, since CSS only breaks specificity ties by
 source position — put the override after the base rule, not before.
 
+**Every interactive element needs an explicit `:focus-visible` ring — checked systematically, not
+tool-by-tool.** A 2026-09-16 accessibility audit found three shared selectors with a `:hover` style
+but no focus equivalent, meaning a keyboard user tabbing through the site got the browser's raw
+default outline (invisible in some browsers, inconsistent with the site's own `--accent` ring
+everywhere else): the bare `a` element (fixed once in `global.css`, which by construction covers
+every prose/footer/breadcrumb/related-tool link, the header wordmark and the homepage demo CTA —
+no per-page changes needed), `.chip` (the preset/mode toggle buttons used across many tools), and
+the plain `input`/`select` elements inside an `.options .field` (every tool's own option
+controls). `Faq.astro`'s `<summary>` got the same treatment. If you add a new shared interactive
+class, grep the codebase for `:hover` without a matching `:focus-visible` before shipping it — that
+regex is exactly how these three were found.
+
 **Theme system.** Three states — dark (the app's own default since 2026-09-15, not OS-follow — it
 was light before that date; see DEV-LIFECYCLE.md for why it flipped), light, system — implemented
 across three places that must stay in sync: `global.css` (the `:root` / `:root[data-theme=dark]` /
