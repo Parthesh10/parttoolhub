@@ -1,43 +1,38 @@
-import { convertAll } from '../lib/case-convert';
+import { cleanText, DEFAULT_CLEAN } from '../lib/text-clean';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
-const input = $<HTMLInputElement>('demo-input');
-const toast = $('demo-toast');
-const rows = [...document.querySelectorAll<HTMLButtonElement>('.demo-row')];
+const input = $<HTMLTextAreaElement>('demo-input');
+const output = $<HTMLTextAreaElement>('demo-output');
+const summary = $('demo-summary');
+
+// Same labels/wording as ai-text-cleaner.client.ts's CHANGE_LABELS — duplicated on
+// purpose (seo-rules §4: no shared JS across widgets), kept short for the hero card.
+const CHANGE_LABELS: Record<string, string> = {
+  markdown: 'markdown stripped',
+  citations: 'citations removed',
+  straightenQuotes: 'quotes straightened',
+  emDash: 'dashes replaced',
+  ellipsis: 'ellipses replaced',
+  invisible: 'hidden characters removed',
+  emoji: 'emoji removed',
+  whitespace: 'whitespace tidied',
+};
 
 function render() {
-  const all = convertAll(input.value);
-  for (const row of rows) {
-    const style = row.dataset.style as keyof typeof all;
-    const value = row.querySelector<HTMLElement>('[data-value]')!;
-    value.textContent = all[style] || '—';
+  const raw = input.value;
+  if (!raw.trim()) {
+    output.value = '';
+    summary.textContent = '';
+    return;
   }
+  const result = cleanText(raw, DEFAULT_CLEAN);
+  output.value = result.output;
+  const applied = Object.keys(result.changes);
+  summary.textContent = applied.length ? `Fixed: ${applied.map((k) => CHANGE_LABELS[k] ?? k).join(', ')}` : 'Already clean — nothing to fix';
 }
 
-let toastTimer: number | undefined;
-function showToast(msg: string) {
-  toast.textContent = msg;
-  toast.hidden = false;
-  window.clearTimeout(toastTimer);
-  toastTimer = window.setTimeout(() => (toast.hidden = true), 1400);
-}
-
-async function copyRow(row: HTMLButtonElement) {
-  const value = row.querySelector<HTMLElement>('[data-value]')!.textContent ?? '';
-  if (!value || value === '—') return;
-  try {
-    await navigator.clipboard.writeText(value);
-  } catch {
-    /* clipboard blocked — still flash the row so the click feels acknowledged */
-  }
-  row.classList.add('just-copied');
-  window.setTimeout(() => row.classList.remove('just-copied'), 700);
-  showToast('Copied');
-}
-
-// No debounce: convertAll() is a handful of regex passes over a short phrase,
-// far under the 50 ms budget, and instant feedback is the whole point of a demo.
+// No debounce: cleanText() is a handful of regex passes over a short paste, far
+// under the 50 ms budget, and instant feedback is the whole point of a demo.
 input.addEventListener('input', render);
-for (const row of rows) row.addEventListener('click', () => void copyRow(row));
 
 render();

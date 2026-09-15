@@ -2,42 +2,43 @@
 /**
  * A live, working demo embedded in the homepage hero — the site says "paste,
  * adjust, copy" in prose right next to it, so this proves it in the same
- * breath rather than asking for trust. Runs the real code-case-convert engine
- * (src/lib/case-convert.ts, the same one /tools/code-case-converter uses),
- * updates on every keystroke, and links through to the full tool.
+ * breath rather than asking for trust. Runs the real AI Text Cleaner engine
+ * (src/lib/text-clean.ts, the same one /tools/ai-text-cleaner uses), updates
+ * on every keystroke, and links through to the full tool.
+ *
+ * Picked over the site's other 23 tools deliberately (was code-case-convert
+ * in the first draft, swapped after feedback that identifier casing means
+ * nothing to a first-time visitor): cleaning up AI-chatbot paste junk is the
+ * one job almost everyone who lands here has actually needed recently, so it
+ * reads as "this solves my problem" rather than "here is an arbitrary trick."
  *
  * Deliberately un-instrumented: this is a homepage decoration, not a tool
  * page, so it doesn't extend the analytics taxonomy in docs/ANALYTICS.md for
  * a click that isn't a real tool use — clicking through to the real tool
  * fires that page's own tool_view/tool_use normally.
  */
-import { CASE_LABELS, type CaseStyle } from '../lib/case-convert';
-
-const ORDER: CaseStyle[] = ['camel', 'pascal', 'snake', 'constant', 'kebab', 'dot'];
-const DEFAULT_INPUT = 'Part Tool Hub';
+const DEFAULT_INPUT = 'I’m **totally** onboard — it’s the right call, and here’s why…';
 ---
 
 <div class="hero-demo" id="hero-demo">
   <div class="demo-titlebar">
     <span class="demo-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-    <span class="demo-file">live · code-case-converter</span>
+    <span class="demo-file">live · ai-text-cleaner</span>
   </div>
   <div class="demo-body">
-    <label class="sr-only" for="demo-input">Type a word or phrase to see it converted live</label>
-    <input id="demo-input" type="text" autocomplete="off" spellcheck="false" value={DEFAULT_INPUT} />
-    <div class="demo-rows" id="demo-rows">
-      {ORDER.map((style) => (
-        <button type="button" class="demo-row" data-style={style} title="Click to copy">
-          <span class="demo-label">{CASE_LABELS[style]}</span>
-          <span class="demo-value" data-value></span>
-        </button>
-      ))}
+    <label class="demo-field-label" for="demo-input">Paste something an AI assistant wrote</label>
+    <textarea id="demo-input" rows="3" spellcheck="false">{DEFAULT_INPUT}</textarea>
+
+    <div class="demo-arrow" aria-hidden="true">↓ cleaned</div>
+
+    <div class="demo-output-wrap">
+      <textarea id="demo-output" rows="3" readonly spellcheck="false" aria-label="Cleaned result"></textarea>
     </div>
+    <p class="demo-summary" id="demo-summary"></p>
   </div>
-  <a class="demo-cta" href="/tools/code-case-converter" data-nav="handoff">
+  <a class="demo-cta" href="/tools/ai-text-cleaner" data-nav="handoff">
     Open the full tool <span aria-hidden="true">→</span>
   </a>
-  <p class="tool-toast" id="demo-toast" role="status" aria-live="polite" hidden></p>
 </div>
 
 <script src="./hero-demo.client.ts"></script>
@@ -75,31 +76,24 @@ const DEFAULT_INPUT = 'Part Tool Hub';
   .demo-dots i:nth-child(3) { background: #61c454; }
   .demo-file { font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.02em; }
 
-  .demo-body { position: relative; padding: 1rem 1.1rem 1.15rem; }
-  #demo-input {
-    width: 100%; font: inherit; font-family: var(--mono); font-size: 1rem; font-weight: 600;
-    padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm);
-    background: var(--surface-2); color: var(--text); margin-bottom: 0.75rem;
+  .demo-body { position: relative; padding: 1rem 1.1rem 1.1rem; }
+  .demo-field-label { display: block; font-size: 0.72rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.35rem; }
+  #demo-input, #demo-output {
+    width: 100%; font: inherit; font-family: var(--mono); font-size: 0.85rem; line-height: 1.5; resize: none;
+    padding: 0.6rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--surface-2); color: var(--text);
   }
   #demo-input:focus { outline: 2px solid var(--accent); outline-offset: -1px; background: var(--surface); }
-
-  .demo-rows { display: grid; gap: 0.35rem; }
-  .demo-row {
-    display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem;
-    width: 100%; text-align: left; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm);
-    border: 1px solid transparent; background: none; font: inherit; color: var(--text); cursor: pointer;
+  .demo-arrow {
+    text-align: center; font-family: var(--mono); font-size: 0.72rem; font-weight: 600;
+    color: var(--success); margin: 0.5rem 0;
   }
-  .demo-row:hover { background: var(--surface-2); border-color: var(--border); }
-  .demo-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .demo-label { font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); flex: none; }
-  .demo-value { font-family: var(--mono); font-size: 0.85rem; font-weight: 600; overflow-wrap: anywhere; text-align: right; }
-  .demo-row.just-copied .demo-value { color: var(--success); }
+  #demo-output { border-color: color-mix(in srgb, var(--success) 45%, var(--border)); }
+  .demo-summary { margin: 0.55rem 0 0; font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); min-height: 1.3em; }
 
   .demo-cta {
     display: block; text-align: center; padding: 0.7rem; font-size: 0.85rem; font-weight: 600;
     color: var(--accent); border-top: 1px solid var(--border); background: var(--surface-2);
   }
   .demo-cta:hover { background: var(--accent-soft); text-decoration: none; }
-
-  @media (pointer: coarse) { .demo-row { min-height: 44px; } }
 </style>

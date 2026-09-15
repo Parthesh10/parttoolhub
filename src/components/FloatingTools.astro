@@ -1,0 +1,119 @@
+---
+/**
+ * Two floating controls, present on every page (rendered once from
+ * Base.astro): a search FAB that opens a command-palette-style overlay for
+ * jumping straight to any of the 24 tools, and a "back to top" FAB that
+ * appears once you've scrolled. Both are frosted-glass, spring-eased —
+ * iOS-control-center styling — and respect prefers-reduced-motion via the
+ * same global `*` transition override every other animation on the site uses.
+ *
+ * The tool index is serialised at build time from the registry into a JSON
+ * island (never hand-duplicated), so the palette can never list a tool that
+ * doesn't exist or use a stale name.
+ */
+import { TOOLS, toolPath } from '../data/tools';
+import { categoryBySlug } from '../data/categories';
+
+const index = TOOLS.map((t) => ({
+  name: t.name,
+  short: t.short,
+  category: categoryBySlug(t.category).name,
+  href: toolPath(t),
+}));
+---
+
+<div class="floating-tools" data-nav="floating">
+  <button type="button" id="fab-top" class="fab fab-top" aria-label="Back to top" hidden>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  </button>
+  <button type="button" id="fab-search" class="fab fab-search" aria-label="Search tools" aria-haspopup="dialog">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2.2" />
+      <path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+    </svg>
+    <span class="fab-kbd">⌘K</span>
+  </button>
+</div>
+
+<div class="palette-backdrop" id="palette-backdrop" hidden>
+  <div class="palette" role="dialog" aria-modal="true" aria-label="Search tools">
+    <div class="palette-head">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2.2" />
+        <path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+      </svg>
+      <input id="palette-input" type="text" placeholder={`Search ${TOOLS.length} tools…`} autocomplete="off" spellcheck="false" aria-label="Search tools" />
+      <kbd class="palette-esc">Esc</kbd>
+    </div>
+    <ul id="palette-results" role="listbox" aria-label="Matching tools"></ul>
+    <p class="palette-empty" id="palette-empty" hidden>No tools match. Try a different word.</p>
+  </div>
+</div>
+
+<script type="application/json" id="tools-index" set:html={JSON.stringify(index)} />
+<script src="./floating-tools.client.ts"></script>
+
+<style>
+  .floating-tools {
+    position: fixed; right: 1.1rem; bottom: calc(1.1rem + env(safe-area-inset-bottom, 0px));
+    display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; z-index: 60;
+  }
+  /* Frosted-glass FAB, iOS control-center style. */
+  .fab {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+    height: 3rem; padding: 0 0.9rem; border-radius: 999px; border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--surface) 72%, transparent);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    color: var(--text); cursor: pointer; box-shadow: var(--shadow-lg);
+    transition: transform 0.18s var(--ease-spring), box-shadow 0.15s, background 0.15s, opacity 0.15s;
+  }
+  .fab-top { width: 3rem; padding: 0; }
+  .fab:hover { background: var(--surface); }
+  .fab:active { transform: scale(0.92); }
+  .fab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .fab-kbd {
+    font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted);
+    border: 1px solid var(--border); border-radius: 4px; padding: 0.05rem 0.35rem;
+  }
+  @media (max-width: 640px) { .fab-kbd { display: none; } .fab-search { width: 3rem; padding: 0; } }
+
+  .palette-backdrop {
+    position: fixed; inset: 0; z-index: 80;
+    background: color-mix(in srgb, #000 45%, transparent);
+    backdrop-filter: blur(3px);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 12vh 1rem 1rem;
+  }
+  .palette {
+    width: 100%; max-width: 560px; max-height: 70vh; display: flex; flex-direction: column;
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(22px) saturate(180%);
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
+    border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px);
+    box-shadow: var(--shadow-lg); overflow: hidden;
+    animation: palette-in 0.22s var(--ease-spring);
+  }
+  @keyframes palette-in { from { opacity: 0; transform: translateY(-8px) scale(0.98); } to { opacity: 1; transform: none; } }
+  .palette-head { display: flex; align-items: center; gap: 0.6rem; padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+  #palette-input { flex: 1; border: 0; background: none; font: inherit; font-size: 1rem; color: var(--text); outline: none; }
+  .palette-esc { font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); border: 1px solid var(--border); border-radius: 4px; padding: 0.1rem 0.4rem; }
+  #palette-results { list-style: none; margin: 0; padding: 0.4rem; overflow-y: auto; }
+  /* The <li>/<a>/spans below are injected client-side (floating-tools.client.ts builds
+     the list from the JSON tools index), so Astro's automatic style scoping never reaches
+     them — :global() is required here, not a stylistic choice. */
+  #palette-results :global(li) { list-style: none; }
+  #palette-results :global(li a) {
+    display: block; padding: 0.55rem 0.7rem; border-radius: var(--radius-sm); color: var(--text);
+  }
+  #palette-results :global(li a:hover),
+  #palette-results :global(li[aria-selected="true"] a) { background: var(--surface-2); text-decoration: none; }
+  #palette-results :global(.r-name) { font-weight: 650; }
+  #palette-results :global(.r-meta) { color: var(--text-muted); font-size: 0.82rem; margin-left: 0.4rem; }
+  #palette-results :global(.r-short) { display: block; color: var(--text-muted); font-size: 0.85rem; margin-top: 0.1rem; }
+  .palette-empty { padding: 1.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.9rem; }
+
+  @media (pointer: coarse) { .fab { min-height: 44px; } }
+</style>

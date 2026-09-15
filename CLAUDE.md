@@ -289,6 +289,23 @@ site-wide — a new tool page needs nothing extra to pick this up:
 - Card hover uses a layered `box-shadow: var(--shadow-lg), 0 0 0 1px color-mix(...)` — the plain
   `--shadow-lg` line first as a fallback for browsers without `color-mix()`, the tinted one after so
   it wins where supported. Keep that ordering if you touch it.
+- `--ease-spring` (`cubic-bezier(0.34, 1.56, 0.64, 1)`, an overshoot/bounce curve) is reserved for
+  "physical" press/entrance feedback — the FABs, the command-palette open animation, and the
+  `:active` squish on `.btn`/`.chip`/`.tool-card` — not for ordinary hover transitions, which stay a
+  plain ease. `prefers-reduced-motion` is handled globally already (the `*` transition-duration
+  override near the top of `global.css`), so a new spring-eased element needs no extra guard.
+
+**Floating controls** (`src/components/FloatingTools.astro` + `floating-tools.client.ts`, rendered
+once from `Base.astro`, present on every page): a back-to-top FAB and a search FAB that opens a
+command-palette overlay (Ctrl+K/Cmd+K or click) fuzzy-filtering all tools by name/category/short
+description, with arrow-key navigation and Enter to jump — keyboard shortcut is modifier-gated
+deliberately, never a bare key like `/`, since the whole site is full of textareas a bare shortcut
+would hijack mid-typing. The tool index is a JSON island serialised from the registry at build time
+(never hand-duplicated). **Gotcha if you touch the palette's result-row styling**: those `<li>`/`<a>`
+elements are built with `innerHTML` in the client script, so Astro's automatic style scoping never
+reaches them — any selector targeting them needs `:global(...)`, or the rule silently never applies
+(no build error; it just does nothing). The same applies to any future component that injects markup
+client-side rather than rendering it in the `.astro` file itself.
 
 **Theme system.** Three states — dark (the app's own default since 2026-09-15, not OS-follow — it
 was light before that date; see DEV-LIFECYCLE.md for why it flipped), light, system — implemented

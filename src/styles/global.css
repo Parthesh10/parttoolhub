@@ -54,6 +54,11 @@
   --font-display: "Space Grotesk", var(--font);
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   --max-w: 1120px;
+  /* An overshoot/spring curve (iOS-style bounce) for floating elements and press
+     feedback — a plain ease-out everywhere else on the site stays put; this is
+     reserved for the handful of "physical" interactions (FABs, the palette, a
+     tapped card) where a little bounce reads as tactile rather than distracting. */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   /* Blueprint dot-grid used behind hero sections — pure CSS, themed via currentcolor-free
      radial-gradient so it needs no image and stays in sync with the border token. */
   --grid-dot: rgba(52, 80, 230, 0.16);
@@ -240,10 +245,10 @@ th { background: var(--surface-2); font-weight: 650; }
   background: var(--surface);
   color: var(--text);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.18s var(--ease-spring);
 }
 .btn:hover { background: var(--surface-2); text-decoration: none; }
-.btn:active { transform: translateY(1px); }
+.btn:active { transform: scale(0.96); }
 .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .btn-primary {
   background: var(--accent-btn); border-color: var(--accent-btn); color: #fff;
@@ -324,8 +329,10 @@ th { background: var(--surface-2); font-weight: 650; }
   font: inherit; font-size: 0.82rem; font-weight: 600; padding: 0.3rem 0.7rem;
   border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
   cursor: pointer; font-family: var(--mono);
+  transition: border-color 0.15s, color 0.15s, background 0.15s, transform 0.15s var(--ease-spring);
 }
 .chip:hover { border-color: var(--accent); color: var(--accent); }
+.chip:active { transform: scale(0.94); }
 .chip[aria-pressed="true"] { background: var(--accent-btn); border-color: var(--accent-btn); color: #fff; }
 
 .tool-toast {

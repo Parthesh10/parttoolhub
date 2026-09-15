@@ -115,13 +115,14 @@ import HeroDemo from '../components/HeroDemo.astro';
   .tool-card {
     display: flex; flex-direction: column; padding: 1.1rem 1.3rem; color: var(--text);
     border-top: 3px solid var(--tint);
-    transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+    transition: border-color 0.15s, transform 0.15s var(--ease-spring), box-shadow 0.15s;
   }
   .tool-card:hover {
     text-decoration: none; transform: translateY(-3px);
     box-shadow: var(--shadow-lg);
     box-shadow: var(--shadow-lg), 0 0 0 1px color-mix(in srgb, var(--tint) 45%, transparent);
   }
+  .tool-card:active { transform: scale(0.98); }
   .tool-card h3 { margin: 0 0 0.35rem; font-size: 1.05rem; }
   .tool-card p { color: var(--text-muted); font-size: 0.9rem; flex: 1; }
   .cta { color: var(--tint); font-weight: 600; font-size: 0.85rem; }
