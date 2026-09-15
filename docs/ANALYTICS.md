@@ -30,7 +30,7 @@ here (or listed here but no longer used), if any tool script is missing instrume
 
 ## Event taxonomy
 
-Nine events, all with `tool_slug` and `tool_category` where a tool is involved. Each row is one
+Ten events, all with `tool_slug` and `tool_category` where a tool is involved. Each row is one
 event name in code; the test enforces the list.
 
 | Event | Trigger | Parameters | Purpose |
@@ -44,6 +44,7 @@ event name in code; the test enforces the list.
 | `download_result` | Download button pressed with a non-empty result | `target` (`output`; on Base64 to Image `image`, or `file` for non-image bytes saved anyway; on Markdown to Google Docs `html`) | Secondary conversion |
 | `reset_tool` | Clear button pressed | — | Re-use within one visit |
 | `navigation_click` | Any internal link click, captured by delegation in `Base.astro`; plus the two cross-tool hand-off buttons | `link_placement` (`header`, `footer`, `breadcrumb`, `related`, `home-directory`, `hub-cards`, `content`, `handoff`, `not-found`), `link_to` (path only, no query or hash) | Which internal pathways move people between tools |
+| `share_click` | Share FAB (`floating-tools.client.ts`, tool pages only) — Copy link or Share to Reddit chosen from the popover | `channel` (`copy_link`, `reddit`) | Secondary conversion — a visitor found the tool worth sending elsewhere |
 
 "Once per page load" is implemented with a per-script `fired` set: `tool_use`, `tool_result` and
 `tool_error` each fire at most once, so a page load can produce at most one of each regardless of
@@ -75,8 +76,9 @@ those off in the property, or every click will count twice.
 
 - **Primary:** `tool_result` — a successful run on real input. Count per `tool_slug` to rank tools by
   value delivered, and compare with `tool_view` for a conversion rate per tool.
-- **Secondary:** `copy_result`, `download_result` (the result was worth taking), and
-  `navigation_click` with `link_placement = handoff` or `related` (the visitor moved to a next tool).
+- **Secondary:** `copy_result`, `download_result` (the result was worth taking), `share_click` (the
+  page was worth sending elsewhere), and `navigation_click` with `link_placement = handoff` or
+  `related` (the visitor moved to a next tool).
 
 The journey GA4 can then answer: *traffic source → landing page → `tool_view` → `tool_use` →
 `tool_result` or `tool_error` → `copy_result` → `navigation_click` → exit.*

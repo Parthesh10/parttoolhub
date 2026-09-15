@@ -14,6 +14,12 @@
 import { TOOLS, toolPath } from '../data/tools';
 import { categoryBySlug } from '../data/categories';
 
+export interface Props {
+  /** Present only on tool pages; when set, a third "Share" FAB is rendered. */
+  tool?: { slug: string; category: string };
+}
+const { tool } = Astro.props as Props;
+
 const index = TOOLS.map((t) => ({
   name: t.name,
   short: t.short,
@@ -28,6 +34,36 @@ const index = TOOLS.map((t) => ({
       <path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
     </svg>
   </button>
+  {tool && (
+    <div class="fab-share-wrap">
+      <button type="button" id="fab-share" class="fab fab-share" aria-label="Share this tool" aria-haspopup="menu" aria-expanded="false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="18" cy="5" r="2.6" stroke="currentColor" stroke-width="2" />
+          <circle cx="6" cy="12" r="2.6" stroke="currentColor" stroke-width="2" />
+          <circle cx="18" cy="19" r="2.6" stroke="currentColor" stroke-width="2" />
+          <path d="M8.4 10.7l7.2-4.4M8.4 13.3l7.2 4.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
+      <div class="share-menu" id="share-menu" role="menu" hidden>
+        <button type="button" id="share-copy" role="menuitem">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="2" />
+            <path d="M5 15V6a1 1 0 0 1 1-1h9" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          Copy link
+        </button>
+        <button type="button" id="share-reddit" role="menuitem">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
+            <circle cx="9" cy="13" r="1.3" fill="currentColor" />
+            <circle cx="15" cy="13" r="1.3" fill="currentColor" />
+            <path d="M8.5 16c1 .8 2.2 1.2 3.5 1.2s2.5-.4 3.5-1.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+          Share to Reddit
+        </button>
+      </div>
+    </div>
+  )}
   <button type="button" id="fab-search" class="fab fab-search" aria-label="Search tools" aria-haspopup="dialog">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2.2" />
@@ -35,6 +71,7 @@ const index = TOOLS.map((t) => ({
     </svg>
     <span class="fab-kbd">⌘K</span>
   </button>
+  <p class="fab-toast" id="fab-toast" role="status" hidden></p>
 </div>
 
 <div class="palette-backdrop" id="palette-backdrop" hidden>
@@ -71,9 +108,40 @@ const index = TOOLS.map((t) => ({
     transition: transform 0.18s var(--ease-spring), box-shadow 0.15s, background 0.15s, opacity 0.15s;
   }
   .fab-top { width: 3rem; padding: 0; }
+  .fab-share { width: 3rem; padding: 0; }
   .fab:hover { background: var(--surface); }
   .fab:active { transform: scale(0.92); }
   .fab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .fab[aria-expanded="true"] { background: var(--surface); }
+
+  .fab-share-wrap { position: relative; }
+  .share-menu {
+    position: absolute; right: calc(100% + 0.6rem); bottom: 0; z-index: 61;
+    display: flex; flex-direction: column; gap: 0.15rem; min-width: 168px; padding: 0.35rem;
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    animation: palette-in 0.16s var(--ease-spring);
+  }
+  .share-menu button {
+    display: flex; align-items: center; gap: 0.55rem; width: 100%; text-align: left;
+    padding: 0.55rem 0.65rem; border: 0; border-radius: var(--radius-sm); background: none;
+    color: var(--text); font: inherit; font-size: 0.88rem; cursor: pointer;
+    transition: background 0.12s;
+  }
+  .share-menu button:hover, .share-menu button:focus-visible { background: var(--surface-2); }
+  /* Beside the button there's room on desktop, but not next to a screen edge on a
+     phone — stack the menu above the FAB instead of to its side. */
+  @media (max-width: 640px) { .share-menu { right: 0; bottom: calc(100% + 0.6rem); } }
+
+  .fab-toast {
+    position: absolute; right: 0; bottom: calc(100% + 0.6rem); z-index: 62;
+    margin: 0; padding: 0.5rem 0.85rem; border-radius: var(--radius-sm);
+    background: var(--text); color: var(--bg); font-size: 0.85rem; white-space: nowrap;
+    box-shadow: var(--shadow-lg); animation: palette-in 0.16s var(--ease-spring);
+  }
   .fab-kbd {
     font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted);
     border: 1px solid var(--border); border-radius: 4px; padding: 0.05rem 0.35rem;
@@ -110,6 +178,10 @@ const index = TOOLS.map((t) => ({
   }
   #palette-results :global(li a:hover),
   #palette-results :global(li[aria-selected="true"] a) { background: var(--surface-2); text-decoration: none; }
+  #palette-results :global(.r-heading) {
+    padding: 0.4rem 0.7rem 0.25rem; font-size: 0.72rem; font-weight: 650; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--text-muted);
+  }
   #palette-results :global(.r-name) { font-weight: 650; }
   #palette-results :global(.r-meta) { color: var(--text-muted); font-size: 0.82rem; margin-left: 0.4rem; }
   #palette-results :global(.r-short) { display: block; color: var(--text-muted); font-size: 0.85rem; margin-top: 0.1rem; }

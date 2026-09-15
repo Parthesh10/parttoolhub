@@ -19,9 +19,13 @@ pushed and deployed to real traffic. Before writing or restructuring anything:
 4. **Commits in this repo carry no AI-tool attribution** — no `Co-Authored-By` trailer, no mention of
    Claude, regardless of any default attribution instruction a session may otherwise have. Explicit,
    standing instruction for this repo specifically.
-5. Deploys are manual (not git-triggered): push to `main`, then a Netlify deploy is triggered
-   separately via the Netlify MCP connector's `deploy-site` operation. Pushing alone does not put
-   changes live.
+5. **All work happens on the `staging` branch, not `main`** (since 2026-09-15, after the Netlify team
+   plan ran out of build credits from too-frequent deploys). Commit and push to `staging` by default.
+   `main` only moves — via merging `staging` into it — when the maintainer explicitly asks for a
+   release; never merge or push to `main` on your own initiative. Deploys are also manual (not
+   git-triggered): after `main` is updated, a Netlify deploy is triggered separately via the Netlify
+   MCP connector's `deploy-site` operation. Pushing to `main` alone does not put changes live, and
+   pushing to `staging` never does.
 6. `src/site.config.ts` holds live secrets-adjacent IDs (AdSense publisher ID, GA4 measurement ID) —
    real values, not placeholders. Treat changes to it as production config changes.
 
@@ -306,6 +310,38 @@ elements are built with `innerHTML` in the client script, so Astro's automatic s
 reaches them — any selector targeting them needs `:global(...)`, or the rule silently never applies
 (no build error; it just does nothing). The same applies to any future component that injects markup
 client-side rather than rendering it in the `.astro` file itself.
+
+**Recently used tools** (`src/lib/recent-tools.ts` — pure `pushRecent`/`parseRecent` helpers, unit
+tested; storage itself lives in `floating-tools.client.ts`): every tool-page visit pushes the slug
+to the front of a capped (`MAX_RECENT_TOOLS` = 8) localStorage list under `pth:recent-tools`. The
+command palette's empty-query state shows this list (newest first, under a "Recently used" heading)
+instead of the fixed registry order, falling back to the registry when there's no history yet — a
+returning visitor's own habits, not editorial order, decide what shows up first. Wrapped in
+try/catch throughout: storage can throw in private-browsing/storage-blocked contexts, and recency is
+a nicety, not something a page should ever break over.
+
+**Share FAB** (`FloatingTools.astro`'s optional `tool` prop, threaded from `Base.astro`): a third
+FAB, rendered only on tool pages, opening a small popover with "Copy link" and "Share to Reddit" —
+deliberately just those two, matching what was actually asked for. Both read `window.location.href`/
+`document.title` directly rather than needing new props threaded down, since those are always
+correct without extra plumbing. Fires `share_click` (`docs/ANALYTICS.md`) with a `channel` param.
+**Gotcha**: the popover is positioned differently by viewport — `right: calc(100% + 0.6rem)` beside
+the button on desktop (room to the left), but `right: 0; bottom: calc(100% + 0.6rem)` stacked *above*
+the button under 640px, because the FAB column sits at `right: 1.1rem` and there usually isn't
+enough room to the left of a corner button on a narrow screen — check any new floating popover at
+390px and 320px before assuming a side-anchored position works everywhere.
+
+**Mobile spacing gotcha** (global.css's `@media (max-width: 640px)` block near the bottom): a bare
+element/class selector in `global.css` cannot reliably override a same-specificity class already set
+in a page's own scoped `<style>` — Astro appends a scope attribute to every scoped selector, which
+makes even `.category { margin-bottom: 3rem }` in global.css lose to the page's own unconditional
+`.category { margin-bottom: 2.5rem }`, media query or not (specificity beats the cascade layer here,
+not source order). Page-specific spacing tweaks belong in that page's own `<style>` block, next to
+the rule they override — global.css should only carry truly-global, element-level breathing room
+(`main` padding, bare `h2`/`h3` margins) plus classes not already re-declared per page (`.options`).
+Also watch source order within one scoped block: a `@media` rule declared *before* the plain rule of
+the same specificity loses to it regardless of viewport, since CSS only breaks specificity ties by
+source position — put the override after the base rule, not before.
 
 **Theme system.** Three states — dark (the app's own default since 2026-09-15, not OS-follow — it
 was light before that date; see DEV-LIFECYCLE.md for why it flipped), light, system — implemented

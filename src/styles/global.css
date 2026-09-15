@@ -348,3 +348,29 @@ th { background: var(--surface-2); font-weight: 650; }
 }
 .status-banner.is-error { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, var(--surface)); }
 .status-banner.is-ok { border-color: var(--success); background: color-mix(in srgb, var(--success) 10%, var(--surface)); }
+
+/* ------------------------------------------------------------------
+   Mobile breathing room (2026-09-15, Notion feedback: "give the user
+   space to breathe, shouldn't be overwhelming"). A narrow screen shows
+   fewer elements at once but they sit closer together by default (less
+   room for margins to read as "space" rather than "gap"), and every
+   card/fieldset on the site has its own border — stacked tightly, that
+   reads as a wall of boxes. This block only ever *adds* space and
+   *removes* visual weight; it changes no layout structure.
+   ------------------------------------------------------------------ */
+@media (max-width: 640px) {
+  main { padding-block: 1.25rem 3.5rem; }
+  h2 { margin-top: 3rem; }
+
+  /* Four bordered fieldsets stacked (Length / Character types / Options / Quantity, say)
+     read as four separate boxes on a narrow screen. A shared light background with a
+     divider between them reads as one panel instead — same information, less "boxed." */
+  .options {
+    gap: 0; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); overflow: hidden; margin-top: 1.5rem;
+  }
+  .options fieldset {
+    border: 0; border-radius: 0; background: none; padding: 0.9rem 1rem;
+  }
+  .options fieldset + fieldset { border-top: 1px solid var(--border); }
+}

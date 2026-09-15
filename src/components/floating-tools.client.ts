@@ -1,3 +1,5 @@
+import { RECENT_TOOLS_KEY, MAX_RECENT_TOOLS, pushRecent, parseRecent } from '../lib/recent-tools';
+
 interface Entry {
   name: string;
   short: string;
@@ -12,8 +14,31 @@ const backdrop = $('palette-backdrop');
 const paletteInput = $<HTMLInputElement>('palette-input');
 const resultsEl = $<HTMLUListElement>('palette-results');
 const emptyEl = $('palette-empty');
+const fabToast = $('fab-toast');
 
 const ALL: Entry[] = JSON.parse($('tools-index').textContent ?? '[]');
+const BY_HREF = new Map(ALL.map((e) => [e.href, e]));
+
+// --- Recently used tools: recorded on every tool-page visit, surfaced in the
+// command palette's empty-query state so a returning visitor's own habits —
+// not a fixed editorial order — decide what shows up first. ---
+const currentSlug = document.body.dataset.toolSlug;
+if (currentSlug) {
+  try {
+    const stored = parseRecent(localStorage.getItem(RECENT_TOOLS_KEY));
+    localStorage.setItem(RECENT_TOOLS_KEY, JSON.stringify(pushRecent(stored, currentSlug, MAX_RECENT_TOOLS)));
+  } catch {
+    /* localStorage can throw in private-browsing/storage-blocked contexts; recency is a nicety, not required. */
+  }
+}
+function recentEntries(): Entry[] {
+  try {
+    const slugs = parseRecent(localStorage.getItem(RECENT_TOOLS_KEY));
+    return slugs.map((slug) => BY_HREF.get(`/tools/${slug}`)).filter((e): e is Entry => Boolean(e));
+  } catch {
+    return [];
+  }
+}
 
 // --- Back to top: appears once the hero has scrolled past, not on a short page. ---
 let ticking = false;
@@ -48,23 +73,32 @@ function score(entry: Entry, q: string): number {
 
 function renderResults() {
   const q = paletteInput.value.trim().toLowerCase();
-  visible = !q
-    ? ALL
-    : ALL.map((e) => [e, score(e, q)] as const)
-        .filter(([, s]) => s >= 0)
-        .sort((a, b) => a[1] - b[1])
-        .map(([e]) => e);
+  let heading = '';
+  if (!q) {
+    const recent = recentEntries();
+    // A returning visitor's own recent tools beat a fixed registry order; a
+    // first-time visitor (no history yet) still sees the full list, not a blank state.
+    visible = recent.length ? recent : ALL;
+    if (recent.length) heading = '<li class="r-heading" role="presentation">Recently used</li>';
+  } else {
+    visible = ALL.map((e) => [e, score(e, q)] as const)
+      .filter(([, s]) => s >= 0)
+      .sort((a, b) => a[1] - b[1])
+      .map(([e]) => e);
+  }
   visible = visible.slice(0, 8);
   selected = 0;
   emptyEl.hidden = visible.length > 0;
-  resultsEl.innerHTML = visible
-    .map(
-      (e, i) => `<li role="option" aria-selected="${i === 0}"><a href="${e.href}" tabindex="-1">
+  resultsEl.innerHTML =
+    heading +
+    visible
+      .map(
+        (e, i) => `<li role="option" aria-selected="${i === 0}"><a href="${e.href}" tabindex="-1">
         <span class="r-name">${escapeHtml(e.name)}</span><span class="r-meta">${escapeHtml(e.category)}</span>
         <span class="r-short">${escapeHtml(e.short)}</span>
       </a></li>`,
-    )
-    .join('');
+      )
+      .join('');
 }
 
 function escapeHtml(s: string) {
@@ -72,7 +106,9 @@ function escapeHtml(s: string) {
 }
 
 function highlight(next: number) {
-  const items = [...resultsEl.querySelectorAll('li')];
+  // The optional "Recently used" heading is a plain <li> too (for layout inside the
+  // <ul>), but it isn't a selectable option, so it's excluded from this list.
+  const items = [...resultsEl.querySelectorAll('li[role="option"]')];
   items.forEach((li, i) => li.setAttribute('aria-selected', String(i === next)));
   items[next]?.scrollIntoView({ block: 'nearest' });
   selected = next;
@@ -124,3 +160,55 @@ document.addEventListener('keydown', (e) => {
     else closePalette();
   }
 });
+
+// --- Share FAB: only rendered on tool pages (see FloatingTools.astro), so every
+// lookup here is guarded rather than assumed present. ---
+const fabShare = document.getElementById('fab-share') as HTMLButtonElement | null;
+const shareMenu = document.getElementById('share-menu');
+const shareCopy = document.getElementById('share-copy');
+const shareReddit = document.getElementById('share-reddit');
+
+let toastTimer: number | undefined;
+function showToast(msg: string) {
+  fabToast.textContent = msg;
+  fabToast.hidden = false;
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => (fabToast.hidden = true), 1800);
+}
+
+if (fabShare && shareMenu && shareCopy && shareReddit) {
+  const closeShareMenu = () => {
+    shareMenu.hidden = true;
+    fabShare.setAttribute('aria-expanded', 'false');
+  };
+  fabShare.addEventListener('click', () => {
+    const opening = shareMenu.hidden;
+    shareMenu.hidden = !opening;
+    fabShare.setAttribute('aria-expanded', String(opening));
+  });
+  document.addEventListener('click', (e) => {
+    if (!shareMenu.hidden && !e.composedPath().includes(fabShare) && !e.composedPath().includes(shareMenu)) closeShareMenu();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !shareMenu.hidden) closeShareMenu();
+  });
+  const shareParams = { tool_slug: currentSlug ?? '', tool_category: document.body.dataset.toolCategory ?? '' };
+  shareCopy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      showToast('Link copied');
+      window.pth?.track('share_click', { ...shareParams, channel: 'copy_link' });
+    } catch {
+      showToast('Could not copy link');
+    }
+    closeShareMenu();
+  });
+  shareReddit.addEventListener('click', () => {
+    const url = new URL('https://www.reddit.com/submit');
+    url.searchParams.set('url', window.location.href);
+    url.searchParams.set('title', document.title);
+    window.open(url.href, '_blank', 'noopener,noreferrer');
+    window.pth?.track('share_click', { ...shareParams, channel: 'reddit' });
+    closeShareMenu();
+  });
+}

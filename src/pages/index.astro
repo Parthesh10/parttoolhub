@@ -97,6 +97,10 @@ import HeroDemo from '../components/HeroDemo.astro';
   @media (max-width: 860px) { .hero-demo-slot { justify-self: stretch; max-width: none; } }
 
   .category { margin-bottom: 2.5rem; }
+  /* A narrow screen shows fewer cards per row so the whole page reads as one long
+     scroll of look-alike sections; more room between categories (and between cards
+     within one) breaks that up — see the shared mobile-spacing note in global.css. */
+  @media (max-width: 640px) { .category { margin-bottom: 3.5rem; } }
   .category-head { margin-bottom: 0.85rem; }
   .category-head h2 {
     display: inline-flex; align-items: center; gap: 0.6rem;
@@ -112,6 +116,7 @@ import HeroDemo from '../components/HeroDemo.astro';
   .category-head h2 a:hover { color: var(--tint); text-decoration: none; }
   .category-head p { margin: 0 0 0 2.6rem; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+  @media (max-width: 640px) { .grid { gap: 1.25rem; } }
   .tool-card {
     display: flex; flex-direction: column; padding: 1.1rem 1.3rem; color: var(--text);
     border-top: 3px solid var(--tint);
