@@ -379,14 +379,42 @@ export const toolPath = (t: Tool) => `/tools/${t.slug}`;
 
 export const toolsInCategory = (category: string) => TOOLS.filter((t) => t.category === category);
 
+const RELATED_STOPWORDS = new Set([
+  'a', 'an', 'and', 'or', 'the', 'to', 'for', 'of', 'in', 'with', 'from', 'online',
+  'converter', 'convert', 'decoder', 'decode', 'encoder', 'encode', 'generator', 'tool',
+]);
+
+/** Lower-cased, stopword-filtered word tokens from a tool's intent and name — what
+ * two tools have "in common" for the purpose of ranking related tools. */
+function relatedKeywords(t: Tool): Set<string> {
+  return new Set(
+    `${t.intent} ${t.name}`
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length > 2 && !RELATED_STOPWORDS.has(w)),
+  );
+}
+
 /**
- * 3–5 related tools: same category first, then fill from the rest so the
- * section is never thin on a small category.
+ * 3–5 related tools, ranked by topic first, category second — so a page about
+ * JSON surfaces the other JSON tools before an unrelated tool that only
+ * happens to share a category (seo-rules' categories group by *shape of
+ * job* — Converters holds JSON, CSV, color and number tools side by side —
+ * not by topic, so "same category" alone was a weak signal: JSON Formatter's
+ * related section used to lead with Column↔List tools, ahead of CSV↔JSON,
+ * purely because of registry order). Same category still breaks a tie
+ * between two topically-unrelated tools, and the original registry order
+ * settles any tie beyond that (Array#sort is stable).
  */
 export function relatedTools(tool: Tool, max = 4): Tool[] {
-  const same = TOOLS.filter((t) => t.category === tool.category && t.slug !== tool.slug);
-  const others = TOOLS.filter((t) => t.category !== tool.category);
-  return [...same, ...others].slice(0, Math.max(3, Math.min(max, 5)));
+  const mine = relatedKeywords(tool);
+  const scored = TOOLS.filter((t) => t.slug !== tool.slug).map((t) => {
+    let overlap = 0;
+    for (const word of relatedKeywords(t)) if (mine.has(word)) overlap++;
+    return { t, score: overlap * 10 + (t.category === tool.category ? 1 : 0) };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, Math.max(3, Math.min(max, 5))).map((s) => s.t);
 }
 
 /** The most recent review date across all tools — used as the site-level dateModified. */

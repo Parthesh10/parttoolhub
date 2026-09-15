@@ -113,6 +113,10 @@ const current = Astro.url.pathname;
   .inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 58px; flex-wrap: wrap; }
   .brand { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; letter-spacing: -0.01em; color: var(--text); }
   .brand:hover { text-decoration: none; color: var(--accent); }
+  /* The mark is a hex nut — turning it on hover reads as "tool," not just decoration. */
+  .brand svg { transition: transform 0.4s var(--ease-spring); }
+  .brand:hover svg { transform: rotate(30deg); }
+  .brand:active svg { transform: rotate(30deg) scale(0.9); }
   .nav-group { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
   nav > ul { list-style: none; display: flex; gap: 0.25rem; margin: 0; padding: 0; }
   nav > ul > li > a {

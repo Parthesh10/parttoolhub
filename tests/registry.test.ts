@@ -54,6 +54,21 @@ test('related tools returns 3–5 entries and never the tool itself', () => {
   }
 });
 
+test('related tools rank by topic before category (Notion feedback: JSON pages should suggest JSON tools)', () => {
+  // Converters holds JSON, CSV, color and number tools side by side — a category-only ranking put
+  // Column↔List tools ahead of CSV↔JSON for a JSON page purely by registry order. Pin the fix.
+  const jsonRelated = relatedTools(TOOLS.find((t) => t.slug === 'json-formatter')!).map((t) => t.slug);
+  assert.ok(jsonRelated.includes('csv-to-json-converter'), `json-formatter's related tools should include csv-to-json-converter: ${jsonRelated}`);
+  assert.ok(jsonRelated.includes('json-to-csv-converter'), `json-formatter's related tools should include json-to-csv-converter: ${jsonRelated}`);
+  assert.ok(!jsonRelated.includes('column-to-comma-separated-list'), `json-formatter's related tools should rank an unrelated same-category tool below the JSON ones: ${jsonRelated}`);
+
+  // A topically-related tool in a *different* category should still surface — html-to-markdown
+  // (Converters) and the three Markdown tools (Text Tools) are the same job, split by category only
+  // because Converters/Text Tools group by shape-of-job, not topic.
+  const htmlToMdRelated = relatedTools(TOOLS.find((t) => t.slug === 'html-to-markdown')!).map((t) => t.slug);
+  assert.ok(htmlToMdRelated.includes('google-docs-to-markdown'), `html-to-markdown should surface the other Markdown tools across the category boundary: ${htmlToMdRelated}`);
+});
+
 // ---- seo-rules.md §11/§12: intent, review fields, spec ------------------
 
 /** Normalise to lower-case words in order: "JSON Formatter Online" → "json formatter online". */
