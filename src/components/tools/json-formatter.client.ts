@@ -19,6 +19,8 @@ const pasteBtn = $<HTMLButtonElement>('btn-paste');
 const fullscreenBtn = $<HTMLButtonElement>('btn-fullscreen');
 const toolSection = $('tool');
 const inputGutter = $('input-gutter');
+const outputGutter = $('output-gutter');
+const outputCodeWrap = $('output-code-wrap');
 const outputTree = $('output-tree');
 const handoffActions = $('handoff-actions');
 const handoffCsvBtn = $<HTMLButtonElement>('btn-handoff-csv');
@@ -33,7 +35,7 @@ function setViewMode(next: 'text' | 'tree') {
   viewMode = next;
   viewTextBtn.setAttribute('aria-pressed', String(next === 'text'));
   viewTreeBtn.setAttribute('aria-pressed', String(next === 'tree'));
-  output.hidden = next === 'tree';
+  outputCodeWrap.hidden = next === 'tree';
   outputTree.classList.toggle('is-visible', next === 'tree');
   track('tool_option', { option: 'view', value: next }, 'opt:view');
 }
@@ -67,25 +69,31 @@ outputTree.addEventListener('keydown', (e) => {
   copyLeafPath(leaf);
 });
 
-// --- UX-005: gutter line numbers + active-line highlight -------------------
-function updateActiveLine() {
-  const lineIndex = input.value.slice(0, input.selectionStart).split('\n').length; // 1-based
-  inputGutter.querySelector('.active')?.classList.remove('active');
-  inputGutter.children[lineIndex - 1]?.classList.add('active');
+// --- UX-005: gutter line numbers + active-line highlight --------------------
+// Shared by both panes (bug report 2026-09-18: the input's gutter was correctly showing "1" for
+// the single-line minified sample, but the formatted, genuinely multi-line Result pane had no
+// gutter at all — every control here is parametrized so both get the same behaviour for free).
+function updateActiveLine(el: HTMLTextAreaElement, gutter: HTMLElement) {
+  const lineIndex = el.value.slice(0, el.selectionStart).split('\n').length; // 1-based
+  gutter.querySelector('.active')?.classList.remove('active');
+  gutter.children[lineIndex - 1]?.classList.add('active');
 }
-function updateGutterLines() {
-  const lines = input.value.split('\n').length;
-  if (inputGutter.children.length !== lines) {
+function updateGutterLines(el: HTMLTextAreaElement, gutter: HTMLElement) {
+  const lines = el.value.split('\n').length;
+  if (gutter.children.length !== lines) {
     let html = '';
     for (let i = 1; i <= lines; i++) html += `<span>${i}</span>`;
-    inputGutter.innerHTML = html; // resets scrollTop to 0, so re-sync it below
+    gutter.innerHTML = html; // resets scrollTop to 0, so re-sync it below
   }
-  inputGutter.scrollTop = input.scrollTop;
-  updateActiveLine();
+  gutter.scrollTop = el.scrollTop;
+  updateActiveLine(el, gutter);
 }
 input.addEventListener('scroll', () => { inputGutter.scrollTop = input.scrollTop; });
-input.addEventListener('click', updateActiveLine);
-input.addEventListener('keyup', updateActiveLine);
+input.addEventListener('click', () => updateActiveLine(input, inputGutter));
+input.addEventListener('keyup', () => updateActiveLine(input, inputGutter));
+output.addEventListener('scroll', () => { outputGutter.scrollTop = output.scrollTop; });
+output.addEventListener('click', () => updateActiveLine(output, outputGutter));
+output.addEventListener('keyup', () => updateActiveLine(output, outputGutter));
 
 // --- UX-003: fullscreen / focus mode ---------------------------------------
 function setFullscreen(on: boolean) {
@@ -188,10 +196,11 @@ function render() {
   inputStat.textContent = raw.length
     ? `${plural(raw.split('\n').length, 'line')} · ${plural(raw.length, 'character')} · ${formatBytes(raw)}`
     : plural(raw.length, 'character');
-  updateGutterLines();
+  updateGutterLines(input, inputGutter);
 
   if (!raw.trim()) {
     output.value = '';
+    updateGutterLines(output, outputGutter);
     outputTree.innerHTML = '';
     outputStat.textContent = '';
     status.hidden = true;
@@ -206,6 +215,7 @@ function render() {
   trackRun(mode, result.ok, 'syntax');
   if (result.ok) {
     output.value = result.output;
+    updateGutterLines(output, outputGutter);
     outputStat.textContent = `Valid ${result.kind} · ${plural(result.output.split('\n').length, 'line')} · ${plural(result.output.length, 'character')} · ${formatBytes(result.output)}`;
     status.hidden = true;
     setErrorLocation();
@@ -219,6 +229,7 @@ function render() {
     handoffActions.hidden = result.kind !== 'array';
   } else {
     output.value = '';
+    updateGutterLines(output, outputGutter);
     outputTree.innerHTML = '';
     outputStat.textContent = 'Invalid JSON';
     status.hidden = false;
@@ -261,7 +272,7 @@ function jumpToError() {
   const offset = lineColToOffset(input.value, line, column);
   input.focus();
   input.setSelectionRange(offset, offset);
-  updateActiveLine();
+  updateActiveLine(input, inputGutter);
 }
 status.addEventListener('click', jumpToError);
 status.addEventListener('keydown', (e) => {

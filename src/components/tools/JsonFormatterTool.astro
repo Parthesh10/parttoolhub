@@ -38,7 +38,10 @@
         <label for="output">Result</label>
         <span class="stat" id="output-stat" aria-live="polite"></span>
       </div>
-      <textarea id="output" rows="14" readonly spellcheck="false" placeholder="Formatted JSON appears here as you type"></textarea>
+      <div class="code-wrap" id="output-code-wrap">
+        <div class="gutter" id="output-gutter" aria-hidden="true"></div>
+        <textarea id="output" rows="14" readonly spellcheck="false" placeholder="Formatted JSON appears here as you type"></textarea>
+      </div>
       <div class="jt-root" id="output-tree"></div>
       <div class="pane-actions">
         <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy to clipboard</button>
