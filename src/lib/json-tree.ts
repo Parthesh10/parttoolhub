@@ -18,6 +18,17 @@ function escapeHtml(s: string): string {
 /** A bare key that doesn't need bracket-quoting in a JSONPath, e.g. `$.name` not `$["a b"]`. */
 const SIMPLE_KEY = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
+/**
+ * SEO-002's Core Web Vitals audit found a real perf cliff here: a 2000-item array (a realistic
+ * "large API response" paste) fully expanded produced 92,010 DOM elements and two 685ms-long
+ * blocking tasks switching into tree view — every element goes into the innerHTML string
+ * regardless of a <details>'s open/closed state, so collapsing nodes by default doesn't help;
+ * only rendering fewer of them does. Capping how many array items get a full subtree, with a
+ * plain (non-interactive) "N more items" leaf for the rest, bounds the worst case without losing
+ * the feature for realistically-sized JSON.
+ */
+const MAX_ARRAY_ITEMS = 200;
+
 function childPath(parentPath: string, key: string, isArray: boolean): string {
   if (isArray) return `${parentPath}[${key}]`;
   return SIMPLE_KEY.test(key) ? `${parentPath}.${key}` : `${parentPath}[${JSON.stringify(key)}]`;
@@ -50,13 +61,18 @@ function renderNode(key: string | null, value: unknown, path: string): string {
     return `<div class="jt-leaf" data-path="${escapeHtml(path)}" role="button" tabindex="0" aria-label="Copy JSONPath ${escapeHtml(path)}">${keyLabel}<span class="jt-punct">${isArray ? '[]' : '{}'}</span></div>`;
   }
 
-  const children = entries
+  const truncated = isArray && entries.length > MAX_ARRAY_ITEMS;
+  const shown = truncated ? entries.slice(0, MAX_ARRAY_ITEMS) : entries;
+  const children = shown
     .map(([k, v]) => renderNode(k, v, childPath(path, k, isArray)))
     .join('');
+  const truncationNotice = truncated
+    ? `<div class="jt-truncated">… ${entries.length - MAX_ARRAY_ITEMS} more item${entries.length - MAX_ARRAY_ITEMS === 1 ? '' : 's'} not shown (use Text view to see the rest)</div>`
+    : '';
   return (
     `<details class="jt-node" open data-path="${escapeHtml(path)}">` +
     `<summary>${keyLabel}<span class="jt-punct">${summary}</span></summary>` +
-    `<div class="jt-children">${children}</div>` +
+    `<div class="jt-children">${children}${truncationNotice}</div>` +
     `</details>`
   );
 }

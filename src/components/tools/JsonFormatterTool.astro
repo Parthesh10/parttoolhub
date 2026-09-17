@@ -121,6 +121,9 @@
   :global(.jt-leaf:focus-visible) { outline: 2px solid var(--accent); outline-offset: -1px; }
   /* JSON-003 copy confirmation: a brief background flash, not a layout-shifting tooltip. */
   :global(.jt-leaf.jt-copied) { background: color-mix(in srgb, var(--success) 25%, transparent); }
+  /* SEO-002 perf fix: the "N more items" notice for a truncated large array — deliberately not
+     .jt-leaf (no cursor:pointer/hover, nothing to click or copy, just an explanation). */
+  :global(.jt-truncated) { padding: 0.05rem 0 0.05rem 1rem; color: var(--text-muted); font-style: italic; }
   :global(.jt-key) { color: var(--accent-2); }
   :global(.jt-colon) { color: var(--text-muted); }
   :global(.jt-punct) { color: var(--text-muted); }

@@ -58,6 +58,22 @@ test('null is rendered distinctly from the string "null"', () => {
   assert.match(html, /"b"<\/span><span class="jt-colon">: <\/span><span class="jt-string">"null"<\/span>/);
 });
 
+test('SEO-002: a large array is capped at 200 rendered items, with a plain truncation notice for the rest', () => {
+  const bigArray = Array.from({ length: 2000 }, (_, i) => i);
+  const html = renderJsonTree(bigArray);
+  // 200 leaves for the shown items, none for the truncated 1800.
+  assert.equal((html.match(/class="jt-leaf"/g) ?? []).length, 200);
+  assert.ok(html.includes('<div class="jt-truncated">… 1800 more items not shown (use Text view to see the rest)</div>'));
+  // The notice is deliberately not a copy target — no role=button, no data-path.
+  assert.ok(!html.includes('jt-truncated" role="button"'));
+});
+
+test('an array at or under the 200-item cap is not truncated', () => {
+  const html = renderJsonTree(Array.from({ length: 200 }, (_, i) => i));
+  assert.equal((html.match(/class="jt-leaf"/g) ?? []).length, 200);
+  assert.ok(!html.includes('jt-truncated'));
+});
+
 test('HTML-special characters in both keys and string values are escaped (XSS safety)', () => {
   const html = renderJsonTree({ '<img src=x>': '<script>alert(1)</script>', quote: `He said "hi" & left` });
   assert.ok(!html.includes('<img src=x>'));
