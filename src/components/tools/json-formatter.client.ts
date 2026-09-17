@@ -1,4 +1,4 @@
-import { formatJson, minifyJson, parseJson, SAMPLES, type Indent, type SampleKey } from '../../lib/json-format';
+import { formatJson, minifyJson, parseJson, autoFixJson, SAMPLES, type Indent, type SampleKey } from '../../lib/json-format';
 import { renderJsonTree } from '../../lib/json-tree';
 import { sendToTool } from '../../lib/transfer';
 
@@ -27,6 +27,7 @@ const handoffCsvBtn = $<HTMLButtonElement>('btn-handoff-csv');
 const viewTextBtn = $<HTMLButtonElement>('view-text');
 const viewTreeBtn = $<HTMLButtonElement>('view-tree');
 const sampleSelect = $<HTMLSelectElement>('sample-select');
+const autofixBtn = $<HTMLButtonElement>('btn-autofix');
 
 let mode: 'format' | 'minify' = 'format';
 let viewMode: 'text' | 'tree' = 'text';
@@ -208,6 +209,7 @@ function render() {
     status.hidden = true;
     setErrorLocation();
     handoffActions.hidden = true;
+    autofixBtn.hidden = true;
     return;
   }
 
@@ -229,6 +231,7 @@ function render() {
     // UX-009: only offer the handoff when JSON to CSV could actually do something with it —
     // it requires a top-level array (an object or scalar errors immediately on arrival).
     handoffActions.hidden = result.kind !== 'array';
+    autofixBtn.hidden = true;
   } else {
     output.value = '';
     updateGutterLines(output, outputGutter);
@@ -240,6 +243,7 @@ function render() {
     status.textContent = `${result.error}${loc}`;
     setErrorLocation(result.line, result.column);
     handoffActions.hidden = true;
+    autofixBtn.hidden = false;
   }
 }
 
@@ -350,6 +354,20 @@ $('btn-clear').addEventListener('click', () => {
   input.value = '';
   render();
   input.focus();
+});
+autofixBtn.addEventListener('click', () => {
+  // autoFixJson only repairs the text (single quotes, trailing commas); still needs a real
+  // parseJson pass afterwards to confirm it's actually valid now before trusting it.
+  const repaired = autoFixJson(input.value);
+  const ok = parseJson(repaired).ok;
+  track('tool_option', { option: 'autofix', value: ok ? 'success' : 'failed' });
+  if (ok) {
+    input.value = repaired;
+    render();
+    showToast('Fixed common issues (quotes, trailing commas)');
+  } else {
+    showToast('Could not auto-fix — edit the reported spot manually');
+  }
 });
 $('btn-reset-options').addEventListener('click', () => {
   // Not gated behind a confirm — unlike Clear, nothing here can lose pasted work.

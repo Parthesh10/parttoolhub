@@ -97,3 +97,66 @@ export function minifyJson(input: string, opts: Partial<Pick<FormatOptions, 'sor
   if (!parsed.ok) return parsed;
   return serialise(parsed.value, Boolean(opts.sortKeys), undefined);
 }
+
+/** Re-encodes a single-quoted string's already-escaped body as valid JSON double-quoted content. */
+function reencodeSingleQuoted(body: string): string {
+  let out = '';
+  let i = 0;
+  while (i < body.length) {
+    const c = body[i];
+    if (c === '\\' && i + 1 < body.length) {
+      const next = body[i + 1];
+      if (next === "'") out += "'"; // \' -> ' (no longer needed once double-quoted)
+      else if (next === '"') out += '\\"'; // already correct for JSON
+      else out += '\\' + next; // \n \t \uXXXX etc. pass through unchanged
+      i += 2;
+      continue;
+    }
+    out += c === '"' ? '\\"' : c; // a bare " inside a single-quoted string must be escaped now
+    i++;
+  }
+  return out;
+}
+
+/**
+ * SITE-003 auto-fix: best-effort repair for the two most common "almost JSON" mistakes —
+ * single-quoted strings and trailing commas — not a full parser. A single pass tracks whether
+ * we're inside a string (and which quote opened it) so neither fix ever touches actual string
+ * content; anything still wrong afterwards is left for parseJson's normal error reporting.
+ */
+export function autoFixJson(input: string): string {
+  let out = '';
+  let i = 0;
+  const n = input.length;
+  while (i < n) {
+    const c = input[i];
+    if (c === '"' || c === "'") {
+      const quote = c;
+      let body = '';
+      i++;
+      while (i < n && input[i] !== quote) {
+        if (input[i] === '\\' && i + 1 < n) {
+          body += input[i] + input[i + 1];
+          i += 2;
+        } else {
+          body += input[i];
+          i++;
+        }
+      }
+      i++; // the closing quote (or end of input if unterminated — left for parseJson to report)
+      out += quote === '"' ? `"${body}"` : `"${reencodeSingleQuoted(body)}"`;
+      continue;
+    }
+    if (c === ',') {
+      let j = i + 1;
+      while (j < n && /\s/.test(input[j])) j++;
+      if (input[j] === '}' || input[j] === ']') {
+        i++; // drop the trailing comma; the whitespace and bracket are copied on later iterations
+        continue;
+      }
+    }
+    out += c;
+    i++;
+  }
+  return out;
+}

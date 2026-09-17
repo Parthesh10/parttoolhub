@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatJson, minifyJson, parseJson } from '../src/lib/json-format.ts';
+import { formatJson, minifyJson, parseJson, autoFixJson } from '../src/lib/json-format.ts';
 
 test('formats with 2 spaces by default', () => {
   const r = formatJson('{"b":1,"a":[1,2]}');
@@ -79,4 +79,56 @@ test('pathological nesting is an error, not a stack-overflow exception', () => {
   assert.ok(!r.ok && /too deeply/.test(r.error), 'format');
   const m = minifyJson(deep, { sortKeys: true });
   assert.ok(!m.ok && /too deeply/.test(m.error), 'minify with sortKeys');
+});
+
+test('autoFixJson: converts single-quoted strings to double-quoted', () => {
+  const fixed = autoFixJson("{'name': 'Ada', 'active': true}");
+  assert.equal(fixed, '{"name": "Ada", "active": true}');
+  const r = parseJson(fixed);
+  assert.ok(r.ok);
+});
+
+test('autoFixJson: strips a trailing comma before } or ]', () => {
+  assert.equal(autoFixJson('{"a": 1,}'), '{"a": 1}');
+  assert.equal(autoFixJson('[1, 2,]'), '[1, 2]');
+  assert.equal(autoFixJson('{"a": 1,   }'), '{"a": 1   }'); // whitespace before the bracket is kept as-is
+});
+
+test('autoFixJson: combines both fixes together, matching a realistic pasted-JS-object mistake', () => {
+  const fixed = autoFixJson("{'name': 'Ada', 'tags': ['x', 'y',],}");
+  assert.equal(fixed, '{"name": "Ada", "tags": ["x", "y"]}');
+  const r = parseJson(fixed);
+  assert.ok(r.ok);
+  assert.deepEqual(r.ok && r.value, { name: 'Ada', tags: ['x', 'y'] });
+});
+
+test('autoFixJson: an escaped apostrophe inside a single-quoted string becomes a plain character', () => {
+  const fixed = autoFixJson("{'name': 'O\\'Brien'}");
+  assert.equal(fixed, '{"name": "O\'Brien"}');
+  const r = parseJson(fixed);
+  assert.ok(r.ok && r.value && (r.value as { name: string }).name === "O'Brien");
+});
+
+test('autoFixJson: a literal double quote inside a single-quoted string gets escaped', () => {
+  const fixed = autoFixJson(`{'quote': 'She said "hi"'}`);
+  const r = parseJson(fixed);
+  assert.ok(r.ok);
+  assert.equal((r.value as { quote: string }).quote, 'She said "hi"');
+});
+
+test('autoFixJson: already-valid double-quoted JSON passes through unchanged', () => {
+  const valid = '{"a": 1, "b": [1, 2, 3]}';
+  assert.equal(autoFixJson(valid), valid);
+});
+
+test('autoFixJson: a comma inside a string is never mistaken for a trailing comma', () => {
+  const fixed = autoFixJson('{"note": "a, b, c",}');
+  assert.equal(fixed, '{"note": "a, b, c"}');
+  assert.ok(parseJson(fixed).ok);
+});
+
+test('autoFixJson: does not touch other kinds of syntax errors it cannot fix', () => {
+  const input = '{not: json at : all !! ][';
+  const fixed = autoFixJson(input);
+  assert.ok(!parseJson(fixed).ok, 'still invalid, as expected — this is a best-effort repair, not a full parser');
 });

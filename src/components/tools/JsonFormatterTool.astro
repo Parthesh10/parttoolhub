@@ -58,6 +58,7 @@
         <button type="button" class="btn btn-sm" id="btn-handoff-csv">Use in JSON to CSV →</button>
       </div>
       <p class="status-banner" id="status" hidden></p>
+      <button type="button" class="btn btn-sm" id="btn-autofix" hidden>🪄 Auto-fix</button>
     </div>
   </div>
 
@@ -108,6 +109,8 @@
 <style>
   /* Format/Minify, Wrap, Text/Tree pressed-state color and .drop-hint now come from
      global.css's shared rules — no per-tool override needed here. */
+  /* SITE-003 auto-fix wand: only shown alongside an error, so it needs its own spacing below it. */
+  #btn-autofix { margin-top: 0.6rem; }
 
   /* JSON-002 tree view. Built via innerHTML in json-formatter.client.ts, so Astro's scoped-style
      attribute never reaches these elements (documented gotcha, CLAUDE.md) — every selector here
