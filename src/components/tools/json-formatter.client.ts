@@ -1,5 +1,6 @@
 import { formatJson, minifyJson, parseJson, autoFixJson, SAMPLES, type Indent, type SampleKey } from '../../lib/json-format';
 import { renderJsonTree } from '../../lib/json-tree';
+import { jsonToTsInterface } from '../../lib/json-to-ts';
 import { sendToTool } from '../../lib/transfer';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -26,23 +27,33 @@ const handoffActions = $('handoff-actions');
 const handoffCsvBtn = $<HTMLButtonElement>('btn-handoff-csv');
 const viewTextBtn = $<HTMLButtonElement>('view-text');
 const viewTreeBtn = $<HTMLButtonElement>('view-tree');
+const viewTsBtn = $<HTMLButtonElement>('view-ts');
 const sampleSelect = $<HTMLSelectElement>('sample-select');
 const autofixBtn = $<HTMLButtonElement>('btn-autofix');
 
 let mode: 'format' | 'minify' = 'format';
-let viewMode: 'text' | 'tree' = 'text';
+let viewMode: 'text' | 'tree' | 'ts' = 'text';
+// UX-009's handoff must always send the actual JSON, never whatever the TS view currently has
+// output.value showing — tracked separately since `result` is local to render().
+let lastValidJson = '';
 
-// --- JSON-002: tree view -----------------------------------------------------
-function setViewMode(next: 'text' | 'tree') {
+// --- JSON-002 tree view / JSON-004 TS interface view -------------------------
+function setViewMode(next: 'text' | 'tree' | 'ts') {
   viewMode = next;
   viewTextBtn.setAttribute('aria-pressed', String(next === 'text'));
   viewTreeBtn.setAttribute('aria-pressed', String(next === 'tree'));
+  viewTsBtn.setAttribute('aria-pressed', String(next === 'ts'));
+  // Text and TS both reuse the same output textarea (and its gutter) — only Tree needs its own
+  // element hidden/shown, so re-running render() is what actually swaps the textarea's content.
   outputCodeWrap.hidden = next === 'tree';
   outputTree.classList.toggle('is-visible', next === 'tree');
   track('tool_option', { option: 'view', value: next }, 'opt:view');
+  $('btn-download').textContent = next === 'ts' ? 'Download .ts' : 'Download .json';
+  render();
 }
 viewTextBtn.addEventListener('click', () => setViewMode('text'));
 viewTreeBtn.addEventListener('click', () => setViewMode('tree'));
+viewTsBtn.addEventListener('click', () => setViewMode('ts'));
 
 // --- JSON-003: JSONPath copy-on-click for tree leaves -----------------------
 async function copyLeafPath(leaf: HTMLElement) {
@@ -218,15 +229,16 @@ function render() {
 
   trackRun(mode, result.ok, 'syntax');
   if (result.ok) {
-    output.value = result.output;
+    // Tree view and TS view both render the actual parsed value, not the re-serialised text —
+    // re-parsing here (rather than threading the value out of formatJson/minifyJson) keeps
+    // json-format.ts's public return shape unchanged for its other callers.
+    const parsed = parseJson(raw);
+    lastValidJson = result.output;
+    output.value = viewMode === 'ts' && parsed.ok ? jsonToTsInterface(parsed.value) : result.output;
     updateGutterLines(output, outputGutter);
     outputStat.textContent = `Valid ${result.kind} · ${plural(result.output.split('\n').length, 'line')} · ${plural(result.output.length, 'character')} · ${formatBytes(result.output)}`;
     status.hidden = true;
     setErrorLocation();
-    // Tree view renders the actual parsed value, not the re-serialised text — re-parsing here
-    // (rather than threading the value out of formatJson/minifyJson) keeps json-format.ts's
-    // public return shape unchanged for its other callers.
-    const parsed = parseJson(raw);
     outputTree.innerHTML = parsed.ok ? renderJsonTree(parsed.value) : '';
     // UX-009: only offer the handoff when JSON to CSV could actually do something with it —
     // it requires a top-level array (an object or scalar errors immediately on arrival).
@@ -312,11 +324,12 @@ async function copyOutput() {
 function downloadOutput() {
   if (!output.value) return showToast('Nothing to download yet');
   track('download_result', { target: 'output' });
-  const blob = new Blob([output.value], { type: 'application/json;charset=utf-8' });
+  const isTs = viewMode === 'ts';
+  const blob = new Blob([output.value], { type: isTs ? 'text/typescript;charset=utf-8' : 'application/json;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'data.json';
+  a.download = isTs ? 'types.ts' : 'data.json';
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -344,7 +357,7 @@ for (const c of [indent, sortKeys]) c.addEventListener('change', () => trackOpti
 pasteBtn.addEventListener('click', pasteFromClipboard);
 handoffCsvBtn.addEventListener('click', () => {
   track('navigation_click', { link_placement: 'handoff', link_to: '/tools/json-to-csv-converter' });
-  sendToTool(output.value, '/tools/json-to-csv-converter');
+  sendToTool(lastValidJson, '/tools/json-to-csv-converter');
 });
 $('btn-copy').addEventListener('click', copyOutput);
 $('btn-download').addEventListener('click', downloadOutput);
