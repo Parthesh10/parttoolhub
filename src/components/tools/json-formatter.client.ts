@@ -1,4 +1,5 @@
-import { formatJson, minifyJson, type Indent } from '../../lib/json-format';
+import { formatJson, minifyJson, parseJson, type Indent } from '../../lib/json-format';
+import { renderJsonTree } from '../../lib/json-tree';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -17,8 +18,24 @@ const pasteBtn = $<HTMLButtonElement>('btn-paste');
 const fullscreenBtn = $<HTMLButtonElement>('btn-fullscreen');
 const toolSection = $('tool');
 const inputGutter = $('input-gutter');
+const outputTree = $('output-tree');
+const viewTextBtn = $<HTMLButtonElement>('view-text');
+const viewTreeBtn = $<HTMLButtonElement>('view-tree');
 
 let mode: 'format' | 'minify' = 'format';
+let viewMode: 'text' | 'tree' = 'text';
+
+// --- JSON-002: tree view -----------------------------------------------------
+function setViewMode(next: 'text' | 'tree') {
+  viewMode = next;
+  viewTextBtn.setAttribute('aria-pressed', String(next === 'text'));
+  viewTreeBtn.setAttribute('aria-pressed', String(next === 'tree'));
+  output.hidden = next === 'tree';
+  outputTree.classList.toggle('is-visible', next === 'tree');
+  track('tool_option', { option: 'view', value: next }, 'opt:view');
+}
+viewTextBtn.addEventListener('click', () => setViewMode('text'));
+viewTreeBtn.addEventListener('click', () => setViewMode('tree'));
 
 // --- UX-005: gutter line numbers + active-line highlight -------------------
 function updateActiveLine() {
@@ -145,6 +162,7 @@ function render() {
 
   if (!raw.trim()) {
     output.value = '';
+    outputTree.innerHTML = '';
     outputStat.textContent = '';
     status.hidden = true;
     return;
@@ -158,8 +176,14 @@ function render() {
     output.value = result.output;
     outputStat.textContent = `Valid ${result.kind} · ${plural(result.output.split('\n').length, 'line')} · ${plural(result.output.length, 'character')} · ${formatBytes(result.output)}`;
     status.hidden = true;
+    // Tree view renders the actual parsed value, not the re-serialised text — re-parsing here
+    // (rather than threading the value out of formatJson/minifyJson) keeps json-format.ts's
+    // public return shape unchanged for its other callers.
+    const parsed = parseJson(raw);
+    outputTree.innerHTML = parsed.ok ? renderJsonTree(parsed.value) : '';
   } else {
     output.value = '';
+    outputTree.innerHTML = '';
     outputStat.textContent = 'Invalid JSON';
     status.hidden = false;
     status.className = 'status-banner is-error';

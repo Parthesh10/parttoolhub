@@ -39,6 +39,7 @@
         <span class="stat" id="output-stat" aria-live="polite"></span>
       </div>
       <textarea id="output" rows="14" readonly spellcheck="false" placeholder="Formatted JSON appears here as you type"></textarea>
+      <div class="jt-root" id="output-tree"></div>
       <div class="pane-actions">
         <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy to clipboard</button>
         <button type="button" class="btn btn-sm" id="btn-download">Download .json</button>
@@ -54,6 +55,14 @@
       <div class="row" role="group" aria-label="Format or minify">
         <button type="button" class="btn btn-sm" id="mode-format" aria-pressed="true">Format</button>
         <button type="button" class="btn btn-sm" id="mode-minify" aria-pressed="false">Minify</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>View</legend>
+      <div class="row" role="group" aria-label="Text or tree view">
+        <button type="button" class="btn btn-sm" id="view-text" aria-pressed="true">Text</button>
+        <button type="button" class="btn btn-sm" id="view-tree" aria-pressed="false">Tree</button>
       </div>
     </fieldset>
 
@@ -91,5 +100,35 @@
   #btn-wrap[aria-pressed="true"] {
     background: var(--accent-btn); border-color: var(--accent-btn); color: #fff;
   }
+  #view-text[aria-pressed="true"], #view-tree[aria-pressed="true"] {
+    background: var(--accent-btn); border-color: var(--accent-btn); color: #fff;
+  }
   .drop-hint { font-size: 0.8rem; margin: 0.4rem 0 0; }
+
+  /* JSON-002 tree view. Built via innerHTML in json-formatter.client.ts, so Astro's scoped-style
+     attribute never reaches these elements (documented gotcha, CLAUDE.md) — every selector here
+     needs :global(). */
+  .jt-root {
+    display: none; min-height: 200px; max-height: 60vh; overflow: auto; padding: 0.75rem;
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2);
+    font-family: var(--mono); font-size: 0.9rem; line-height: 1.6;
+  }
+  .jt-root.is-visible { display: block; }
+  :global(.jt-node) { margin: 0; }
+  :global(.jt-node > summary) {
+    cursor: pointer; list-style: none; padding: 0.05rem 0; border-radius: 3px;
+  }
+  :global(.jt-node > summary::-webkit-details-marker) { display: none; }
+  :global(.jt-node > summary::before) { content: '▸'; display: inline-block; width: 1rem; color: var(--text-muted); }
+  :global(.jt-node[open] > summary::before) { content: '▾'; }
+  :global(.jt-node > summary:hover) { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+  :global(.jt-node > summary:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
+  :global(.jt-children) { margin-left: 1rem; padding-left: 0.75rem; border-left: 1px dashed var(--border); }
+  :global(.jt-leaf) { padding: 0.05rem 0 0.05rem 1rem; }
+  :global(.jt-key) { color: var(--accent-2); }
+  :global(.jt-colon) { color: var(--text-muted); }
+  :global(.jt-punct) { color: var(--text-muted); }
+  :global(.jt-string) { color: var(--success); }
+  :global(.jt-number), :global(.jt-boolean) { color: var(--accent); }
+  :global(.jt-null) { color: var(--text-muted); font-style: italic; }
 </style>
