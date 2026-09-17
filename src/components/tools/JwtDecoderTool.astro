@@ -31,6 +31,8 @@
   <div class="jwt-result" id="result" hidden>
     <div class="jwt-timing" id="timing"></div>
 
+    <div class="jwt-claims" id="claims"></div>
+
     <div class="jwt-panes">
       <div class="pane">
         <div class="pane-head">
@@ -70,4 +72,18 @@
   .jwt-timing .item .v { font-weight: 600; }
   .jwt-timing .v.expired { color: var(--danger); }
   .jwt-timing .v.valid { color: var(--success); }
+
+  /* JWT-002 claims table. Built via innerHTML in jwt-decoder.client.ts, so Astro's scoped-style
+     attribute never reaches these elements (documented gotcha, CLAUDE.md) — :global() throughout. */
+  .jwt-claims { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.25rem; }
+  @media (max-width: 760px) { .jwt-claims { grid-template-columns: 1fr; } }
+  :global(.jwt-claims-group h3) { margin: 0 0 0.4rem; font-size: 0.95rem; }
+  :global(.jwt-claims-table) {
+    width: 100%; border-collapse: collapse; font-size: 0.85rem; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); overflow: hidden;
+  }
+  :global(.jwt-claims-table td) { padding: 0.4rem 0.6rem; border-top: 1px solid var(--border); vertical-align: top; }
+  :global(.jwt-claims-table tr:first-child td) { border-top: none; }
+  :global(.jwt-claims-table .jc-key) { color: var(--text-muted); white-space: nowrap; width: 40%; }
+  :global(.jwt-claims-table .jc-val) { font-family: var(--mono); word-break: break-word; }
 </style>

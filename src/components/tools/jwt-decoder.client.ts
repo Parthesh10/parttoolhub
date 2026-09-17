@@ -1,4 +1,4 @@
-import { decodeJwt, relativeTime, SAMPLE_TOKEN } from '../../lib/jwt-decode';
+import { decodeJwt, relativeTime, describeClaims, SAMPLE_TOKEN, type ClaimRow } from '../../lib/jwt-decode';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -9,6 +9,7 @@ const result = $('result');
 const timing = $('timing');
 const headerOut = $<HTMLTextAreaElement>('header-out');
 const payloadOut = $<HTMLTextAreaElement>('payload-out');
+const claims = $('claims');
 const toast = $('toast');
 const pasteBtn = $<HTMLButtonElement>('btn-paste');
 const fullscreenBtn = $<HTMLButtonElement>('btn-fullscreen');
@@ -97,6 +98,18 @@ function fmtClaimTime(d: Date | undefined): string {
   return `${d.toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC')} (${relativeTime(d)})`;
 }
 
+// --- JWT-002: claim-by-claim breakdown table --------------------------------
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+}
+function renderClaimsGroup(title: string, rows: ClaimRow[]): string {
+  if (!rows.length) return '';
+  const trs = rows
+    .map((r) => `<tr><td class="jc-key">${escapeHtml(r.label)}</td><td class="jc-val">${escapeHtml(r.value)}</td></tr>`)
+    .join('');
+  return `<div class="jwt-claims-group"><h3>${escapeHtml(title)}</h3><table class="jwt-claims-table"><tbody>${trs}</tbody></table></div>`;
+}
+
 function render() {
   const raw = input.value;
   inputStat.textContent = raw.trim() ? '' : 'Paste a token to decode';
@@ -131,6 +144,9 @@ function render() {
   result.hidden = false;
   headerOut.value = JSON.stringify(r.jwt.header, null, 2);
   payloadOut.value = JSON.stringify(r.jwt.payload, null, 2);
+  claims.innerHTML =
+    renderClaimsGroup('Header claims', describeClaims(r.jwt.header)) +
+    renderClaimsGroup('Payload claims', describeClaims(r.jwt.payload));
 
   const t = r.jwt.timing;
   const items: string[] = [];

@@ -92,6 +92,55 @@ export function decodeJwt(token: string, now: number = Date.now()): JwtResult {
   }
 }
 
+// --- JWT-002: claim-by-claim breakdown table --------------------------------
+// Registered claim names (RFC 7519 §4.1 for the payload; the two common JOSE
+// header parameters, RFC 7515 §4.1) get a human label; anything else keeps its
+// raw key as the label, since it's almost certainly a private/application claim.
+const CLAIM_LABELS: Record<string, string> = {
+  alg: 'Algorithm',
+  typ: 'Type',
+  kid: 'Key ID',
+  cty: 'Content Type',
+  iss: 'Issuer',
+  sub: 'Subject',
+  aud: 'Audience',
+  exp: 'Expiration Time',
+  nbf: 'Not Before',
+  iat: 'Issued At',
+  jti: 'JWT ID',
+};
+const DATE_CLAIMS = new Set(['exp', 'nbf', 'iat']);
+
+export interface ClaimRow {
+  key: string;
+  label: string;
+  value: string;
+  /** Whether `key` is one of the RFC-registered names above, vs. a private/application claim. */
+  isRegistered: boolean;
+}
+
+function formatClaimValue(key: string, value: unknown): string {
+  if (DATE_CLAIMS.has(key) && typeof value === 'number' && Number.isFinite(value)) {
+    const d = new Date(value * 1000);
+    return `${d.toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC')} (${relativeTime(d)})`;
+  }
+  if (value === null) return 'null';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) return value.map((v) => (typeof v === 'string' ? v : JSON.stringify(v))).join(', ');
+  return JSON.stringify(value);
+}
+
+/** Row order follows the object's own key order (the token's own field order), not the label map's. */
+export function describeClaims(claims: Record<string, unknown>): ClaimRow[] {
+  return Object.entries(claims).map(([key, value]) => ({
+    key,
+    label: CLAIM_LABELS[key] ?? key,
+    value: formatClaimValue(key, value),
+    isRegistered: key in CLAIM_LABELS,
+  }));
+}
+
 /** "in 2 hours" / "3 days ago" style phrasing for claim timestamps. */
 export function relativeTime(date: Date, now: number = Date.now()): string {
   const diff = date.getTime() - now;

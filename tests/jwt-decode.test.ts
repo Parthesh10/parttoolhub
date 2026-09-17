@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { decodeJwt, relativeTime } from '../src/lib/jwt-decode.ts';
+import { decodeJwt, relativeTime, describeClaims } from '../src/lib/jwt-decode.ts';
 
 const b64url = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
 const make = (header: unknown, payload: unknown, sig = 'sig') => `${b64url(header)}.${b64url(payload)}.${sig}`;
@@ -49,4 +49,39 @@ test('relativeTime phrasing', () => {
   assert.equal(relativeTime(new Date(now + 2 * 3600e3), now), 'in 2 hours');
   assert.equal(relativeTime(new Date(now - 3 * 86400e3), now), '3 days ago');
   assert.equal(relativeTime(new Date(now - 1000), now), '1 second ago');
+});
+
+test('describeClaims: registered header claims get human labels', () => {
+  const rows = describeClaims({ alg: 'HS256', typ: 'JWT' });
+  assert.deepEqual(rows, [
+    { key: 'alg', label: 'Algorithm', value: 'HS256', isRegistered: true },
+    { key: 'typ', label: 'Type', value: 'JWT', isRegistered: true },
+  ]);
+});
+
+test('describeClaims: exp/nbf/iat render as human-readable dates with relative phrasing', () => {
+  const rows = describeClaims({ iat: 1700000000 });
+  assert.equal(rows[0].label, 'Issued At');
+  assert.match(rows[0].value, /^2023-11-14 22:13:20 UTC \(.+\)$/);
+});
+
+test('describeClaims: an unregistered/private claim keeps its own key as the label', () => {
+  const rows = describeClaims({ role: 'admin', 'x-custom-claim': 42 });
+  assert.deepEqual(rows, [
+    { key: 'role', label: 'role', value: 'admin', isRegistered: false },
+    { key: 'x-custom-claim', label: 'x-custom-claim', value: '42', isRegistered: false },
+  ]);
+});
+
+test('describeClaims: arrays, objects, null and booleans all render to plain text', () => {
+  const rows = describeClaims({ aud: ['api-a', 'api-b'], meta: { plan: 'pro' }, admin: true, note: null });
+  assert.equal(rows[0].value, 'api-a, api-b');
+  assert.equal(rows[1].value, '{"plan":"pro"}');
+  assert.equal(rows[2].value, 'true');
+  assert.equal(rows[3].value, 'null');
+});
+
+test('describeClaims: row order follows the object\'s own key order, not the label map', () => {
+  const rows = describeClaims({ jti: 'x', sub: 'y', iss: 'z' });
+  assert.deepEqual(rows.map((r) => r.key), ['jti', 'sub', 'iss']);
 });

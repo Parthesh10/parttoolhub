@@ -372,10 +372,10 @@ export const TOOLS: Tool[] = [
     description: 'Decode a JWT to see its header, payload and expiry in plain JSON. Runs entirely in your browser — the token is never sent anywhere.',
     short: 'Inspect the header, claims and expiry of a JSON Web Token without sending it anywhere.',
     category: 'encoders',
-    features: ['Header and payload as formatted JSON', 'Human-readable exp, iat and nbf', 'Expiry status', 'Fully client-side'],
+    features: ['Header and payload as formatted JSON', 'Claim-by-claim breakdown table', 'Human-readable exp, iat and nbf', 'Expiry status', 'Fully client-side'],
     intent: 'jwt decoder',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-13',
+    reviewedOn: '2026-09-17',
     spec: { name: 'RFC 7519 (JSON Web Token)', url: 'https://www.rfc-editor.org/rfc/rfc7519' },
   },
   {

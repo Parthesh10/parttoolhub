@@ -80,6 +80,7 @@ const faq = [
       <li><strong>Header</strong> — typically just <code>alg</code> (the signing algorithm, such as HS256 or RS256) and <code>typ</code> (“JWT”). Some issuers add <code>kid</code>, the ID of the key they signed with.</li>
       <li><strong>Payload</strong> — the claims. Some are standard (<code>sub</code>, <code>iss</code>, <code>aud</code>, <code>exp</code>, <code>iat</code>, <code>nbf</code>, <code>jti</code>); most APIs add their own on top. Shown as-is, formatted with two-space indent.</li>
       <li><strong>Issued / Expires / Not before</strong> — computed from <code>iat</code>, <code>exp</code> and <code>nbf</code> against your device's current time, in UTC, with a relative time (“in 2 hours”, “3 days ago”). Expires is coloured red once the token has expired; Not before only appears when the claim is present.</li>
+      <li><strong>Header claims / Payload claims tables</strong> — every field in the header and payload, one row each, with a plain-English label for the seven RFC 7519 registered claim names (<code>iss</code> “Issuer”, <code>sub</code> “Subject”, and so on); a field your API added on its own keeps its own key as the label, since this tool has no way to know what it means.</li>
       <li><strong>Load sample</strong> inserts the token above; <strong>Clear</strong> empties the box; <strong>Copy header</strong> and <strong>Copy payload</strong> copy the formatted JSON.</li>
     </ul>
 
