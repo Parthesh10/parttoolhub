@@ -20,9 +20,11 @@
         placeholder={'{\n  "name": "Ada",\n  "active": true,\n  "tags": ["admin", "beta"]\n}'}
       ></textarea>
       <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-paste">Paste</button>
         <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
         <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
       </div>
+      <p class="muted drop-hint">Or drop a .json/.txt file onto the box above.</p>
     </div>
 
     <div class="pane">
@@ -83,4 +85,5 @@
   #btn-wrap[aria-pressed="true"] {
     background: var(--accent-btn); border-color: var(--accent-btn); color: #fff;
   }
+  .drop-hint { font-size: 0.8rem; margin: 0.4rem 0 0; }
 </style>

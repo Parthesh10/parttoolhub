@@ -13,15 +13,44 @@ const sortKeys = $<HTMLInputElement>('opt-sort');
 const modeFormatBtn = $<HTMLButtonElement>('mode-format');
 const modeMinifyBtn = $<HTMLButtonElement>('mode-minify');
 const wrapBtn = $<HTMLButtonElement>('btn-wrap');
+const pasteBtn = $<HTMLButtonElement>('btn-paste');
 
 let mode: 'format' | 'minify' = 'format';
+
+// --- UX-002: paste from clipboard + drag-and-drop file upload -------------
+async function pasteFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text) return showToast('Clipboard is empty');
+    inputSource = 'pasted';
+    input.value = text;
+    render();
+  } catch {
+    showToast('Clipboard permission denied — use Ctrl+V instead');
+  }
+}
+input.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  input.classList.add('drag-over');
+});
+input.addEventListener('dragleave', () => input.classList.remove('drag-over'));
+input.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  input.classList.remove('drag-over');
+  const file = e.dataTransfer?.files?.[0];
+  if (!file) return;
+  const fileText = await file.text();
+  inputSource = 'file';
+  input.value = fileText;
+  render();
+});
 
 // --- Analytics (docs/ANALYTICS.md) -----------------------------------------
 // Duplicated per tool on purpose: no shared JS across tools (seo-rules §4).
 // Only slugs, action names, control ids, enumerated values, size buckets and
 // error *categories* are ever sent — never the text a visitor typed.
 const fired = new Set<string>();
-let inputSource: 'typed' | 'pasted' | 'sample' | 'transfer' = 'typed';
+let inputSource: 'typed' | 'pasted' | 'sample' | 'transfer' | 'file' = 'typed';
 let justPasted = false;
 function track(name: string, params: Record<string, string | number | boolean> = {}, once?: string) {
   if (once) {
@@ -148,6 +177,7 @@ input.addEventListener('input', scheduleRender);
 indent.addEventListener('input', render);
 sortKeys.addEventListener('input', render);
 for (const c of [indent, sortKeys]) c.addEventListener('change', () => trackOption(c));
+pasteBtn.addEventListener('click', pasteFromClipboard);
 $('btn-copy').addEventListener('click', copyOutput);
 $('btn-download').addEventListener('click', downloadOutput);
 $('btn-clear').addEventListener('click', () => {
