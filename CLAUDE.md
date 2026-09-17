@@ -284,6 +284,20 @@ pointing at the wrong place, worse than not showing one at all). The fix was giv
 `PyError` in the parser report `token.pos` — never the token index itself. Any future hand-written
 parser in this codebase needs the same treatment before its position can drive a line/column display.
 
+**Toolbar controls (wrap, fullscreen, line numbers, etc.) are a duplicated-per-tool pattern, not a
+shared component** (2026-09-17, backlog `UX-001`) — the same tradeoff as the `// --- Analytics`
+helper block, for the same reason: `no shared JavaScript across tools` is a deliberate performance
+rule (seo-rules §4), so a control that several tools want gets its own small, copy-pasted JS snippet
+per tool plus one shared CSS class in `global.css`, never an imported module. Reference
+implementation: the output-pane wrap/no-wrap toggle in `json-formatter.client.ts` +
+`JsonFormatterTool.astro` — a plain button with `aria-pressed`, matching the existing Format/Minify
+toggle convention in the same file, that adds/removes the shared `.pane textarea.no-wrap` class
+(`white-space: pre; overflow-x: auto`, vs. the textarea's default soft-wrap) and reports through the
+existing `trackOption` helper (no new analytics event). Copy this shape — a small event listener
+toggling one shared CSS class, wired through the tool's own existing analytics helper — for each new
+toolbar control as it's added to a tool; this paragraph gets extended with each one's shared class
+name once it exists, not written speculatively ahead of the code.
+
 Older tools (`ColumnToListTool.astro`, `ListToColumnTool.astro`) live directly under
 `src/components/` rather than `src/components/tools/` — a naming inconsistency from before the
 `tools/` subfolder convention was established, not a different pattern; new tools go in
