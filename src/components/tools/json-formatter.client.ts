@@ -121,6 +121,11 @@ const SAMPLE = '{"name":"Ada Lovelace","born":1815,"active":true,"tags":["mathem
 function plural(n: number, word: string) {
   return `${n.toLocaleString()} ${word}${n === 1 ? '' : 's'}`;
 }
+// UX-006: live micro-stats bar. Byte size is the UTF-8 encoded size (what actually gets
+// downloaded/copied), not .length (a UTF-16 code-unit count) — they differ for non-ASCII input.
+function formatBytes(text: string) {
+  return `${(new TextEncoder().encode(text).length / 1024).toFixed(1)} KB`;
+}
 
 function setMode(next: 'format' | 'minify') {
   mode = next;
@@ -133,7 +138,9 @@ function setMode(next: 'format' | 'minify') {
 
 function render() {
   const raw = input.value;
-  inputStat.textContent = plural(raw.length, 'character');
+  inputStat.textContent = raw.length
+    ? `${plural(raw.split('\n').length, 'line')} · ${plural(raw.length, 'character')} · ${formatBytes(raw)}`
+    : plural(raw.length, 'character');
   updateGutterLines();
 
   if (!raw.trim()) {
@@ -149,7 +156,7 @@ function render() {
   trackRun(mode, result.ok, 'syntax');
   if (result.ok) {
     output.value = result.output;
-    outputStat.textContent = `Valid ${result.kind} · ${plural(result.output.length, 'character')}`;
+    outputStat.textContent = `Valid ${result.kind} · ${plural(result.output.split('\n').length, 'line')} · ${plural(result.output.length, 'character')} · ${formatBytes(result.output)}`;
     status.hidden = true;
   } else {
     output.value = '';
