@@ -12,6 +12,7 @@ const indent = $<HTMLSelectElement>('opt-indent');
 const sortKeys = $<HTMLInputElement>('opt-sort');
 const modeFormatBtn = $<HTMLButtonElement>('mode-format');
 const modeMinifyBtn = $<HTMLButtonElement>('mode-minify');
+const wrapBtn = $<HTMLButtonElement>('btn-wrap');
 
 let mode: 'format' | 'minify' = 'format';
 
@@ -129,6 +130,12 @@ function downloadOutput() {
 
 modeFormatBtn.addEventListener('click', () => setMode('format'));
 modeMinifyBtn.addEventListener('click', () => setMode('minify'));
+wrapBtn.addEventListener('click', () => {
+  const next = wrapBtn.getAttribute('aria-pressed') !== 'true';
+  wrapBtn.setAttribute('aria-pressed', String(next));
+  output.classList.toggle('no-wrap', next);
+  trackOption(wrapBtn, next ? 'no-wrap' : 'wrap');
+});
 // Typing is debounced so a keystroke never waits on the engine — the site's
 // INP budget is < 200 ms and large pastes can take longer than that to process
 // synchronously. Option toggles still re-render immediately (one event, not a burst).

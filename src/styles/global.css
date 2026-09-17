@@ -300,6 +300,9 @@ th { background: var(--surface-2); font-weight: 650; }
 }
 .pane textarea:focus, .single textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; background: var(--surface); }
 .pane textarea[readonly], .single textarea[readonly] { background: var(--surface); }
+/* UX-004: opt-in horizontal scroll instead of soft-wrap, for tools whose output reads better
+   unwrapped (long JSON lines, CSV rows). Shared class, per-tool JS toggles it (UX-001 pattern). */
+.pane textarea.no-wrap { white-space: pre; overflow-x: auto; }
 .pane-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem; }
 
 .options { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.85rem; margin-top: 1.25rem; }

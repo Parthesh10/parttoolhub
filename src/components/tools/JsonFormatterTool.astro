@@ -34,6 +34,7 @@
       <div class="pane-actions">
         <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy to clipboard</button>
         <button type="button" class="btn btn-sm" id="btn-download">Download .json</button>
+        <button type="button" class="btn btn-sm" id="btn-wrap" aria-pressed="false">No-wrap</button>
       </div>
       <p class="status-banner" id="status" hidden></p>
     </div>
@@ -77,6 +78,9 @@
 
 <style>
   #mode-format[aria-pressed="true"], #mode-minify[aria-pressed="true"] {
+    background: var(--accent-btn); border-color: var(--accent-btn); color: #fff;
+  }
+  #btn-wrap[aria-pressed="true"] {
     background: var(--accent-btn); border-color: var(--accent-btn); color: #fff;
   }
 </style>
