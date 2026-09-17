@@ -124,6 +124,13 @@
   /* SEO-002 perf fix: the "N more items" notice for a truncated large array — deliberately not
      .jt-leaf (no cursor:pointer/hover, nothing to click or copy, just an explanation). */
   :global(.jt-truncated) { padding: 0.05rem 0 0.05rem 1rem; color: var(--text-muted); font-style: italic; }
+
+  /* SITE-002: the status banner becomes a click target to jump to the error's line/column,
+     only when it actually names one (toggled in json-formatter.client.ts). Starting here per
+     this row's own scope; promote to global.css if/when another line/column-reporting tool adopts it. */
+  #status.is-clickable { cursor: pointer; }
+  #status.is-clickable:hover { filter: brightness(1.1); }
+  #status.is-clickable:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   :global(.jt-key) { color: var(--accent-2); }
   :global(.jt-colon) { color: var(--text-muted); }
   :global(.jt-punct) { color: var(--text-muted); }

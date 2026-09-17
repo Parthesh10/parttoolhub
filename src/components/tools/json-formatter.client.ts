@@ -192,6 +192,7 @@ function render() {
     outputTree.innerHTML = '';
     outputStat.textContent = '';
     status.hidden = true;
+    setErrorLocation();
     return;
   }
 
@@ -203,6 +204,7 @@ function render() {
     output.value = result.output;
     outputStat.textContent = `Valid ${result.kind} · ${plural(result.output.split('\n').length, 'line')} · ${plural(result.output.length, 'character')} · ${formatBytes(result.output)}`;
     status.hidden = true;
+    setErrorLocation();
     // Tree view renders the actual parsed value, not the re-serialised text — re-parsing here
     // (rather than threading the value out of formatJson/minifyJson) keeps json-format.ts's
     // public return shape unchanged for its other callers.
@@ -216,8 +218,50 @@ function render() {
     status.className = 'status-banner is-error';
     const loc = result.line ? ` (line ${result.line}${result.column ? `, column ${result.column}` : ''})` : '';
     status.textContent = `${result.error}${loc}`;
+    setErrorLocation(result.line, result.column);
   }
 }
+
+// --- SITE-002: click the error banner to jump the cursor to that line/column ------
+function setErrorLocation(line?: number, column?: number) {
+  if (line) {
+    status.dataset.errLine = String(line);
+    status.dataset.errCol = String(column ?? 1);
+    status.classList.add('is-clickable');
+    status.setAttribute('role', 'button');
+    status.setAttribute('tabindex', '0');
+    status.title = 'Click to jump to this line';
+  } else {
+    delete status.dataset.errLine;
+    delete status.dataset.errCol;
+    status.classList.remove('is-clickable');
+    status.removeAttribute('role');
+    status.removeAttribute('tabindex');
+    status.removeAttribute('title');
+  }
+}
+function lineColToOffset(text: string, line: number, column: number): number {
+  const lines = text.split('\n');
+  let offset = 0;
+  for (let i = 0; i < line - 1 && i < lines.length; i++) offset += lines[i].length + 1;
+  return offset + (column - 1);
+}
+function jumpToError() {
+  const line = Number(status.dataset.errLine);
+  if (!line) return;
+  const column = Number(status.dataset.errCol) || 1;
+  const offset = lineColToOffset(input.value, line, column);
+  input.focus();
+  input.setSelectionRange(offset, offset);
+  updateActiveLine();
+}
+status.addEventListener('click', jumpToError);
+status.addEventListener('keydown', (e) => {
+  if ((e.key === 'Enter' || e.key === ' ') && status.classList.contains('is-clickable')) {
+    e.preventDefault();
+    jumpToError();
+  }
+});
 
 let toastTimer: number | undefined;
 function showToast(msg: string) {
