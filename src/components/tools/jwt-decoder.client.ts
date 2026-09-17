@@ -10,15 +10,59 @@ const timing = $('timing');
 const headerOut = $<HTMLTextAreaElement>('header-out');
 const payloadOut = $<HTMLTextAreaElement>('payload-out');
 const toast = $('toast');
+const pasteBtn = $<HTMLButtonElement>('btn-paste');
+const fullscreenBtn = $<HTMLButtonElement>('btn-fullscreen');
+const toolSection = $('tool');
 
 const SAMPLE = SAMPLE_TOKEN;
+
+// --- UX-003: fullscreen / focus mode ---------------------------------------
+function setFullscreen(on: boolean) {
+  toolSection.classList.toggle('is-fullscreen', on);
+  document.body.classList.toggle('no-scroll', on);
+  fullscreenBtn.setAttribute('aria-pressed', String(on));
+  fullscreenBtn.textContent = on ? '✕ Exit fullscreen' : '⛶ Fullscreen';
+  track('tool_option', { option: 'fullscreen', value: String(on) });
+}
+fullscreenBtn.addEventListener('click', () => setFullscreen(!toolSection.classList.contains('is-fullscreen')));
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && toolSection.classList.contains('is-fullscreen')) setFullscreen(false);
+});
+
+// --- UX-002: paste from clipboard + drag-and-drop file upload -------------
+async function pasteFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text) return showToast('Clipboard is empty');
+    inputSource = 'pasted';
+    input.value = text;
+    render();
+  } catch {
+    showToast('Clipboard permission denied — use Ctrl+V instead');
+  }
+}
+input.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  input.classList.add('drag-over');
+});
+input.addEventListener('dragleave', () => input.classList.remove('drag-over'));
+input.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  input.classList.remove('drag-over');
+  const file = e.dataTransfer?.files?.[0];
+  if (!file) return;
+  const fileText = await file.text();
+  inputSource = 'file';
+  input.value = fileText.trim();
+  render();
+});
 
 // --- Analytics (docs/ANALYTICS.md) -----------------------------------------
 // Duplicated per tool on purpose: no shared JS across tools (seo-rules §4).
 // Only slugs, action names, control ids, enumerated values, size buckets and
 // error *categories* are ever sent — never the text a visitor typed.
 const fired = new Set<string>();
-let inputSource: 'typed' | 'pasted' | 'sample' | 'transfer' = 'typed';
+let inputSource: 'typed' | 'pasted' | 'sample' | 'transfer' | 'file' = 'typed';
 let justPasted = false;
 function track(name: string, params: Record<string, string | number | boolean> = {}, once?: string) {
   if (once) {
@@ -135,6 +179,7 @@ function scheduleRender() {
   renderTimer = window.setTimeout(render, 120);
 }
 input.addEventListener('input', scheduleRender);
+pasteBtn.addEventListener('click', pasteFromClipboard);
 $('btn-clear').addEventListener('click', () => {
   track('reset_tool');
   input.value = '';

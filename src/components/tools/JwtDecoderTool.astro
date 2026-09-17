@@ -3,6 +3,9 @@
 ---
 
 <section class="tool card" id="tool" data-tool="jwt-decoder">
+  <div class="tool-toolbar">
+    <button type="button" class="btn btn-sm" id="btn-fullscreen" aria-pressed="false">⛶ Fullscreen</button>
+  </div>
   <div class="single">
     <div class="pane-head">
       <label for="input">Paste a JWT</label>
@@ -16,9 +19,11 @@
       placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SIGNATURE"
     ></textarea>
     <div class="pane-actions">
+      <button type="button" class="btn btn-sm" id="btn-paste">Paste</button>
       <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
       <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
     </div>
+    <p class="muted drop-hint">Or drop a .txt file containing the token onto the box above.</p>
   </div>
 
   <p class="status-banner" id="status" hidden></p>
