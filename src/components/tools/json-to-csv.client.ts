@@ -1,4 +1,5 @@
 import { jsonToCsv, SAMPLE_JSON, type Delimiter } from '../../lib/csv-json';
+import { receiveTransfer } from '../../lib/transfer';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -240,4 +241,11 @@ input.addEventListener('keydown', (e) => {
   }
 });
 
+// UX-009: arriving from JSON Formatter's "Use in JSON to CSV" button — the validated/formatted
+// JSON is handed over in sessionStorage and this page opens with it already loaded.
+const incoming = receiveTransfer();
+if (incoming) {
+  inputSource = 'transfer';
+  input.value = incoming;
+}
 render();

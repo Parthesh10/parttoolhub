@@ -1,5 +1,6 @@
 import { formatJson, minifyJson, parseJson, type Indent } from '../../lib/json-format';
 import { renderJsonTree } from '../../lib/json-tree';
+import { sendToTool } from '../../lib/transfer';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -19,6 +20,8 @@ const fullscreenBtn = $<HTMLButtonElement>('btn-fullscreen');
 const toolSection = $('tool');
 const inputGutter = $('input-gutter');
 const outputTree = $('output-tree');
+const handoffActions = $('handoff-actions');
+const handoffCsvBtn = $<HTMLButtonElement>('btn-handoff-csv');
 const viewTextBtn = $<HTMLButtonElement>('view-text');
 const viewTreeBtn = $<HTMLButtonElement>('view-tree');
 
@@ -193,6 +196,7 @@ function render() {
     outputStat.textContent = '';
     status.hidden = true;
     setErrorLocation();
+    handoffActions.hidden = true;
     return;
   }
 
@@ -210,6 +214,9 @@ function render() {
     // public return shape unchanged for its other callers.
     const parsed = parseJson(raw);
     outputTree.innerHTML = parsed.ok ? renderJsonTree(parsed.value) : '';
+    // UX-009: only offer the handoff when JSON to CSV could actually do something with it —
+    // it requires a top-level array (an object or scalar errors immediately on arrival).
+    handoffActions.hidden = result.kind !== 'array';
   } else {
     output.value = '';
     outputTree.innerHTML = '';
@@ -219,6 +226,7 @@ function render() {
     const loc = result.line ? ` (line ${result.line}${result.column ? `, column ${result.column}` : ''})` : '';
     status.textContent = `${result.error}${loc}`;
     setErrorLocation(result.line, result.column);
+    handoffActions.hidden = true;
   }
 }
 
@@ -317,6 +325,10 @@ indent.addEventListener('input', render);
 sortKeys.addEventListener('input', render);
 for (const c of [indent, sortKeys]) c.addEventListener('change', () => trackOption(c));
 pasteBtn.addEventListener('click', pasteFromClipboard);
+handoffCsvBtn.addEventListener('click', () => {
+  track('navigation_click', { link_placement: 'handoff', link_to: '/tools/json-to-csv-converter' });
+  sendToTool(output.value, '/tools/json-to-csv-converter');
+});
 $('btn-copy').addEventListener('click', copyOutput);
 $('btn-download').addEventListener('click', downloadOutput);
 $('btn-clear').addEventListener('click', () => {
