@@ -1,4 +1,4 @@
-import { formatJson, minifyJson, parseJson, type Indent } from '../../lib/json-format';
+import { formatJson, minifyJson, parseJson, SAMPLES, type Indent, type SampleKey } from '../../lib/json-format';
 import { renderJsonTree } from '../../lib/json-tree';
 import { sendToTool } from '../../lib/transfer';
 
@@ -26,6 +26,7 @@ const handoffActions = $('handoff-actions');
 const handoffCsvBtn = $<HTMLButtonElement>('btn-handoff-csv');
 const viewTextBtn = $<HTMLButtonElement>('view-text');
 const viewTreeBtn = $<HTMLButtonElement>('view-tree');
+const sampleSelect = $<HTMLSelectElement>('sample-select');
 
 let mode: 'format' | 'minify' = 'format';
 let viewMode: 'text' | 'tree' = 'text';
@@ -171,7 +172,6 @@ function trackOption(el: HTMLInputElement | HTMLSelectElement | HTMLButtonElemen
 input.addEventListener('paste', () => { justPasted = true; });
 input.addEventListener('input', () => { inputSource = justPasted ? 'pasted' : 'typed'; justPasted = false; });
 
-const SAMPLE = '{"name":"Ada Lovelace","born":1815,"active":true,"tags":["mathematician","writer"],"address":{"city":"London","country":"UK"}}';
 // UX-007: below this, clearing is cheap to redo by pasting again — not worth interrupting for.
 const CLEAR_CONFIRM_THRESHOLD = 500;
 
@@ -363,10 +363,14 @@ $('btn-reset-options').addEventListener('click', () => {
   setViewMode('text');
   setMode('format');
 });
-$('btn-sample').addEventListener('click', () => {
+sampleSelect.addEventListener('change', () => {
+  const key = sampleSelect.value as SampleKey | '';
+  if (!key) return;
+  trackOption(sampleSelect);
   inputSource = 'sample';
-  input.value = SAMPLE;
+  input.value = SAMPLES[key];
   render();
+  sampleSelect.value = ''; // back to the placeholder, so picking the same option again still fires 'change'
 });
 input.addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {

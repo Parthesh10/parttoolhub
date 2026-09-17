@@ -27,7 +27,12 @@
       </div>
       <div class="pane-actions">
         <button type="button" class="btn btn-sm" id="btn-paste">Paste</button>
-        <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+        <select class="btn btn-sm" id="sample-select" aria-label="Load sample data">
+          <option value="" selected>Load sample…</option>
+          <option value="simple">Simple</option>
+          <option value="apiResponse">API response</option>
+          <option value="edgeCase">Edge case</option>
+        </select>
         <button type="button" class="btn btn-sm" id="btn-clear">Clear input</button>
         <button type="button" class="btn btn-sm" id="btn-reset-options">Reset options</button>
       </div>

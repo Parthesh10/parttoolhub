@@ -3,6 +3,25 @@
  */
 import { parseJson as parseJsonShared } from './json-parse';
 
+/**
+ * UX-008: named sample sets behind the "Load sample" control, so a visitor can pick data that
+ * actually resembles what they're about to paste rather than always getting the same one object.
+ * `simple` is the pre-existing default (unchanged, so it stays the one thing this tool's own
+ * page's history has referenced); `apiResponse` and `edgeCase` are new.
+ */
+export const SAMPLES = {
+  simple:
+    '{"name":"Ada Lovelace","born":1815,"active":true,"tags":["mathematician","writer"],"address":{"city":"London","country":"UK"}}',
+  apiResponse:
+    '{"page":1,"per_page":2,"total":42,"results":[{"id":101,"name":"Widget A","price":19.99,"in_stock":true},{"id":102,"name":"Widget B","price":24.5,"in_stock":false}]}',
+  // Exercises the cases the "Edge cases" section on the tool page already talks about: Unicode,
+  // an integer past Number.MAX_SAFE_INTEGER (9007199254740993, which JSON.parse silently rounds),
+  // an empty object/array, a null, and escaped characters inside a string.
+  edgeCase:
+    '{"unicode":"caf\\u00e9 \\u65e5\\u672c","bigNumber":9007199254740993,"emptyArray":[],"emptyObject":{},"nullValue":null,"nested":[[1,2],[3,4]],"escaped":"line1\\nline2\\ttab \\"quoted\\""}',
+} as const;
+export type SampleKey = keyof typeof SAMPLES;
+
 export type Indent = 2 | 4 | 'tab';
 
 export interface JsonOk {
