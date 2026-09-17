@@ -80,6 +80,12 @@ const FORBIDDEN = [
   "here's why:",
   'at its core',
   'ultimately,',
+  'delve',
+  'elevate',
+  'unleash',
+  'testament',
+  'in this article, we',
+  'in this guide, we',
 ];
 
 const REQUIRED_H2 = [
