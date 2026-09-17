@@ -5,23 +5,31 @@
 ---
 
 <section class="tool card" id="tool" data-tool="json-to-python-dict">
+  <div class="tool-toolbar">
+    <button type="button" class="btn btn-sm" id="btn-fullscreen" aria-pressed="false">⛶ Fullscreen</button>
+  </div>
   <div class="panes">
     <div class="pane">
       <div class="pane-head">
         <label for="input">Paste JSON</label>
         <span class="stat" id="input-stat" aria-live="polite">0 characters</span>
       </div>
-      <textarea
-        id="input"
-        rows="14"
-        spellcheck="false"
-        autocomplete="off"
-        placeholder={'{"name": "Ada", "active": true, "tags": ["admin", "beta"], "ref": null}'}
-      ></textarea>
+      <div class="code-wrap">
+        <div class="gutter" id="input-gutter" aria-hidden="true"><span>1</span></div>
+        <textarea
+          id="input"
+          rows="14"
+          spellcheck="false"
+          autocomplete="off"
+          placeholder={'{"name": "Ada", "active": true, "tags": ["admin", "beta"], "ref": null}'}
+        ></textarea>
+      </div>
       <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-paste">Paste</button>
         <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
         <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
       </div>
+      <p class="muted drop-hint">Or drop a .json/.txt file onto the box above.</p>
     </div>
 
     <div class="pane">
@@ -29,10 +37,14 @@
         <label for="output">Python</label>
         <span class="stat" id="output-stat" aria-live="polite"></span>
       </div>
-      <textarea id="output" rows="14" readonly spellcheck="false" placeholder="A Python dict or list literal appears here as you type"></textarea>
+      <div class="code-wrap">
+        <div class="gutter" id="output-gutter" aria-hidden="true"></div>
+        <textarea id="output" rows="14" readonly spellcheck="false" placeholder="A Python dict or list literal appears here as you type"></textarea>
+      </div>
       <div class="pane-actions">
         <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy to clipboard</button>
         <button type="button" class="btn btn-sm" id="btn-download">Download .py</button>
+        <button type="button" class="btn btn-sm" id="btn-wrap" aria-pressed="false">No-wrap</button>
       </div>
       <p class="status-banner" id="status" hidden></p>
     </div>
