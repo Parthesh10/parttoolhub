@@ -3,6 +3,9 @@
 ---
 
 <section class="tool card" id="tool" data-tool="markdown-to-plain-text">
+  <div class="tool-toolbar">
+    <button type="button" class="btn btn-sm" id="btn-fullscreen" aria-pressed="false">⛶ Fullscreen</button>
+  </div>
   <div class="options">
     <fieldset>
       <legend>Output for</legend>
@@ -35,17 +38,22 @@
         <label for="input">Markdown</label>
         <span class="stat" id="input-stat" aria-live="polite">0 characters</span>
       </div>
-      <textarea
-        id="input"
-        rows="16"
-        spellcheck="false"
-        autocomplete="off"
-        placeholder={'## Title\n\nSome **bold** text with a [link](https://example.com).\n\n- first point\n- second point'}
-      ></textarea>
+      <div class="code-wrap">
+        <div class="gutter" id="input-gutter" aria-hidden="true"><span>1</span></div>
+        <textarea
+          id="input"
+          rows="16"
+          spellcheck="false"
+          autocomplete="off"
+          placeholder={'## Title\n\nSome **bold** text with a [link](https://example.com).\n\n- first point\n- second point'}
+        ></textarea>
+      </div>
       <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-paste">Paste</button>
         <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
         <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
       </div>
+      <p class="muted drop-hint">Or drop a .md/.txt file onto the box above.</p>
     </div>
 
     <div class="pane">
@@ -53,10 +61,14 @@
         <label for="output" id="output-label">Plain text</label>
         <span class="stat" id="output-stat" aria-live="polite"></span>
       </div>
-      <textarea id="output" rows="16" readonly spellcheck="false" placeholder="The converted text appears here as you type"></textarea>
+      <div class="code-wrap">
+        <div class="gutter" id="output-gutter" aria-hidden="true"></div>
+        <textarea id="output" rows="16" readonly spellcheck="false" placeholder="The converted text appears here as you type"></textarea>
+      </div>
       <div class="pane-actions">
         <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy to clipboard</button>
         <button type="button" class="btn btn-sm" id="btn-download">Download .txt</button>
+        <button type="button" class="btn btn-sm" id="btn-wrap" aria-pressed="false">No-wrap</button>
       </div>
       <p class="status-banner" id="status" hidden></p>
     </div>
