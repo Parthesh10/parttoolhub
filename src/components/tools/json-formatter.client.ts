@@ -16,8 +16,29 @@ const wrapBtn = $<HTMLButtonElement>('btn-wrap');
 const pasteBtn = $<HTMLButtonElement>('btn-paste');
 const fullscreenBtn = $<HTMLButtonElement>('btn-fullscreen');
 const toolSection = $('tool');
+const inputGutter = $('input-gutter');
 
 let mode: 'format' | 'minify' = 'format';
+
+// --- UX-005: gutter line numbers + active-line highlight -------------------
+function updateActiveLine() {
+  const lineIndex = input.value.slice(0, input.selectionStart).split('\n').length; // 1-based
+  inputGutter.querySelector('.active')?.classList.remove('active');
+  inputGutter.children[lineIndex - 1]?.classList.add('active');
+}
+function updateGutterLines() {
+  const lines = input.value.split('\n').length;
+  if (inputGutter.children.length !== lines) {
+    let html = '';
+    for (let i = 1; i <= lines; i++) html += `<span>${i}</span>`;
+    inputGutter.innerHTML = html; // resets scrollTop to 0, so re-sync it below
+  }
+  inputGutter.scrollTop = input.scrollTop;
+  updateActiveLine();
+}
+input.addEventListener('scroll', () => { inputGutter.scrollTop = input.scrollTop; });
+input.addEventListener('click', updateActiveLine);
+input.addEventListener('keyup', updateActiveLine);
 
 // --- UX-003: fullscreen / focus mode ---------------------------------------
 function setFullscreen(on: boolean) {
@@ -113,6 +134,7 @@ function setMode(next: 'format' | 'minify') {
 function render() {
   const raw = input.value;
   inputStat.textContent = plural(raw.length, 'character');
+  updateGutterLines();
 
   if (!raw.trim()) {
     output.value = '';

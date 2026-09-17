@@ -15,13 +15,16 @@
         <label for="input">Paste JSON</label>
         <span class="stat" id="input-stat" aria-live="polite">0 characters</span>
       </div>
-      <textarea
-        id="input"
-        rows="14"
-        spellcheck="false"
-        autocomplete="off"
-        placeholder={'{\n  "name": "Ada",\n  "active": true,\n  "tags": ["admin", "beta"]\n}'}
-      ></textarea>
+      <div class="code-wrap">
+        <div class="gutter" id="input-gutter" aria-hidden="true"><span>1</span></div>
+        <textarea
+          id="input"
+          rows="14"
+          spellcheck="false"
+          autocomplete="off"
+          placeholder={'{\n  "name": "Ada",\n  "active": true,\n  "tags": ["admin", "beta"]\n}'}
+        ></textarea>
+      </div>
       <div class="pane-actions">
         <button type="button" class="btn btn-sm" id="btn-paste">Paste</button>
         <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
