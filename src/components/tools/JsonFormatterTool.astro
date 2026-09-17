@@ -94,16 +94,8 @@
 <script src="./json-formatter.client.ts"></script>
 
 <style>
-  #mode-format[aria-pressed="true"], #mode-minify[aria-pressed="true"] {
-    background: var(--accent-btn); border-color: var(--accent-btn); color: #fff;
-  }
-  #btn-wrap[aria-pressed="true"] {
-    background: var(--accent-btn); border-color: var(--accent-btn); color: #fff;
-  }
-  #view-text[aria-pressed="true"], #view-tree[aria-pressed="true"] {
-    background: var(--accent-btn); border-color: var(--accent-btn); color: #fff;
-  }
-  .drop-hint { font-size: 0.8rem; margin: 0.4rem 0 0; }
+  /* Format/Minify, Wrap, Text/Tree pressed-state color and .drop-hint now come from
+     global.css's shared rules — no per-tool override needed here. */
 
   /* JSON-002 tree view. Built via innerHTML in json-formatter.client.ts, so Astro's scoped-style
      attribute never reaches these elements (documented gotcha, CLAUDE.md) — every selector here

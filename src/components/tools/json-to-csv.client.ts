@@ -9,17 +9,88 @@ const outputStat = $('output-stat');
 const status = $('status');
 const toast = $('toast');
 const delimiter = $<HTMLSelectElement>('opt-delimiter');
+const wrapBtn = $<HTMLButtonElement>('btn-wrap');
+const pasteBtn = $<HTMLButtonElement>('btn-paste');
+const fullscreenBtn = $<HTMLButtonElement>('btn-fullscreen');
+const toolSection = $('tool');
+const inputGutter = $('input-gutter');
 
 function plural(n: number, word: string) {
   return `${n.toLocaleString()} ${word}${n === 1 ? '' : 's'}`;
 }
+// UX-006: byte size is the UTF-8 encoded size (what actually gets downloaded/copied), not
+// .length (a UTF-16 code-unit count) — they differ for non-ASCII input.
+function formatBytes(text: string) {
+  return `${(new TextEncoder().encode(text).length / 1024).toFixed(1)} KB`;
+}
+
+// --- UX-005: gutter line numbers + active-line highlight -------------------
+function updateActiveLine() {
+  const lineIndex = input.value.slice(0, input.selectionStart).split('\n').length; // 1-based
+  inputGutter.querySelector('.active')?.classList.remove('active');
+  inputGutter.children[lineIndex - 1]?.classList.add('active');
+}
+function updateGutterLines() {
+  const lines = input.value.split('\n').length;
+  if (inputGutter.children.length !== lines) {
+    let html = '';
+    for (let i = 1; i <= lines; i++) html += `<span>${i}</span>`;
+    inputGutter.innerHTML = html; // resets scrollTop to 0, so re-sync it below
+  }
+  inputGutter.scrollTop = input.scrollTop;
+  updateActiveLine();
+}
+input.addEventListener('scroll', () => { inputGutter.scrollTop = input.scrollTop; });
+input.addEventListener('click', updateActiveLine);
+input.addEventListener('keyup', updateActiveLine);
+
+// --- UX-003: fullscreen / focus mode ---------------------------------------
+function setFullscreen(on: boolean) {
+  toolSection.classList.toggle('is-fullscreen', on);
+  document.body.classList.toggle('no-scroll', on);
+  fullscreenBtn.setAttribute('aria-pressed', String(on));
+  fullscreenBtn.textContent = on ? '✕ Exit fullscreen' : '⛶ Fullscreen';
+  track('tool_option', { option: 'fullscreen', value: String(on) });
+}
+fullscreenBtn.addEventListener('click', () => setFullscreen(!toolSection.classList.contains('is-fullscreen')));
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && toolSection.classList.contains('is-fullscreen')) setFullscreen(false);
+});
+
+// --- UX-002: paste from clipboard + drag-and-drop file upload -------------
+async function pasteFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text) return showToast('Clipboard is empty');
+    inputSource = 'pasted';
+    input.value = text;
+    render();
+  } catch {
+    showToast('Clipboard permission denied — use Ctrl+V instead');
+  }
+}
+input.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  input.classList.add('drag-over');
+});
+input.addEventListener('dragleave', () => input.classList.remove('drag-over'));
+input.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  input.classList.remove('drag-over');
+  const file = e.dataTransfer?.files?.[0];
+  if (!file) return;
+  const fileText = await file.text();
+  inputSource = 'file';
+  input.value = fileText;
+  render();
+});
 
 // --- Analytics (docs/ANALYTICS.md) -----------------------------------------
 // Duplicated per tool on purpose: no shared JS across tools (seo-rules §4).
 // Only slugs, action names, control ids, enumerated values, size buckets and
 // error *categories* are ever sent — never the text a visitor typed.
 const fired = new Set<string>();
-let inputSource: 'typed' | 'pasted' | 'sample' | 'transfer' = 'typed';
+let inputSource: 'typed' | 'pasted' | 'sample' | 'transfer' | 'file' = 'typed';
 let justPasted = false;
 function track(name: string, params: Record<string, string | number | boolean> = {}, once?: string) {
   if (once) {
@@ -51,6 +122,7 @@ input.addEventListener('input', () => { inputSource = justPasted ? 'pasted' : 't
 
 function render() {
   const raw = input.value;
+  updateGutterLines();
 
   if (!raw.trim()) {
     inputStat.textContent = plural(raw.length, 'character');
@@ -83,7 +155,7 @@ function render() {
 
   if (result.ok) {
     output.value = result.output;
-    outputStat.textContent = `${plural(result.count, 'row')} · ${plural(result.output.length, 'character')}`;
+    outputStat.textContent = `${plural(result.count, 'row')} · ${plural(result.output.length, 'character')} · ${formatBytes(result.output)}`;
     status.hidden = true;
   } else {
     output.value = '';
@@ -139,6 +211,13 @@ function scheduleRender() {
 input.addEventListener('input', scheduleRender);
 delimiter.addEventListener('input', render);
 delimiter.addEventListener('change', () => trackOption(delimiter));
+wrapBtn.addEventListener('click', () => {
+  const next = wrapBtn.getAttribute('aria-pressed') !== 'true';
+  wrapBtn.setAttribute('aria-pressed', String(next));
+  output.classList.toggle('no-wrap', next);
+  trackOption(wrapBtn, next ? 'no-wrap' : 'wrap');
+});
+pasteBtn.addEventListener('click', pasteFromClipboard);
 $('btn-copy').addEventListener('click', copyOutput);
 $('btn-download').addEventListener('click', downloadOutput);
 $('btn-clear').addEventListener('click', () => {
