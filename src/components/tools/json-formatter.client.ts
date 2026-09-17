@@ -37,6 +37,33 @@ function setViewMode(next: 'text' | 'tree') {
 viewTextBtn.addEventListener('click', () => setViewMode('text'));
 viewTreeBtn.addEventListener('click', () => setViewMode('tree'));
 
+// --- JSON-003: JSONPath copy-on-click for tree leaves -----------------------
+async function copyLeafPath(leaf: HTMLElement) {
+  const path = leaf.dataset.path;
+  if (!path) return;
+  track('copy_result', { target: 'jsonpath' });
+  try {
+    await navigator.clipboard.writeText(path);
+  } catch {
+    // Nothing to fall back to for a non-visible element (unlike the output textarea's
+    // select()+execCommand fallback) — the toast below still confirms either way.
+  }
+  showToast(`Copied ${path}`);
+  leaf.classList.add('jt-copied');
+  window.setTimeout(() => leaf.classList.remove('jt-copied'), 400);
+}
+outputTree.addEventListener('click', (e) => {
+  const leaf = (e.target as HTMLElement).closest<HTMLElement>('.jt-leaf');
+  if (leaf) copyLeafPath(leaf);
+});
+outputTree.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const leaf = (e.target as HTMLElement).closest<HTMLElement>('.jt-leaf');
+  if (!leaf) return;
+  e.preventDefault(); // stop Space from scrolling the tree pane
+  copyLeafPath(leaf);
+});
+
 // --- UX-005: gutter line numbers + active-line highlight -------------------
 function updateActiveLine() {
   const lineIndex = input.value.slice(0, input.selectionStart).split('\n').length; // 1-based

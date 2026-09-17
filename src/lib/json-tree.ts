@@ -2,8 +2,13 @@
  * Renders a parsed JSON value as nested, collapsible <details> HTML for the JSON Formatter's
  * tree view (JSON-002). Pure, no DOM — returns an HTML string the client script assigns via
  * innerHTML. Every node carries a JSONPath-style `data-path` attribute ($ for the root,
- * $.key / $[index] for children) so JSON-003 (copy JSONPath on click) can reuse it without
- * touching this module again.
+ * $.key / $[index] for children).
+ *
+ * JSON-003 (copy JSONPath on click): scoped to leaf nodes only, not container-node <summary>
+ * lines — nesting a focusable copy control inside a <summary> (already an interactive element,
+ * toggling expand/collapse on click) means nested interactive content, which is both invalid
+ * HTML and a real keyboard-navigation trap. A leaf div has no such conflict, so it's the click
+ * target itself (role="button", tabindex, aria-label) rather than needing a separate control.
  */
 
 function escapeHtml(s: string): string {
@@ -31,7 +36,7 @@ function renderNode(key: string | null, value: unknown, path: string): string {
   const isContainer = value !== null && typeof value === 'object';
 
   if (!isContainer) {
-    return `<div class="jt-leaf" data-path="${escapeHtml(path)}">${keyLabel}${renderPrimitive(value)}</div>`;
+    return `<div class="jt-leaf" data-path="${escapeHtml(path)}" role="button" tabindex="0" aria-label="Copy JSONPath ${escapeHtml(path)}">${keyLabel}${renderPrimitive(value)}</div>`;
   }
 
   const isArray = Array.isArray(value);
@@ -42,7 +47,7 @@ function renderNode(key: string | null, value: unknown, path: string): string {
   const summary = isArray ? `[${count} item${count === 1 ? '' : 's'}]` : `{${count} key${count === 1 ? '' : 's'}}`;
 
   if (count === 0) {
-    return `<div class="jt-leaf" data-path="${escapeHtml(path)}">${keyLabel}<span class="jt-punct">${isArray ? '[]' : '{}'}</span></div>`;
+    return `<div class="jt-leaf" data-path="${escapeHtml(path)}" role="button" tabindex="0" aria-label="Copy JSONPath ${escapeHtml(path)}">${keyLabel}<span class="jt-punct">${isArray ? '[]' : '{}'}</span></div>`;
   }
 
   const children = entries

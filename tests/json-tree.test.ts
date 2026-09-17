@@ -4,7 +4,18 @@ import { renderJsonTree } from '../src/lib/json-tree.ts';
 
 test('primitive root renders as a single leaf with no key', () => {
   const html = renderJsonTree(42);
-  assert.equal(html, '<div class="jt-leaf" data-path="$"><span class="jt-number">42</span></div>');
+  assert.equal(
+    html,
+    '<div class="jt-leaf" data-path="$" role="button" tabindex="0" aria-label="Copy JSONPath $"><span class="jt-number">42</span></div>',
+  );
+});
+
+test('JSON-003: every leaf is a focusable, labelled copy target; container summaries are not', () => {
+  const html = renderJsonTree({ a: 1, nested: { b: 2 } });
+  // 2 leaves total ($.a and $.nested.b) should each get the copy affordance.
+  assert.equal((html.match(/role="button" tabindex="0"/g) ?? []).length, 2);
+  // The container node's own <details>/<summary> never gets a nested interactive control.
+  assert.ok(!html.includes('<summary role="button"'));
 });
 
 test('object renders one <details> per container, one leaf per primitive', () => {
