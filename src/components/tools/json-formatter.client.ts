@@ -172,6 +172,8 @@ input.addEventListener('paste', () => { justPasted = true; });
 input.addEventListener('input', () => { inputSource = justPasted ? 'pasted' : 'typed'; justPasted = false; });
 
 const SAMPLE = '{"name":"Ada Lovelace","born":1815,"active":true,"tags":["mathematician","writer"],"address":{"city":"London","country":"UK"}}';
+// UX-007: below this, clearing is cheap to redo by pasting again — not worth interrupting for.
+const CLEAR_CONFIRM_THRESHOLD = 500;
 
 function plural(n: number, word: string) {
   return `${n.toLocaleString()} ${word}${n === 1 ? '' : 's'}`;
@@ -343,10 +345,23 @@ handoffCsvBtn.addEventListener('click', () => {
 $('btn-copy').addEventListener('click', copyOutput);
 $('btn-download').addEventListener('click', downloadOutput);
 $('btn-clear').addEventListener('click', () => {
+  if (input.value.length >= CLEAR_CONFIRM_THRESHOLD && !window.confirm('Clear the pasted input? This can\'t be undone.')) return;
   track('reset_tool');
   input.value = '';
   render();
   input.focus();
+});
+$('btn-reset-options').addEventListener('click', () => {
+  // Not gated behind a confirm — unlike Clear, nothing here can lose pasted work.
+  track('reset_tool');
+  indent.value = '2';
+  sortKeys.checked = false;
+  if (wrapBtn.getAttribute('aria-pressed') === 'true') {
+    wrapBtn.setAttribute('aria-pressed', 'false');
+    output.classList.remove('no-wrap');
+  }
+  setViewMode('text');
+  setMode('format');
 });
 $('btn-sample').addEventListener('click', () => {
   inputSource = 'sample';
