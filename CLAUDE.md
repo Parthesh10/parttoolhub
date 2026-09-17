@@ -493,6 +493,14 @@ to `localhost` over IPv6 — use `http://localhost:<port>`, not `127.0.0.1`.
    immediately. Copy the `// --- Analytics` helper and wire it per `docs/ANALYTICS.md`.
 4. `src/pages/tools/<slug>.astro` using `ToolLayout`, per the "Tool page anatomy" pattern above.
    Compute every example from the engine in the frontmatter; describe only options the widget has.
+   **Never put a literal `"` or `'` in a FAQ `q` field.** `Faq.astro` renders it as
+   `<summary>{i.q}</summary>` — a plain Astro expression, which HTML-escapes both quote characters
+   (`"` → `&quot;`, `'` → `&#39;`) — but the same string goes verbatim into the FAQPage JSON-LD's
+   `name` field, unescaped. `tests/content.test.ts` compares the two and fails on the mismatch, so
+   this is always caught before it ships, but it's cheaper to just not write a question this way in
+   the first place: rephrase ("What is" instead of "What's", no quotation marks around a term) —
+   the `a` field has no such restriction, since `Faq.astro` renders it with `set:html` (raw, never
+   escaped).
 5. Work through the **Mandatory rule** checklist above, then `npm run build && npm test`:
    `registry.test.ts` fails on a missing page file or a metadata rule; `analytics.test.ts` on missing
    instrumentation, a PII leak or an undocumented event; `content.test.ts` on a missing/misordered

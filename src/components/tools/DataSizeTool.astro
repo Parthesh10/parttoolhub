@@ -1,0 +1,72 @@
+---
+/** Data size converter (decimal vs binary). Behaviour in ./data-size.client.ts */
+---
+
+<section class="tool card" id="tool" data-tool="data-size-converter">
+  <div class="options">
+    <fieldset>
+      <legend>From unit</legend>
+      <div class="row">
+        <label class="field">
+          <span>Unit</span>
+          <select id="opt-unit">
+            <option value="B">Bytes</option>
+            <option value="KB">KB / KiB</option>
+            <option value="MB" selected>MB / MiB</option>
+            <option value="GB">GB / GiB</option>
+            <option value="TB">TB / TiB</option>
+            <option value="PB">PB / PiB</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Base</legend>
+      <div class="row" role="group" aria-label="Decimal or binary base">
+        <button type="button" class="btn btn-sm" id="base-decimal" aria-pressed="true">Decimal (1000)</button>
+        <button type="button" class="btn btn-sm" id="base-binary" aria-pressed="false">Binary (1024)</button>
+      </div>
+    </fieldset>
+  </div>
+
+  <div class="single">
+    <div class="pane-head">
+      <label for="input">Size</label>
+      <span class="stat" id="input-stat" aria-live="polite"></span>
+    </div>
+    <textarea id="input" rows="1" spellcheck="false" autocomplete="off" placeholder="1500"></textarea>
+    <div class="pane-actions">
+      <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+      <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+    </div>
+  </div>
+
+  <p class="status-banner" id="status" hidden></p>
+
+  <div class="cc-grid" id="grid" hidden></div>
+
+  <p class="muted cc-note" id="note" hidden>Click any result to copy it.</p>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./data-size.client.ts"></script>
+
+<style>
+  #base-decimal[aria-pressed="true"], #base-binary[aria-pressed="true"] {
+    background: var(--accent-btn); border-color: var(--accent-btn); color: #fff;
+  }
+  .single textarea { min-height: 44px; resize: none; font-family: var(--mono); }
+  .cc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.7rem; margin-top: 1rem; }
+  .cc-row {
+    display: flex; flex-direction: column; gap: 0.25rem; text-align: left; cursor: pointer;
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+    padding: 0.55rem 0.75rem; font: inherit; color: inherit; min-height: 44px;
+  }
+  .cc-row:hover, .cc-row:focus-visible { border-color: var(--accent); }
+  .cc-row.is-current { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+  .cc-row .k { color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .cc-row .v { font-weight: 600; font-family: var(--mono); word-break: break-all; }
+  .cc-note { font-size: 0.85rem; margin-top: 0.75rem; }
+</style>
