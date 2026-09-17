@@ -282,6 +282,14 @@ th { background: var(--surface-2); font-weight: 650; }
    ------------------------------------------------------------------ */
 .tool { padding: 1rem; }
 @media (min-width: 640px) { .tool { padding: 1.25rem 1.5rem; } }
+/* UX-003: fullscreen/focus mode. Per-tool JS toggles .is-fullscreen on the .tool section itself
+   and .no-scroll on <body> (prevents the page scrolling behind the overlay); Esc exits. */
+.tool-toolbar { display: flex; justify-content: flex-end; margin-bottom: 0.75rem; }
+.tool.is-fullscreen {
+  position: fixed; inset: 0; z-index: 70; margin: 0; border-radius: 0;
+  overflow-y: auto; max-height: 100vh; box-shadow: none;
+}
+body.no-scroll { overflow: hidden; }
 
 .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 @media (max-width: 760px) { .panes { grid-template-columns: 1fr; } }
