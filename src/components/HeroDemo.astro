@@ -35,6 +35,9 @@ const DEFAULT_INPUT = 'I’m **totally** onboard — it’s the right call, and 
       <textarea id="demo-output" rows="3" readonly spellcheck="false" aria-label="Cleaned result"></textarea>
     </div>
     <p class="demo-summary" id="demo-summary"></p>
+    <p class="demo-detect" id="demo-detect" hidden>
+      <a id="demo-detect-link" href="/" data-nav="handoff"></a>
+    </p>
   </div>
   <a class="demo-cta" href="/tools/ai-text-cleaner" data-nav="handoff">
     Open the full tool <span aria-hidden="true">→</span>
@@ -90,6 +93,13 @@ const DEFAULT_INPUT = 'I’m **totally** onboard — it’s the right call, and 
   }
   #demo-output { border-color: color-mix(in srgb, var(--success) 45%, var(--border)); }
   .demo-summary { margin: 0.55rem 0 0; font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); min-height: 1.3em; }
+  /* UX-011: paste-to-detect suggestion, shown only when the pasted text looks like a
+     format one of the other tools handles better than the AI Text Cleaner does. */
+  .demo-detect { margin: 0.5rem 0 0; font-size: 0.78rem; }
+  .demo-detect a {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    color: var(--accent); font-weight: 600;
+  }
 
   .demo-cta {
     display: block; text-align: center; padding: 0.7rem; font-size: 0.85rem; font-weight: 600;
