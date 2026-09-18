@@ -26,6 +26,7 @@ const year = new Date().getFullYear();
         <li><a href="/contact">Contact</a></li>
         <li><a href="/privacy-policy">Privacy Policy</a></li>
         <li><a href="/terms">Terms of Use</a></li>
+        <li><button type="button" id="footer-shortcuts" class="link-btn">Keyboard shortcuts</button></li>
         {SITE.github && <li><a href={SITE.github} rel="noopener">Source on GitHub</a></li>}
       </ul>
     </div>
@@ -53,6 +54,14 @@ const year = new Date().getFullYear();
   li { margin-bottom: 0.3rem; }
   a { color: var(--text-muted); }
   a:hover { color: var(--accent); }
+  /* Styled to read as just another footer link; floating-tools.client.ts opens the
+     shortcuts dialog on click (that overlay lives there, not here, per the "shared
+     layout components stay pure HTML/CSS" rule this file otherwise follows). */
+  .link-btn {
+    border: 0; background: none; padding: 0; margin: 0; font: inherit; color: var(--text-muted);
+    cursor: pointer; text-align: left;
+  }
+  .link-btn:hover { color: var(--accent); }
   .copy { padding-block: 1rem 1.5rem; font-size: 0.85rem; }
   @media (max-width: 720px) { .grid { grid-template-columns: 1fr 1fr; gap: 1.25rem; } .about { grid-column: 1 / -1; } }
 </style>

@@ -174,4 +174,16 @@ tz.addEventListener('change', () => {
 startInput.addEventListener('input', render);
 endInput.addEventListener('input', render);
 
+// UX-013: Ctrl+Enter / Cmd+Enter to copy, matching every other tool's shortcut —
+// bound to both date fields since either could be the one focused.
+function onDateKeydown(e: KeyboardEvent) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    render();
+    void copyResult();
+  }
+}
+startInput.addEventListener('keydown', onDateKeydown);
+endInput.addEventListener('keydown', onDateKeydown);
+
 render();

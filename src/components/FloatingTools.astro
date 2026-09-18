@@ -89,6 +89,22 @@ const index = TOOLS.map((t) => ({
   </div>
 </div>
 
+<div class="palette-backdrop" id="shortcuts-backdrop" hidden>
+  <div class="palette shortcuts-dialog" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
+    <div class="palette-head">
+      <strong>Keyboard shortcuts</strong>
+      <kbd class="palette-esc">Esc</kbd>
+    </div>
+    <dl class="shortcuts-list">
+      <div><dt><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>K</kbd></dt><dd>Search tools</dd></div>
+      <div><dt><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd></dt><dd>Copy the result, on tools where that applies</dd></div>
+      <div><dt><kbd>Esc</kbd></dt><dd>Close a dialog, or exit fullscreen</dd></div>
+      <div><dt><kbd>?</kbd></dt><dd>Open this list</dd></div>
+    </dl>
+    <p class="shortcuts-note muted">Shown only when you're not typing in a field, so "?" still works normally in every tool's input.</p>
+  </div>
+</div>
+
 <script type="application/json" id="tools-index" set:html={JSON.stringify(index)} />
 <script src="./floating-tools.client.ts"></script>
 
@@ -186,6 +202,19 @@ const index = TOOLS.map((t) => ({
   #palette-results :global(.r-meta) { color: var(--text-muted); font-size: 0.82rem; margin-left: 0.4rem; }
   #palette-results :global(.r-short) { display: block; color: var(--text-muted); font-size: 0.85rem; margin-top: 0.1rem; }
   .palette-empty { padding: 1.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.9rem; }
+
+  .shortcuts-dialog { max-height: none; }
+  .shortcuts-dialog .palette-head { justify-content: space-between; }
+  .shortcuts-list { margin: 0; padding: 0.5rem 1rem 0.2rem; }
+  .shortcuts-list > div { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+  .shortcuts-list > div:last-child { border-bottom: 0; }
+  .shortcuts-list dt { display: flex; align-items: center; gap: 0.25rem; flex: none; }
+  .shortcuts-list dd { margin: 0; color: var(--text-muted); font-size: 0.9rem; text-align: right; }
+  .shortcuts-list kbd {
+    font-family: var(--mono); font-size: 0.78rem; color: var(--text);
+    border: 1px solid var(--border); border-radius: 4px; padding: 0.1rem 0.4rem; background: var(--surface-2);
+  }
+  .shortcuts-note { padding: 0.7rem 1rem 0.9rem; margin: 0; font-size: 0.8rem; }
 
   @media (pointer: coarse) { .fab { min-height: 44px; } }
 </style>

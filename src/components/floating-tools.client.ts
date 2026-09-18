@@ -15,6 +15,8 @@ const paletteInput = $<HTMLInputElement>('palette-input');
 const resultsEl = $<HTMLUListElement>('palette-results');
 const emptyEl = $('palette-empty');
 const fabToast = $('fab-toast');
+const shortcutsBackdrop = $('shortcuts-backdrop');
+const footerShortcutsBtn = $<HTMLButtonElement>('footer-shortcuts');
 
 const ALL: Entry[] = JSON.parse($('tools-index').textContent ?? '[]');
 const BY_HREF = new Map(ALL.map((e) => [e.href, e]));
@@ -158,6 +160,42 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     if (backdrop.hidden) openPalette();
     else closePalette();
+  }
+});
+
+// --- UX-013: keyboard-shortcuts help dialog ---------------------------------
+// "?" is a bare key, unlike Ctrl+K — every tool's textarea needs to accept a
+// literal "?" while typing, so this only fires when focus isn't in a text
+// field, a <select>, or any contenteditable box (Google Docs to Markdown's
+// paste target included).
+function isEditableTarget(el: Element | null): boolean {
+  if (!el) return false;
+  const tag = el.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (el as HTMLElement).isContentEditable;
+}
+function openShortcuts() {
+  shortcutsBackdrop.hidden = false;
+  document.addEventListener('keydown', onShortcutsKeydown);
+}
+function closeShortcuts() {
+  shortcutsBackdrop.hidden = true;
+  document.removeEventListener('keydown', onShortcutsKeydown);
+}
+function onShortcutsKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    closeShortcuts();
+  }
+}
+footerShortcutsBtn?.addEventListener('click', () => (shortcutsBackdrop.hidden ? openShortcuts() : closeShortcuts()));
+shortcutsBackdrop.addEventListener('click', (e) => {
+  if (e.target === shortcutsBackdrop) closeShortcuts();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === '?' && !isEditableTarget(document.activeElement) && backdrop.hidden) {
+    e.preventDefault();
+    if (shortcutsBackdrop.hidden) openShortcuts();
+    else closeShortcuts();
   }
 });
 
