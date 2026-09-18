@@ -1,5 +1,6 @@
 import { RECENT_TOOLS_KEY, MAX_RECENT_TOOLS, pushRecent, parseRecent } from '../lib/recent-tools';
 import { FAVORITE_TOOLS_KEY, toggleFavorite, parseFavorites } from '../lib/favorite-tools';
+import { matchesSynonym } from '../lib/tool-synonyms';
 
 interface Entry {
   name: string;
@@ -99,8 +100,11 @@ function score(entry: Entry, q: string): number {
   if (name === q) return 0;
   if (name.startsWith(q)) return 1;
   if (name.includes(q)) return 2;
-  if (entry.category.toLowerCase().includes(q)) return 3;
-  if (entry.short.toLowerCase().includes(q)) return 4;
+  // UX-012: a curated alternate phrasing ("pretty json", "epoch") is a more deliberate
+  // signal than an incidental word match in the category or description, so it outranks both.
+  if (matchesSynonym(entry.href.split('/').pop() ?? '', q)) return 3;
+  if (entry.category.toLowerCase().includes(q)) return 4;
+  if (entry.short.toLowerCase().includes(q)) return 5;
   return -1;
 }
 
