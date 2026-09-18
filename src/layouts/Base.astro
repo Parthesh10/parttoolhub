@@ -160,6 +160,22 @@ const baseSchema = [
         <script is:inline define:vars={{ id: ANALYTICS.ga4, tool: tool ?? null }}>
           window.dataLayer = window.dataLayer || [];
           function gtag() { dataLayer.push(arguments); }
+          // Consent Mode v2 defaults (must run before the config command below). This site has
+          // no consent banner yet — see privacy-policy.astro's promise of one for the EEA/UK/CH —
+          // so visitors there get Google's privacy-safe cookieless/modelled pings by default.
+          // Once a real banner ships, it should call gtag('consent', 'update', {...}) with the
+          // visitor's actual choice; nothing here does that yet.
+          gtag('consent', 'default', {
+            ad_storage: 'denied',
+            ad_user_data: 'denied',
+            ad_personalization: 'denied',
+            analytics_storage: 'denied',
+            region: [
+              'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE',
+              'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+              'IS', 'LI', 'NO', 'GB', 'CH',
+            ],
+          });
           gtag('js', new Date());
           gtag('config', id);
           window.pth = {
