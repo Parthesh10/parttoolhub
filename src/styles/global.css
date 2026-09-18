@@ -386,10 +386,19 @@ body.no-scroll { overflow: hidden; }
 .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .chip[aria-pressed="true"] { background: var(--accent-btn); border-color: var(--accent-btn); color: #fff; }
 
+/* Bottom-left (not centered, and not the FABs' bottom-right corner) so it never
+   sits over the floating search/share/top buttons, on desktop or mobile — and a
+   slide-up + fade entrance rather than an instant pop-in, matching .fab-toast's
+   existing animation. prefers-reduced-motion is already handled globally above. */
 .tool-toast {
-  position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%);
-  background: var(--text); color: var(--bg); padding: 0.55rem 1rem; border-radius: 999px;
-  font-size: 0.9rem; font-weight: 600; box-shadow: var(--shadow); z-index: 60; margin: 0;
+  position: fixed; left: 1.25rem; bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  background: var(--text); color: var(--bg); padding: 0.6rem 1.05rem; border-radius: var(--radius);
+  font-size: 0.88rem; font-weight: 600; box-shadow: var(--shadow-lg); z-index: 60; margin: 0;
+  animation: toast-in 0.22s var(--ease-spring);
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
 }
 
 .status-banner {
