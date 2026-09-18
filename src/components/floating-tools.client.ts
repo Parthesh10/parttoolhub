@@ -1,4 +1,5 @@
 import { RECENT_TOOLS_KEY, MAX_RECENT_TOOLS, pushRecent, parseRecent } from '../lib/recent-tools';
+import { FAVORITE_TOOLS_KEY, toggleFavorite, parseFavorites } from '../lib/favorite-tools';
 
 interface Entry {
   name: string;
@@ -42,6 +43,36 @@ function recentEntries(): Entry[] {
   }
 }
 
+// --- UX-010: favorites (pin a tool), alongside the recently-used list above. ---
+function favoriteSlugs(): string[] {
+  try {
+    return parseFavorites(localStorage.getItem(FAVORITE_TOOLS_KEY));
+  } catch {
+    return [];
+  }
+}
+function favoriteEntries(): Entry[] {
+  const slugs = favoriteSlugs();
+  return slugs.map((slug) => BY_HREF.get(`/tools/${slug}`)).filter((e): e is Entry => Boolean(e)).reverse(); // most-recently-pinned first
+}
+function isFavorited(href: string): boolean {
+  const slug = href.split('/').pop() ?? '';
+  return favoriteSlugs().includes(slug);
+}
+function toggleFavoriteBySlug(slug: string) {
+  const current = favoriteSlugs();
+  try {
+    localStorage.setItem(FAVORITE_TOOLS_KEY, JSON.stringify(toggleFavorite(current, slug)));
+  } catch {
+    /* localStorage can throw in private-browsing/storage-blocked contexts; favoriting is a nicety, not required. */
+  }
+}
+function starButton(entry: Entry): string {
+  const slug = entry.href.split('/').pop() ?? '';
+  const on = isFavorited(entry.href);
+  return `<button type="button" class="r-star" data-slug="${escapeHtml(slug)}" aria-pressed="${on}" aria-label="${on ? 'Remove from favorites' : 'Add to favorites'}" tabindex="-1">${on ? '★' : '☆'}</button>`;
+}
+
 // --- Back to top: appears once the hero has scrolled past, not on a short page. ---
 let ticking = false;
 function onScroll() {
@@ -73,34 +104,54 @@ function score(entry: Entry, q: string): number {
   return -1;
 }
 
+function resultRow(e: Entry, i: number): string {
+  return `<li role="option" aria-selected="${i === 0}">${starButton(e)}<a href="${e.href}" tabindex="-1">
+    <span class="r-name">${escapeHtml(e.name)}</span><span class="r-meta">${escapeHtml(e.category)}</span>
+    <span class="r-short">${escapeHtml(e.short)}</span>
+  </a></li>`;
+}
+
 function renderResults() {
   const q = paletteInput.value.trim().toLowerCase();
-  let heading = '';
+  let html = '';
   if (!q) {
-    const recent = recentEntries();
-    // A returning visitor's own recent tools beat a fixed registry order; a
-    // first-time visitor (no history yet) still sees the full list, not a blank state.
-    visible = recent.length ? recent : ALL;
-    if (recent.length) heading = '<li class="r-heading" role="presentation">Recently used</li>';
+    const favorites = favoriteEntries();
+    const favSlugs = new Set(favoriteSlugs());
+    const recent = recentEntries().filter((e) => !favSlugs.has(e.href.split('/').pop() ?? ''));
+    // Favorites are a deliberate choice, so they lead; recently used fills in after; a
+    // first-time visitor with neither still sees the full list, not a blank state.
+    const sections: { heading: string | null; entries: Entry[] }[] =
+      favorites.length || recent.length
+        ? [
+            ...(favorites.length ? [{ heading: 'Favorites', entries: favorites }] : []),
+            ...(recent.length ? [{ heading: 'Recently used', entries: recent }] : []),
+          ]
+        : [{ heading: null, entries: ALL }];
+    visible = [];
+    let i = 0;
+    for (const section of sections) {
+      const remaining = 8 - visible.length;
+      if (remaining <= 0) break;
+      const entries = section.entries.slice(0, remaining);
+      if (!entries.length) continue;
+      if (section.heading) html += `<li class="r-heading" role="presentation">${section.heading}</li>`;
+      for (const e of entries) {
+        html += resultRow(e, i);
+        visible.push(e);
+        i++;
+      }
+    }
   } else {
     visible = ALL.map((e) => [e, score(e, q)] as const)
       .filter(([, s]) => s >= 0)
       .sort((a, b) => a[1] - b[1])
-      .map(([e]) => e);
+      .map(([e]) => e)
+      .slice(0, 8);
+    html = visible.map((e, i) => resultRow(e, i)).join('');
   }
-  visible = visible.slice(0, 8);
   selected = 0;
   emptyEl.hidden = visible.length > 0;
-  resultsEl.innerHTML =
-    heading +
-    visible
-      .map(
-        (e, i) => `<li role="option" aria-selected="${i === 0}"><a href="${e.href}" tabindex="-1">
-        <span class="r-name">${escapeHtml(e.name)}</span><span class="r-meta">${escapeHtml(e.category)}</span>
-        <span class="r-short">${escapeHtml(e.short)}</span>
-      </a></li>`,
-      )
-      .join('');
+  resultsEl.innerHTML = html;
 }
 
 function escapeHtml(s: string) {
@@ -152,6 +203,16 @@ backdrop.addEventListener('click', (e) => {
   if (e.target === backdrop) closePalette();
 });
 paletteInput.addEventListener('input', renderResults);
+resultsEl.addEventListener('click', (e) => {
+  const star = (e.target as HTMLElement).closest<HTMLButtonElement>('.r-star');
+  if (!star) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const slug = star.dataset.slug ?? '';
+  toggleFavoriteBySlug(slug);
+  window.pth?.track('tool_option', { option: 'favorite', value: isFavorited(`/tools/${slug}`) ? 'add' : 'remove' });
+  renderResults();
+});
 
 // Global shortcut: Ctrl+K / Cmd+K only (never a bare key like "/", which would
 // hijack typing into any tool's textarea).

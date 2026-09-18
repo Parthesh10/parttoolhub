@@ -189,9 +189,17 @@ const index = TOOLS.map((t) => ({
      the list from the JSON tools index), so Astro's automatic style scoping never reaches
      them — :global() is required here, not a stylistic choice. */
   #palette-results :global(li) { list-style: none; }
+  #palette-results :global(li[role="option"]) { display: flex; align-items: stretch; gap: 0.15rem; }
   #palette-results :global(li a) {
-    display: block; padding: 0.55rem 0.7rem; border-radius: var(--radius-sm); color: var(--text);
+    display: block; flex: 1; min-width: 0; padding: 0.55rem 0.7rem; border-radius: var(--radius-sm); color: var(--text);
   }
+  /* UX-010: pin/unpin a tool without leaving the palette or navigating. */
+  #palette-results :global(.r-star) {
+    flex: none; width: 2.1rem; border: 0; background: none; border-radius: var(--radius-sm);
+    color: var(--text-muted); font-size: 1.05rem; cursor: pointer; line-height: 1;
+  }
+  #palette-results :global(.r-star:hover) { background: var(--surface-2); color: var(--accent); }
+  #palette-results :global(.r-star[aria-pressed="true"]) { color: var(--accent); }
   #palette-results :global(li a:hover),
   #palette-results :global(li[aria-selected="true"] a) { background: var(--surface-2); text-decoration: none; }
   #palette-results :global(.r-heading) {
