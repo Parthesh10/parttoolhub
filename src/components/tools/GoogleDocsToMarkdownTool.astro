@@ -3,6 +3,9 @@
 ---
 
 <section class="tool card" id="tool" data-tool="google-docs-to-markdown">
+  <div class="tool-toolbar">
+    <button type="button" class="btn btn-sm" id="btn-fullscreen" aria-pressed="false">⛶ Fullscreen</button>
+  </div>
   <div class="panes">
     <div class="pane">
       <div class="pane-head">
@@ -32,10 +35,14 @@
         <label for="output">Markdown</label>
         <span class="stat" id="output-stat" aria-live="polite"></span>
       </div>
-      <textarea id="output" rows="18" readonly spellcheck="false" placeholder="The Markdown appears here as soon as you paste"></textarea>
+      <div class="code-wrap">
+        <div class="gutter" id="output-gutter" aria-hidden="true"></div>
+        <textarea id="output" rows="18" readonly spellcheck="false" placeholder="The Markdown appears here as soon as you paste"></textarea>
+      </div>
       <div class="pane-actions">
         <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy Markdown</button>
         <button type="button" class="btn btn-sm" id="btn-download">Download .md</button>
+        <button type="button" class="btn btn-sm" id="btn-wrap" aria-pressed="false">No-wrap</button>
       </div>
       <p class="status-banner" id="status" hidden></p>
     </div>

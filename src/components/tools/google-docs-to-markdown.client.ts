@@ -10,8 +10,46 @@ const outputStat = $('output-stat');
 const status = $('status');
 const toast = $('toast');
 const bullet = $<HTMLSelectElement>('opt-bullet');
+const wrapBtn = $<HTMLButtonElement>('btn-wrap');
+const fullscreenBtn = $<HTMLButtonElement>('btn-fullscreen');
+const toolSection = $('tool');
+const outputGutter = $('output-gutter');
 
 const inputLength = () => (input.textContent ?? '').length;
+
+// --- UX-005: gutter line numbers + active-line highlight (output only — the
+// input is a contenteditable box, not a textarea) ---------------------------
+function updateActiveLine(el: HTMLTextAreaElement, gutter: HTMLElement) {
+  const lineIndex = el.value.slice(0, el.selectionStart).split('\n').length; // 1-based
+  gutter.querySelector('.active')?.classList.remove('active');
+  gutter.children[lineIndex - 1]?.classList.add('active');
+}
+function updateGutterLines(el: HTMLTextAreaElement, gutter: HTMLElement) {
+  const lines = el.value.split('\n').length;
+  if (gutter.children.length !== lines) {
+    let html = '';
+    for (let i = 1; i <= lines; i++) html += `<span>${i}</span>`;
+    gutter.innerHTML = html; // resets scrollTop to 0, so re-sync it below
+  }
+  gutter.scrollTop = el.scrollTop;
+  updateActiveLine(el, gutter);
+}
+output.addEventListener('scroll', () => { outputGutter.scrollTop = output.scrollTop; });
+output.addEventListener('click', () => updateActiveLine(output, outputGutter));
+output.addEventListener('keyup', () => updateActiveLine(output, outputGutter));
+
+// --- UX-003: fullscreen / focus mode ---------------------------------------
+function setFullscreen(on: boolean) {
+  toolSection.classList.toggle('is-fullscreen', on);
+  document.body.classList.toggle('no-scroll', on);
+  fullscreenBtn.setAttribute('aria-pressed', String(on));
+  fullscreenBtn.textContent = on ? '✕ Exit fullscreen' : '⛶ Fullscreen';
+  track('tool_option', { option: 'fullscreen', value: String(on) });
+}
+fullscreenBtn.addEventListener('click', () => setFullscreen(!toolSection.classList.contains('is-fullscreen')));
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && toolSection.classList.contains('is-fullscreen')) setFullscreen(false);
+});
 
 // --- Analytics (docs/ANALYTICS.md) -----------------------------------------
 // Duplicated per tool on purpose: no shared JS across tools (seo-rules §4).
@@ -63,6 +101,7 @@ function render() {
   const text = (input.textContent ?? '').trim();
   if (!text && !/<img/i.test(html)) {
     output.value = '';
+    updateGutterLines(output, outputGutter);
     inputStat.textContent = 'Nothing pasted yet';
     outputStat.textContent = '';
     setStatus(null);
@@ -71,6 +110,7 @@ function render() {
   const r = htmlToMarkdown(html, { bullet: bullet.value as '-' | '*' });
   trackRun('convert', true);
   output.value = r.markdown;
+  updateGutterLines(output, outputGutter);
   inputStat.textContent = plural(inputLength(), 'character');
   const s = r.stats;
   const parts = [plural(s.words, 'word')];
@@ -133,6 +173,12 @@ input.addEventListener('input', () => scheduleRender());
 input.addEventListener('paste', () => scheduleRender(0));
 bullet.addEventListener('input', render);
 bullet.addEventListener('change', () => trackOption(bullet));
+wrapBtn.addEventListener('click', () => {
+  const next = wrapBtn.getAttribute('aria-pressed') !== 'true';
+  wrapBtn.setAttribute('aria-pressed', String(next));
+  output.classList.toggle('no-wrap', next);
+  trackOption(wrapBtn, next ? 'no-wrap' : 'wrap');
+});
 $('btn-copy').addEventListener('click', () => void copyOutput());
 $('btn-download').addEventListener('click', downloadOutput);
 $('btn-clear').addEventListener('click', () => {
