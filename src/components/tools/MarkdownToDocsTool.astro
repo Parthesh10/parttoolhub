@@ -3,23 +3,31 @@
 ---
 
 <section class="tool card" id="tool" data-tool="markdown-to-google-docs">
+  <div class="tool-toolbar">
+    <button type="button" class="btn btn-sm" id="btn-fullscreen" aria-pressed="false">⛶ Fullscreen</button>
+  </div>
   <div class="panes">
     <div class="pane">
       <div class="pane-head">
         <label for="input">Markdown</label>
         <span class="stat" id="input-stat" aria-live="polite">0 characters</span>
       </div>
-      <textarea
-        id="input"
-        rows="18"
-        spellcheck="false"
-        autocomplete="off"
-        placeholder={'# Title\n\nSome **bold** text.\n\n| Column | Value |\n|---|---|\n| a | 1 |'}
-      ></textarea>
+      <div class="code-wrap">
+        <div class="gutter" id="input-gutter" aria-hidden="true"><span>1</span></div>
+        <textarea
+          id="input"
+          rows="18"
+          spellcheck="false"
+          autocomplete="off"
+          placeholder={'# Title\n\nSome **bold** text.\n\n| Column | Value |\n|---|---|\n| a | 1 |'}
+        ></textarea>
+      </div>
       <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-paste">Paste</button>
         <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
         <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
       </div>
+      <p class="muted drop-hint">Or drop a .md/.txt file onto the box above.</p>
     </div>
 
     <div class="pane">
