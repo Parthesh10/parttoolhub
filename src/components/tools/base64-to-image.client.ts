@@ -16,6 +16,37 @@ const copyBtn = $<HTMLButtonElement>('btn-copy');
 const downloadFileBtn = $<HTMLButtonElement>('btn-download-file');
 const handoffTextBtn = $<HTMLButtonElement>('btn-handoff-text');
 const bgChips = [...document.querySelectorAll<HTMLButtonElement>('.chip[data-bg]')];
+const pasteBtn = $<HTMLButtonElement>('btn-paste');
+const fullscreenBtn = $<HTMLButtonElement>('btn-fullscreen');
+const toolSection = $('tool');
+
+// --- UX-003: fullscreen / focus mode ---------------------------------------
+function setFullscreen(on: boolean) {
+  toolSection.classList.toggle('is-fullscreen', on);
+  document.body.classList.toggle('no-scroll', on);
+  fullscreenBtn.setAttribute('aria-pressed', String(on));
+  fullscreenBtn.textContent = on ? '✕ Exit fullscreen' : '⛶ Fullscreen';
+  track('tool_option', { option: 'fullscreen', value: String(on) });
+}
+fullscreenBtn.addEventListener('click', () => setFullscreen(!toolSection.classList.contains('is-fullscreen')));
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && toolSection.classList.contains('is-fullscreen')) setFullscreen(false);
+});
+
+// --- UX-002: paste from clipboard -------------------------------------------
+// No drag-and-drop here — the sibling tool (Image to Base64) already owns
+// dropping an image file; this pane takes Base64/data-URI text, one blob.
+async function pasteFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text) return showToast('Clipboard is empty');
+    inputSource = 'pasted';
+    input.value = text;
+    render();
+  } catch {
+    showToast('Clipboard permission denied — use Ctrl+V instead');
+  }
+}
 
 /** The last successful decode — what Download and Copy act on. */
 let current: DecodedImage | null = null;
@@ -238,6 +269,7 @@ for (const chip of bgChips) {
 downloadBtn.addEventListener('click', downloadImage);
 downloadFileBtn.addEventListener('click', downloadFile);
 copyBtn.addEventListener('click', copyDataUri);
+pasteBtn.addEventListener('click', pasteFromClipboard);
 handoffTextBtn.addEventListener('click', () => {
   track('navigation_click', { link_placement: 'handoff', link_to: '/tools/base64-encode-decode' });
   sendToTool(input.value, '/tools/base64-encode-decode');
