@@ -7,6 +7,9 @@ import { PRESETS, DELIMITER_CHOICES } from '../lib/list-convert';
 ---
 
 <section class="tool card" id="tool" data-tool="column-to-list">
+  <div class="tool-toolbar">
+    <button type="button" class="btn btn-sm" id="btn-fullscreen" aria-pressed="false">⛶ Fullscreen</button>
+  </div>
   <div class="presets" role="group" aria-label="Quick presets">
     <span class="presets-label">Presets:</span>
     {PRESETS.map((p) => (
@@ -20,17 +23,22 @@ import { PRESETS, DELIMITER_CHOICES } from '../lib/list-convert';
         <label for="input">Paste your column</label>
         <span class="stat" id="input-stat" aria-live="polite">0 lines</span>
       </div>
-      <textarea
-        id="input"
-        rows="12"
-        spellcheck="false"
-        autocomplete="off"
-        placeholder={'One item per line, e.g.\napple\nbanana\ncherry'}
-      ></textarea>
+      <div class="code-wrap">
+        <div class="gutter" id="input-gutter" aria-hidden="true"><span>1</span></div>
+        <textarea
+          id="input"
+          rows="12"
+          spellcheck="false"
+          autocomplete="off"
+          placeholder={'One item per line, e.g.\napple\nbanana\ncherry'}
+        ></textarea>
+      </div>
       <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-paste">Paste</button>
         <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
         <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
       </div>
+      <p class="muted drop-hint">Or drop a .txt file onto the box above.</p>
     </div>
 
     <div class="pane">
@@ -38,10 +46,14 @@ import { PRESETS, DELIMITER_CHOICES } from '../lib/list-convert';
         <label for="output">Result</label>
         <span class="stat" id="output-stat" aria-live="polite">0 items</span>
       </div>
-      <textarea id="output" rows="12" readonly spellcheck="false" placeholder="Your delimited list appears here as you type"></textarea>
+      <div class="code-wrap">
+        <div class="gutter" id="output-gutter" aria-hidden="true"></div>
+        <textarea id="output" rows="12" readonly spellcheck="false" placeholder="Your delimited list appears here as you type"></textarea>
+      </div>
       <div class="pane-actions">
         <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy to clipboard</button>
         <button type="button" class="btn btn-sm" id="btn-download">Download .txt</button>
+        <button type="button" class="btn btn-sm" id="btn-wrap" aria-pressed="false">No-wrap</button>
         <button type="button" class="btn btn-sm" id="btn-to-column" title="Open the result in the list-to-column tool">Split back to column →</button>
       </div>
     </div>
