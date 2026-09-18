@@ -123,7 +123,7 @@ async function pasteFromClipboard() {
     input.value = text;
     render();
   } catch {
-    showToast('Clipboard permission denied — use Ctrl+V instead');
+    showToast('Clipboard permission denied; use Ctrl+V instead');
   }
 }
 input.addEventListener('dragover', (e) => {
@@ -246,7 +246,7 @@ function downloadDocx() {
     a.download = 'document.docx';
     a.click();
     URL.revokeObjectURL(url);
-    setStatus('ok', 'Downloaded document.docx — open it directly in Word, LibreOffice or upload it to Google Docs.');
+    setStatus('ok', 'Downloaded document.docx. Open it directly in Word, LibreOffice or upload it to Google Docs.');
   } catch {
     setStatus('error', 'Could not build the .docx file. If this keeps happening, simplify the Markdown (very deeply nested lists are the most likely cause) and try again.');
   }

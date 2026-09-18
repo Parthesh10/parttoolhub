@@ -39,7 +39,7 @@ async function pasteFromClipboard() {
     input.value = text;
     render();
   } catch {
-    showToast('Clipboard permission denied — use Ctrl+V instead');
+    showToast('Clipboard permission denied; use Ctrl+V instead');
   }
 }
 input.addEventListener('dragover', (e) => {
@@ -153,7 +153,7 @@ function render() {
   items.push(`<div class="item"><span class="k">Issued</span><span class="v">${fmtClaimTime(t.iat)}</span></div>`);
   items.push(
     `<div class="item"><span class="k">Expires</span><span class="v ${t.expired ? 'expired' : t.exp ? 'valid' : ''}">${fmtClaimTime(t.exp)}${
-      t.expired === true ? ' — expired' : t.expired === false ? ' — valid' : ''
+      t.expired === true ? ' (expired)' : t.expired === false ? ' (valid)' : ''
     }</span></div>`,
   );
   if (t.nbf) {

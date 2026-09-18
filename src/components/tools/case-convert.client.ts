@@ -35,7 +35,7 @@ async function pasteFromClipboard() {
     input.value = text;
     render();
   } catch {
-    showToast('Clipboard permission denied — use Ctrl+V instead');
+    showToast('Clipboard permission denied; use Ctrl+V instead');
   }
 }
 
@@ -93,7 +93,7 @@ function render() {
     trackRun('convert', false, 'no_tokens');
     status.hidden = false;
     status.className = 'status-banner is-error';
-    status.textContent = 'That has no letters or digits to convert — only separators.';
+    status.textContent = 'That has no letters or digits to convert, only separators.';
     grid.hidden = true;
     return;
   }
@@ -130,7 +130,7 @@ async function copyRow(btn: HTMLButtonElement) {
     await navigator.clipboard.writeText(value);
     showToast(`Copied ${CASE_LABELS[style as CaseStyle] ?? style}`);
   } catch {
-    showToast('Could not copy — select the text manually');
+    showToast('Could not copy; select the text manually');
   }
 }
 grid.addEventListener('click', (e) => {

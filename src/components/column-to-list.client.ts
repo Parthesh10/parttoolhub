@@ -139,7 +139,7 @@ async function pasteFromClipboard() {
     input.value = text;
     render();
   } catch {
-    showToast('Clipboard permission denied — use Ctrl+V instead');
+    showToast('Clipboard permission denied; use Ctrl+V instead');
   }
 }
 input.addEventListener('dragover', (e) => {

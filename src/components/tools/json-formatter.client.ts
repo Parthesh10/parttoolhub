@@ -192,7 +192,7 @@ async function pasteFromClipboard() {
     input.value = text;
     render();
   } catch {
-    showToast('Clipboard permission denied — use Ctrl+V instead');
+    showToast('Clipboard permission denied; use Ctrl+V instead');
   }
 }
 input.addEventListener('dragover', (e) => {
@@ -441,7 +441,7 @@ autofixBtn.addEventListener('click', () => {
     render();
     showToast('Fixed common issues (quotes, trailing commas)');
   } else {
-    showToast('Could not auto-fix — edit the reported spot manually');
+    showToast('Could not auto-fix; edit the reported spot manually');
   }
 });
 $('btn-reset-options').addEventListener('click', () => {

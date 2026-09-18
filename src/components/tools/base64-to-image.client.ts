@@ -106,7 +106,7 @@ async function pasteFromClipboard() {
     input.value = text;
     render();
   } catch {
-    showToast('Clipboard permission denied — use Ctrl+V instead');
+    showToast('Clipboard permission denied; use Ctrl+V instead');
   }
 }
 
@@ -261,7 +261,7 @@ function render() {
 preview.addEventListener('error', () => {
   if (!current) return;
   track('tool_error', { action: 'decode', error_type: 'render' }, 'error');
-  setStatus('error', `The bytes start like a ${current.info.format.toUpperCase()} but your browser could not render them — the data is probably corrupted or cut short. You can still download the file to inspect it.`);
+  setStatus('error', `The bytes start like a ${current.info.format.toUpperCase()} but your browser could not render them; the data is probably corrupted or cut short. You can still download the file to inspect it.`);
 });
 preview.addEventListener('load', () => {
   if (current) outputStat.textContent = describe(current);
@@ -304,7 +304,7 @@ async function copyDataUri() {
     await navigator.clipboard.writeText(current.dataUri);
     showToast('Data URI copied');
   } catch {
-    showToast('Copy failed — your browser blocked clipboard access');
+    showToast('Copy failed: your browser blocked clipboard access');
   }
 }
 

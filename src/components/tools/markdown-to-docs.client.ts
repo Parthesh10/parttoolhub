@@ -126,7 +126,7 @@ async function pasteFromClipboard() {
     input.value = text;
     render();
   } catch {
-    showToast('Clipboard permission denied — use Ctrl+V instead');
+    showToast('Clipboard permission denied; use Ctrl+V instead');
   }
 }
 input.addEventListener('dragover', (e) => {
@@ -256,7 +256,7 @@ async function copyRich() {
     });
     await navigator.clipboard.write([item]);
     setStatus('ok', 'Copied as formatted text. In Google Docs (or Word, Gmail, Teams) press Ctrl+V / ⌘V to paste with the formatting.');
-    showToast('Copied — paste into Google Docs');
+    showToast('Copied. Paste into Google Docs');
   } catch {
     const range = document.createRange();
     range.selectNodeContents(preview);
@@ -267,9 +267,9 @@ async function copyRich() {
     sel?.removeAllRanges();
     if (ok) {
       setStatus('ok', 'Copied as formatted text. In Google Docs (or Word, Gmail, Teams) press Ctrl+V / ⌘V to paste with the formatting.');
-      showToast('Copied — paste into Google Docs');
+      showToast('Copied. Paste into Google Docs');
     } else {
-      setStatus('error', 'Your browser blocked clipboard access. Select the preview with the mouse and press Ctrl+C / ⌘C instead — the formatting comes with it.');
+      setStatus('error', 'Your browser blocked clipboard access. Select the preview with the mouse and press Ctrl+C / ⌘C instead; the formatting comes with it.');
     }
   }
 }
@@ -281,7 +281,7 @@ async function copyHtml() {
     await navigator.clipboard.writeText(currentHtml);
     showToast('HTML copied');
   } catch {
-    showToast('Copy failed — your browser blocked clipboard access');
+    showToast('Copy failed: your browser blocked clipboard access');
   }
 }
 

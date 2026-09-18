@@ -44,7 +44,7 @@ async function pasteFromClipboard() {
     input.value = text;
     render();
   } catch {
-    showToast('Clipboard permission denied — use Ctrl+V instead');
+    showToast('Clipboard permission denied; use Ctrl+V instead');
   }
 }
 
@@ -161,7 +161,7 @@ async function copyRow(btn: HTMLButtonElement) {
     await navigator.clipboard.writeText(value);
     showToast('Copied to clipboard');
   } catch {
-    showToast('Could not copy — select the text manually');
+    showToast('Could not copy; select the text manually');
   }
 }
 grid.addEventListener('click', (e) => {

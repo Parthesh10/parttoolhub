@@ -214,7 +214,7 @@ thumb.addEventListener('error', () => {
   if (!current) return;
   thumb.hidden = true;
   dropHint.hidden = false;
-  setStatus('ok', `Your browser could not preview this ${current.info.format.toUpperCase()}, but the Base64 below is the file's bytes, unchanged — it will work wherever the format is supported.`);
+  setStatus('ok', `Your browser could not preview this ${current.info.format.toUpperCase()}, but the Base64 below is the file's bytes, unchanged. It will work wherever the format is supported.`);
 });
 
 let toastTimer: number | undefined;

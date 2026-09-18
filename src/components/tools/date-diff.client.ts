@@ -108,7 +108,7 @@ function render() {
   status.hidden = true;
   result.hidden = false;
   const v = r.value;
-  const directionNote = v.endBeforeStart ? ' (end is before start — showing the gap between them)' : '';
+  const directionNote = v.endBeforeStart ? ' (end is before start, showing the gap between them)' : '';
   headline.textContent = formatCalendarDiff(v.calendar) + directionNote;
   grid.innerHTML = [
     gridRow('Total days', plural(v.totalDays, 'day')),
@@ -137,7 +137,7 @@ async function copyResult() {
     await navigator.clipboard.writeText(text);
     showToast('Copied to clipboard');
   } catch {
-    showToast('Copy failed — your browser blocked clipboard access');
+    showToast('Copy failed: your browser blocked clipboard access');
   }
 }
 
