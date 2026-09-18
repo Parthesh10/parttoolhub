@@ -11,11 +11,42 @@ const toast = $('toast');
 const unit = $<HTMLSelectElement>('opt-unit');
 const baseDecimalBtn = $<HTMLButtonElement>('base-decimal');
 const baseBinaryBtn = $<HTMLButtonElement>('base-binary');
+const pasteBtn = $<HTMLButtonElement>('btn-paste');
+const fullscreenBtn = $<HTMLButtonElement>('btn-fullscreen');
+const toolSection = $('tool');
 
 let base: SizeBase = 'decimal';
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// --- UX-003: fullscreen / focus mode ---------------------------------------
+function setFullscreen(on: boolean) {
+  toolSection.classList.toggle('is-fullscreen', on);
+  document.body.classList.toggle('no-scroll', on);
+  fullscreenBtn.setAttribute('aria-pressed', String(on));
+  fullscreenBtn.textContent = on ? '✕ Exit fullscreen' : '⛶ Fullscreen';
+  track('tool_option', { option: 'fullscreen', value: String(on) });
+}
+fullscreenBtn.addEventListener('click', () => setFullscreen(!toolSection.classList.contains('is-fullscreen')));
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && toolSection.classList.contains('is-fullscreen')) setFullscreen(false);
+});
+
+// --- UX-002: paste from clipboard -------------------------------------------
+// No drag-and-drop here — this input is a single size value, not a file's
+// worth of text, so a drop zone would be an affordance this tool doesn't need.
+async function pasteFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text) return showToast('Clipboard is empty');
+    inputSource = 'pasted';
+    input.value = text;
+    render();
+  } catch {
+    showToast('Clipboard permission denied — use Ctrl+V instead');
+  }
 }
 
 // --- Analytics (docs/ANALYTICS.md) -----------------------------------------
@@ -155,6 +186,7 @@ unit.addEventListener('input', render);
 unit.addEventListener('change', () => trackOption(unit));
 baseDecimalBtn.addEventListener('click', () => setBase('decimal'));
 baseBinaryBtn.addEventListener('click', () => setBase('binary'));
+pasteBtn.addEventListener('click', pasteFromClipboard);
 $('btn-clear').addEventListener('click', () => {
   track('reset_tool');
   input.value = '';
