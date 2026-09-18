@@ -17,10 +17,27 @@ const numbers = $<HTMLInputElement>('opt-numbers');
 const symbols = $<HTMLInputElement>('opt-symbols');
 const ambiguous = $<HTMLInputElement>('opt-ambiguous');
 const count = $<HTMLSelectElement>('opt-count');
+const fullscreenBtn = $<HTMLButtonElement>('btn-fullscreen');
+const toolSection = $('tool');
 
 function plural(n: number, word: string) {
   return `${n.toLocaleString()} ${word}${n === 1 ? '' : 's'}`;
 }
+
+// --- UX-003: fullscreen / focus mode ---------------------------------------
+// No paste here — this tool only ever generates fresh passwords, it never
+// transforms pasted text, so there's nothing for a Paste button to feed.
+function setFullscreen(on: boolean) {
+  toolSection.classList.toggle('is-fullscreen', on);
+  document.body.classList.toggle('no-scroll', on);
+  fullscreenBtn.setAttribute('aria-pressed', String(on));
+  fullscreenBtn.textContent = on ? '✕ Exit fullscreen' : '⛶ Fullscreen';
+  track('tool_option', { option: 'fullscreen', value: String(on) });
+}
+fullscreenBtn.addEventListener('click', () => setFullscreen(!toolSection.classList.contains('is-fullscreen')));
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && toolSection.classList.contains('is-fullscreen')) setFullscreen(false);
+});
 function currentOptions(): Partial<PasswordOptions> {
   return {
     length: Number(length.value),
