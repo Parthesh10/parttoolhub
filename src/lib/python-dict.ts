@@ -178,7 +178,7 @@ class Parser {
           return inner;
         }
         default:
-          throw new PyError(`"${t.v}" is a variable or unsupported name — JSON can only hold literal values.`, t.pos);
+          throw new PyError(`"${t.v}" is a variable or unsupported name; JSON can only hold literal values.`, t.pos);
       }
     }
     if (t.t === 'eof') throw new PyError('Unexpected end of input.', t.pos);

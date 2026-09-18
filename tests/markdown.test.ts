@@ -24,15 +24,15 @@ const slack = (md: string) => renderText(parseMarkdown(md), SLACK_STYLE);
 test('sample: structure is what the pages describe', () => {
   const blocks = parseMarkdown(SAMPLE_MARKDOWN);
   assert.deepEqual(blocks.map((b) => b.type), ['heading', 'paragraph', 'list', 'table', 'quote', 'code', 'list']);
-  assert.deepEqual(summarize(blocks), { headings: 1, lists: 3, tables: 1, codeBlocks: 1, links: 3, words: 104 });
+  assert.deepEqual(summarize(blocks), { headings: 1, lists: 3, tables: 1, codeBlocks: 1, links: 3, words: 103 });
   const p = plain(SAMPLE_MARKDOWN);
-  assert.ok(p.startsWith('Deploy checklist\n\nRun the full test suite before tagging a release — npm test takes about two minutes.'));
+  assert.ok(p.startsWith('Deploy checklist\n\nRun the full test suite before tagging a release: npm test takes about two minutes.'));
   assert.ok(p.includes('2. Update the changelog\n   • Group entries under Added, Changed and Fixed\n   • Link each entry'), 'nested tight list, no blank line, indented under its parent');
   assert.ok(p.includes('Environment | URL                         | Owner\n------------|-----------------------------|------\nStaging     |'), 'table aligned in columns');
   assert.ok(p.includes('• ☑ Smoke test passed\n• ☐ Release notes sent to #announcements (https://example.com/chat/announcements)'));
   assert.ok(!/[*_`#|]{2}|\[.*\]\(/.test(p.replace(/------.*\n/, '')), 'no Markdown markup survives in plain text');
   const s = slack(SAMPLE_MARKDOWN);
-  assert.ok(s.startsWith('*Deploy checklist*\n\nRun the *full test suite* before tagging a release — `npm test` takes about _two minutes_.'));
+  assert.ok(s.startsWith('*Deploy checklist*\n\nRun the *full test suite* before tagging a release: `npm test` takes about _two minutes_.'));
   assert.ok(s.includes('```\nEnvironment | URL'), 'table fenced for monospace in chat');
   assert.ok(s.includes('```\nnpm run build && npm run deploy -- --env production\n```'));
   const h = html(SAMPLE_MARKDOWN);

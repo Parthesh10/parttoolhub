@@ -34,7 +34,7 @@ export type SizeResult = { ok: true; value: SizeValue } | { ok: false; error: st
 
 export function convertSize(amount: number, unit: SizeUnit, base: SizeBase): SizeResult {
   if (!Number.isFinite(amount)) return { ok: false, error: 'Enter a number.' };
-  if (amount < 0) return { ok: false, error: 'Enter a size of zero or more — negative sizes don’t mean anything here.' };
+  if (amount < 0) return { ok: false, error: 'Enter a size of zero or more; negative sizes don’t mean anything here.' };
 
   const bytes = amount * unitFactor(unit, base);
   // Checked on the actual byte count, not a worst-case guess from `amount` alone — a guess based

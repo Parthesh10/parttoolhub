@@ -105,7 +105,7 @@ export function jsonToCsv(text: string, opts: Partial<JsonToCsvOptions> = {}): R
   const parsed = parseJson(text, 'Paste JSON to convert.');
   if (!parsed.ok) return parsed;
   const value = parsed.value;
-  if (!Array.isArray(value)) return { ok: false, error: 'The top level must be a JSON array — of objects, or of arrays.' };
+  if (!Array.isArray(value)) return { ok: false, error: 'The top level must be a JSON array, of objects or of arrays.' };
   if (!value.length) return { ok: true, output: '', count: 0 };
 
   const rows: string[] = [];
@@ -121,7 +121,7 @@ export function jsonToCsv(text: string, opts: Partial<JsonToCsvOptions> = {}): R
       rows.push(keys.map((k) => csvCell(obj[k], o.delimiter)).join(o.delimiter));
     }
   } else {
-    return { ok: false, error: 'Every item must be the same shape — all objects, or all arrays, not a mix.' };
+    return { ok: false, error: 'Every item must be the same shape: all objects, or all arrays, not a mix.' };
   }
   return { ok: true, output: rows.join('\r\n'), count: value.length };
 }

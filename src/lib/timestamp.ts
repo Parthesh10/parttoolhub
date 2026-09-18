@@ -93,7 +93,7 @@ export function timestampToDate(input: string, unit: TimestampUnit = 'auto', now
   const trimmed = input.trim();
   if (!trimmed) return { ok: false, error: 'Enter a Unix timestamp.' };
   if (!/^[+-]?\d+(\.\d+)?$/.test(trimmed)) {
-    return { ok: false, error: 'A Unix timestamp is a plain integer (optionally signed) — no letters, colons, commas or units.' };
+    return { ok: false, error: 'A Unix timestamp is a plain integer (optionally signed), with no letters, colons, commas or units.' };
   }
   const n = Number(trimmed);
   if (!Number.isFinite(n)) return { ok: false, error: 'That number is too large to represent.' };

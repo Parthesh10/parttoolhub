@@ -31,11 +31,12 @@ const count = (html: string, re: RegExp) => (html.match(re) ?? []).length;
 /** Text of one <h2> per match, tags stripped. */
 const h2s = (html: string) => [...html.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/g)].map((m) => m[1].replace(/<[^>]+>/g, '').trim());
 
-/** Visible text: drop scripts/styles/JSON-LD and tags. */
+/** Visible text: drop scripts/styles/JSON-LD, HTML comments and tags. */
 const visibleText = (html: string) =>
   html
     .replace(/<script[\s\S]*?<\/script>/g, ' ')
     .replace(/<style[\s\S]*?<\/style>/g, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&[a-z#0-9]+;/g, ' ')
     .replace(/\s+/g, ' ');
@@ -265,6 +266,37 @@ test('every <title> is 60 characters or fewer after the brand suffix rule', { sk
 // ---- Site-wide metadata: every indexable page, not just tools ---------------
 
 const INDEXABLE = ['/index', '/about', '/contact', '/privacy-policy', '/terms', ...CATEGORIES.map((c) => `/${c.slug}`), ...TOOLS.map(toolPath)];
+
+// An em dash reads as an AI-writing tell (seo-rules.md's "Em dashes: zero on the live
+// site" rule) -- especially bad on a site that sells an AI Text Cleaner tool whose own
+// job is stripping them. The §3A FORBIDDEN check above only runs on tool pages; this
+// runs over every indexable page (home, hubs, about/contact/privacy/terms included)
+// so one slipping into non-tool prose can't go unnoticed the way it did once already.
+//
+// A tiny, deliberate allowlist: pages that legitimately quote the literal character
+// rather than using it as punctuation. Each entry is a route -> substring(s) that are
+// allowed to contain one; anything else on that page still fails normally.
+const EM_DASH_ALLOWED: Record<string, string[]> = {
+  // Documents the exact punctuation marks (colon, em dash, en dash, ?, !) that resume
+  // capitalization after a clause break -- matches title-case.ts's own regex.
+  '/tools/title-case-converter': ['—'],
+  // Quotes the literal "—" the tool renders in the UI when a token has no exp claim --
+  // must match jwt-decoder.client.ts's actual output, not just read well.
+  '/tools/jwt-decoder': ['“—”'],
+  // The Em Dash option is named after the character it replaces, and the worked
+  // "before" example must contain a real one to demonstrate the tool doing its job.
+  '/tools/ai-text-cleaner': ['Em dash (—)', 'really** important — so'],
+};
+test('no em dashes on any indexable page (site-wide, not just tool pages)', { skip }, () => {
+  for (const route of INDEXABLE) {
+    let text = visibleText(read(route));
+    for (const allowed of EM_DASH_ALLOWED[route] ?? []) {
+      assert.ok(text.includes(allowed), `${route}: expected allowlisted em-dash text "${allowed}" was not found -- update or remove this allowlist entry`);
+      text = text.split(allowed).join('');
+    }
+    assert.ok(!text.includes('—'), `em dash (—) found on ${route} outside the allowlist -- rewrite with a period, comma, colon or parentheses`);
+  }
+});
 const publicPath = (route: string) => (route === '/index' ? '/' : route);
 const attr = (html: string, re: RegExp) => html.match(re)?.[1] ?? '';
 const unescape = (t: string) => t.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");

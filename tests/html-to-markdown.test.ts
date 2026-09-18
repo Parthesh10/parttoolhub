@@ -13,7 +13,7 @@ test('Google Docs sample: styled spans, wrapper, redirect link, sibling-ul nesti
     [
       '# Q3 launch plan',
       '',
-      'We ship on **14 October**. The *only* blocker is the `billing-v2` flag — see the [rollout page](https://example.com/wiki/billing-v2).',
+      'We ship on **14 October**. The *only* blocker is the `billing-v2` flag, see the [rollout page](https://example.com/wiki/billing-v2).',
       '',
       '## Checklist',
       '',
@@ -26,7 +26,7 @@ test('Google Docs sample: styled spans, wrapper, redirect link, sibling-ul nesti
       '| Priya | On track |',
     ].join('\n'),
   );
-  assert.deepEqual(r.stats, { headings: 2, paragraphs: 4, lists: 2, tables: 1, links: 1, images: 0, codeBlocks: 0, words: 53 });
+  assert.deepEqual(r.stats, { headings: 2, paragraphs: 4, lists: 2, tables: 1, links: 1, images: 0, codeBlocks: 0, words: 52 });
   assert.deepEqual(r.notes, [
     'Google Docs redirect links were unwrapped to their real addresses.',
     'The table had no header row, so its first row became the header (Markdown tables need one).',
@@ -39,7 +39,7 @@ test('semantic HTML sample: headings, emphasis, code, links, nested lists, quote
   assert.equal(
     r.markdown,
     [
-      '## Release notes — v2.4.0',
+      '## Release notes: v2.4.0',
       '',
       'This release adds **scheduled exports** and fixes the *timezone* bug in `report.py`. Full details on the [changelog](https://example.com/changelog).',
       '',
@@ -69,7 +69,7 @@ test('semantic HTML sample: headings, emphasis, code, links, nested lists, quote
       '![Dashboard in dark mode](https://example.com/dashboard.png)',
     ].join('\n'),
   );
-  assert.deepEqual(r.stats, { headings: 3, paragraphs: 9, lists: 3, tables: 1, links: 1, images: 1, codeBlocks: 1, words: 97 });
+  assert.deepEqual(r.stats, { headings: 3, paragraphs: 9, lists: 3, tables: 1, links: 1, images: 1, codeBlocks: 1, words: 96 });
   assert.deepEqual(r.notes, []);
 });
 

@@ -44,7 +44,7 @@ export type Block =
 /** What "Load sample" inserts on both Markdown pages and what their Example sections render. */
 export const SAMPLE_MARKDOWN = `## Deploy checklist
 
-Run the **full test suite** before tagging a release — \`npm test\` takes about *two minutes*.
+Run the **full test suite** before tagging a release: \`npm test\` takes about *two minutes*.
 
 1. Bump the version in \`package.json\`
 2. Update the changelog
