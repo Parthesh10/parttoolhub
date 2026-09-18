@@ -22,13 +22,13 @@ const steps = [
   'Choose <strong>Version 4</strong> for a plain random ID, or <strong>Version 7</strong> if the ID also needs to sort roughly by when it was created.',
   'Pick how many to generate at once, from 1 to 100.',
   'Turn on <strong>UPPERCASE</strong>, <strong>Hyphens</strong> or braces to match the format your database or language expects.',
-  '<strong>Generate</strong> a fresh batch any time — every click makes new ones. <strong>Copy to clipboard</strong> or <strong>Download .txt</strong> to take them with you.',
+  '<strong>Generate</strong> a fresh batch any time; every click makes new ones. <strong>Copy to clipboard</strong> or <strong>Download .txt</strong> to take them with you.',
 ];
 
 const faq = [
   {
     q: 'What’s the difference between version 4 and version 7?',
-    a: `Version 4 is entirely random — <code>${exampleV4}</code> — so two IDs give no clue which was created first. Version 7 puts a millisecond timestamp in the first part of the UUID and randomizes the rest, so <code>${exampleV7}</code> sorts correctly next to other version 7 UUIDs created before or after it. Reading that timestamp back out of the example above gives <code>${recoveredTimestamp}</code>, exactly the instant it was generated with.`,
+    a: `Version 4 is entirely random (<code>${exampleV4}</code>), so two IDs give no clue which was created first. Version 7 puts a millisecond timestamp in the first part of the UUID and randomizes the rest, so <code>${exampleV7}</code> sorts correctly next to other version 7 UUIDs created before or after it. Reading that timestamp back out of the example above gives <code>${recoveredTimestamp}</code>, exactly the instant it was generated with.`,
   },
   {
     q: 'Why would sorting by creation time matter for a database ID?',
@@ -36,11 +36,11 @@ const faq = [
   },
   {
     q: 'Are these IDs actually unpredictable, or just look random?',
-    a: 'Both versions fill their non-timestamp, non-version, non-variant bits from the Web Crypto API’s cryptographically secure random number generator (crypto.getRandomValues) — the same source browsers use for encryption keys — not Math.random(), which is not designed to be unpredictable.',
+    a: 'Both versions fill their non-timestamp, non-version, non-variant bits from the Web Crypto API’s cryptographically secure random number generator (crypto.getRandomValues), the same source browsers use for encryption keys. They do not use Math.random(), which is not designed to be unpredictable.',
   },
   {
     q: 'Is 00000000-0000-0000-0000-000000000000 a real UUID?',
-    a: `It's the "nil" UUID defined by the RFC — a reserved constant meaning "no ID" or "not set," not something this tool would ever generate. If you see <code>${NIL_UUID}</code> somewhere, it usually signals a missing or default value, not an actual generated identifier.`,
+    a: `It's the "nil" UUID defined by the RFC: a reserved constant meaning "no ID" or "not set," not something this tool would ever generate. If you see <code>${NIL_UUID}</code> somewhere, it usually signals a missing or default value, not an actual generated identifier.`,
   },
 ];
 ---
@@ -52,26 +52,26 @@ const faq = [
     <h2>A unique ID with no server round trip</h2>
     <p>
       A UUID (Universally Unique Identifier) is a 128-bit value designed so that two different
-      computers, generating IDs independently with no coordination between them, will not collide —
-      no database lookup, no central counter, no network call required. That property is what makes
+      computers, generating IDs independently with no coordination between them, will not collide.
+      No database lookup, no central counter, and no network call are required. That property is what makes
       UUIDs the default choice for database primary keys, request IDs, and anything else that needs
       an identifier before it has anywhere to register one.
     </p>
 
     <h2>Example</h2>
-    <p>A freshly generated version 4 UUID (yours will be different every time — that is the point):</p>
+    <p>A freshly generated version 4 UUID (yours will be different every time, that is the point):</p>
     <pre><code>{exampleV4}</code></pre>
     <p>A version 7 UUID carries its creation time in the first part, recoverable afterward:</p>
     <pre><code>{exampleV7}</code></pre>
 
     <h2>Options explained</h2>
     <ul>
-      <li><strong>Version 4 / Version 7</strong> — see the FAQ.</li>
+      <li><strong>Version 4 / Version 7:</strong> see the FAQ.</li>
       <li><strong>How many</strong> generates 1 to 100 at once, one per line, so you can paste a
         whole batch of test IDs in one go.</li>
       <li><strong>UPPERCASE</strong> renders hex digits in capitals: <code>{uppercaseExample}</code>.
         <strong>Hyphens</strong> toggles the standard 8-4-4-4-12 grouping; turning it off gives <code>{noHyphenExample}</code>. <strong>Wrap in braces</strong> adds <code>{'{'}</code> and <code>{'}'}</code>
-        around each ID: <code>{bracesExample}</code> — the format Microsoft's GUID APIs (and some
+        around each ID: <code>{bracesExample}</code>, the format Microsoft's GUID APIs (and some
         Windows registry tools) expect.</li>
       <li><strong>Generate</strong> makes a new batch with the current settings; the first batch on
         the page is generated automatically so there is one ready immediately.</li>
@@ -79,29 +79,29 @@ const faq = [
 
     <h2>Edge cases and common errors</h2>
     <ul>
-      <li><strong>There is no invalid input</strong> — this tool only generates, so there is nothing
+      <li><strong>There is no invalid input.</strong> This tool only generates, so there is nothing
         to reject. The only limit is quantity, capped at 100 per click to keep the page responsive;
         click <strong>Generate</strong> again for more.</li>
       <li><strong>Every batch is independent.</strong> Clicking <strong>Generate</strong> again
-        replaces the list rather than appending to it — copy or download a batch before generating a
+        replaces the list rather than appending to it, so copy or download a batch before generating a
         new one if you need to keep it.</li>
       <li><strong>Version 7's timestamp is only millisecond-precision</strong> and only as accurate as
         your device's clock; two UUIDs generated in the same millisecond are ordered only by their
         random bits, not guaranteed to reflect which call actually ran first.</li>
-      <li><strong>The nil UUID</strong> — see the FAQ.</li>
+      <li><strong>The nil UUID:</strong> see the FAQ.</li>
       <li><strong>Nothing is sent anywhere.</strong> Every ID is generated locally in your browser;
         this page could be disconnected from the network entirely and still work.</li>
     </ul>
 
     <h2>Do the same thing in code</h2>
-    <pre><code>// JavaScript / browsers and Node 19+ (version 4 only — built in, no library needed)
+    <pre><code>// JavaScript / browsers and Node 19+ (version 4 only, built in, no library needed)
 crypto.randomUUID();
 
 # Python 3.7+ (version 4; version 7 needs the separate uuid6 or uuid-utils package)
 import uuid
 str(uuid.uuid4())</code></pre>
     <p class="muted">Version 7 is new enough (finalized in RFC 9562, 2024) that few languages'
-      standard libraries generate it natively yet — this tool implements the same bit layout by
+      standard libraries generate it natively yet. This tool implements the same bit layout by
       hand from the RFC rather than depending on a library.</p>
   </Fragment>
 </ToolLayout>

@@ -49,7 +49,7 @@ const steps = [
 
 const faq = [
   {
-    q: 'Google Docs can copy as Markdown itself — why use this?',
+    q: 'Google Docs can copy as Markdown itself, so why use this?',
     a: 'It can, since July 2024: Tools → Preferences → Enable Markdown, then select text and right-click → Copy as Markdown, or File → Download → Markdown for a whole document. If that option is available to you, it is the shortest route. This page is for when it is not (an account or Workspace policy without it), for text copied from Word, Notion, Confluence or a web page, which Docs cannot help with, and for seeing the Markdown before it lands somewhere.',
   },
   {
@@ -62,7 +62,7 @@ const faq = [
   },
   {
     q: 'What gets lost?',
-    a: 'Anything Markdown cannot say: underline, colours, font sizes, alignment, and Docs’ Title and Subtitle styles (they arrive as large text, not as headings, so they become paragraphs — add a # yourself). Images are kept as links to the address Docs provides. Comments, footnotes and suggestions are not part of what Docs copies, so they never reach this page.',
+    a: 'Anything Markdown cannot say: underline, colours, font sizes, alignment, and Docs’ Title and Subtitle styles (they arrive as large text, not as headings, so they become paragraphs; add a # yourself). Images are kept as links to the address Docs provides. Comments, footnotes and suggestions are not part of what Docs copies, so they never reach this page.',
   },
   {
     q: 'Is my document uploaded anywhere?',
@@ -91,7 +91,7 @@ const faq = [
 
     <h2>Example</h2>
     <p>
-      <strong>Load sample</strong> fills the box with what Docs puts on the clipboard for a short launch plan — {s.headings}
+      <strong>Load sample</strong> fills the box with what Docs puts on the clipboard for a short launch plan: {s.headings}
       headings, a paragraph with bold, italic, monospace and a link, a nested list, and a table. Abridged, the HTML looks like:
     </p>
     <pre><code>{docsShape}</code></pre>
@@ -104,7 +104,7 @@ const faq = [
     <h2>Options explained</h2>
     <ul>
       <li><strong>Paste from Google Docs</strong> is a formatted box, not a plain text field, which is what lets it receive the HTML flavour of a paste. You can also type or edit in it; the Markdown follows.</li>
-      <li><strong>Bullet character</strong> chooses <code>-</code> or <code>*</code> for unordered lists — both are valid Markdown; some style guides insist on one.</li>
+      <li><strong>Bullet character</strong> chooses <code>-</code> or <code>*</code> for unordered lists. Both are valid Markdown; some style guides insist on one.</li>
       <li><strong>Load sample</strong> inserts the Docs clipboard HTML shown above; <strong>Clear</strong> empties both sides.</li>
       <li><strong>Copy Markdown</strong> and <strong>Download .md</strong> take the right-hand box as it is. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the paste box copies.</li>
       <li>The <strong>status line</strong> lists every approximation: unwrapped redirect links, a first row promoted to table header, underline kept as plain text, Word list paragraphs converted by their glyph, an image with no address dropped.</li>
@@ -113,13 +113,13 @@ const faq = [
     <h2>Edge cases and common errors</h2>
     <ul>
       <li><strong>The Docs wrapper is not bold.</strong> Every Docs copy is wrapped in <code>&lt;b style="font-weight:normal"&gt;</code>. A tag-only converter bolds the whole document; here the style wins and <code>&lt;b style="font-weight:normal"&gt;&lt;p&gt;plain&lt;/p&gt;&lt;/b&gt;</code> gives <code>{wrapper}</code>.</li>
-      <li><strong>One bold phrase in several spans</strong> — <code>Hello</code> + <code> world</code> + <code>!</code> as three spans, the first two bold — merges into <code>{boldSplit}</code>, not <code>**Hello** **world**!</code>.</li>
+      <li><strong>One bold phrase in several spans</strong>: <code>Hello</code> + <code> world</code> + <code>!</code> as three spans, the first two bold, merges into <code>{boldSplit}</code>, not <code>**Hello** **world**!</code>.</li>
       <li><strong>Redirect links are unwrapped.</strong> <code>https://www.google.com/url?q=https://example.com/a%3Fx%3D1&amp;sa=D…</code> becomes <code>{redirect}</code>, with the address percent-decoded.</li>
       <li><strong>Nested lists the Docs way.</strong> A <code>&lt;ul&gt;</code> placed beside an <code>&lt;li&gt;</code> with <code>aria-level="2"</code> becomes <code>{ariaNested.replace(/\n/g, ' ⏎ ')}</code>.</li>
       <li><strong>Monospace is code.</strong> A span in Courier New (or Consolas, Menlo, Monaco, any font family containing “mono”) becomes <code>{courier}</code>. A whole paragraph in a monospace font becomes a fenced code block.</li>
       <li><strong>Underline has no Markdown.</strong> <code>&lt;u&gt;underlined&lt;/u&gt;</code> and a line-through span give <code>{underline.markdown}</code>; the status line says “{underline.notes[0]}”.</li>
       <li><strong>Title and Subtitle styles are not headings.</strong> Docs copies them as large text, so <code>{bigTitle}</code> comes out as a paragraph. Heading 1–6 styles do become <code>#</code> headings.</li>
-      <li><strong>Markdown-significant characters are escaped</strong> so the text reads as it did: <code>Version 2 * 3, a_b, and #hashtag</code> becomes <code>{escaped}</code> — the asterisk is escaped, the underscore inside a word is left alone, the hash mid-line needs nothing.</li>
+      <li><strong>Markdown-significant characters are escaped</strong> so the text reads as it did: <code>Version 2 * 3, a_b, and #hashtag</code> becomes <code>{escaped}</code>; the asterisk is escaped, the underscore inside a word is left alone, and the hash mid-line needs nothing.</li>
       <li><strong>Empty paragraphs collapse.</strong> Docs emits a <code>&lt;p&gt;</code> with an empty span for every blank line; <code>one</code>, two blank paragraphs, <code>two</code> become <code>{emptyParas.replace(/\n/g, '⏎')}</code>, one blank line.</li>
       <li><strong>Checklists</strong> copied from Docs arrive as ☐ and ☑ characters and become <code>{checkbox.replace(/\n/g, ' ⏎ ')}</code>.</li>
       <li><strong>Word pastes</strong> mark list items as paragraphs with a bullet glyph and an indent (<code>MsoListParagraph</code>); they are converted by that glyph and indent and flagged in the status line, since Word does not say where a list starts or ends.</li>

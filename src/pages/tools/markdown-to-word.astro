@@ -29,26 +29,26 @@ if (emptyBytes.length < 2000) throw new Error('page claims empty input still pro
 const steps = [
   'Paste the Markdown into the left box. The preview on the right shows headings, bold, lists, tables, code and links as you type.',
   'Click <strong>Download .docx</strong> (or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the input box).',
-  'Open the downloaded file directly in Word, LibreOffice, or drag it into Google Docs / drive.google.com to open it there — no copy-paste step, no intermediate format.',
+  'Open the downloaded file directly in Word, LibreOffice, or drag it into Google Docs / drive.google.com to open it there: no copy-paste step, no intermediate format.',
   'Need it on the clipboard instead of as a file? The companion <a href="/tools/markdown-to-google-docs">Markdown to Google Docs</a> tool pastes formatted text directly into an already-open document.',
 ];
 
 const faq = [
   {
     q: 'How is this different from Markdown to Google Docs?',
-    a: 'That tool puts formatted text on your clipboard for you to paste into a document you already have open. This one builds an actual .docx file and downloads it — the thing to reach for when you need a file to attach to an email, upload somewhere, or hand to someone who expects a Word document rather than a pasted block of text.',
+    a: 'That tool puts formatted text on your clipboard for you to paste into a document you already have open. This one builds an actual .docx file and downloads it, the thing to reach for when you need a file to attach to an email, upload somewhere, or hand to someone who expects a Word document rather than a pasted block of text.',
   },
   {
     q: 'Is this a real Word document, or Markdown wrapped in a .docx extension?',
-    a: `A real one — the file is assembled by hand as a package of WordprocessingML XML (the same format Word itself writes), not text dumped into a renamed file. Headings use Word's own Heading 1-6 styles, lists use real Word numbering (so they show up in Word's own list tools, not just as plain text with a leading dash), and tables are genuine Word tables with borders, not an image or a monospace approximation. The sample Markdown below becomes a ${sampleKb} KB .docx with ${stats.headings} heading${stats.headings === 1 ? '' : 's'}, ${stats.lists} list${stats.lists === 1 ? '' : 's'} and ${stats.tables} table${stats.tables === 1 ? '' : 's'}, all real Word elements.`,
+    a: `A real one: the file is assembled by hand as a package of WordprocessingML XML (the same format Word itself writes), not text dumped into a renamed file. Headings use Word's own Heading 1-6 styles, lists use real Word numbering (so they show up in Word's own list tools, not just as plain text with a leading dash), and tables are genuine Word tables with borders, not an image or a monospace approximation. The sample Markdown below becomes a ${sampleKb} KB .docx with ${stats.headings} heading${stats.headings === 1 ? '' : 's'}, ${stats.lists} list${stats.lists === 1 ? '' : 's'} and ${stats.tables} table${stats.tables === 1 ? '' : 's'}, all real Word elements.`,
   },
   {
     q: 'Does this upload my document anywhere to convert it?',
-    a: 'No. The entire .docx file — every XML part, the ZIP container itself — is assembled by JavaScript running in your browser. Nothing is sent to a server; this page could be disconnected from the network entirely and still produce a working file.',
+    a: 'No. The entire .docx file (every XML part, the ZIP container itself) is assembled by JavaScript running in your browser. Nothing is sent to a server; this page could be disconnected from the network entirely and still produce a working file.',
   },
   {
     q: 'Do nested and numbered lists come out right, not just visually indented?',
-    a: 'Yes — this was worth getting right on purpose. Two separate numbered lists in the same document each restart at 1 rather than continuing each other\'s count (a common bug in hand-rolled Word generators, since Word numbering is tracked by an ID that has to be allocated fresh per list); nested lists indent to their actual depth, with bullet lists cycling through different bullet characters by level the way Word\'s own nested-list styles do.',
+    a: 'Yes. This was worth getting right on purpose. Two separate numbered lists in the same document each restart at 1 rather than continuing each other\'s count (a common bug in hand-rolled Word generators, since Word numbering is tracked by an ID that has to be allocated fresh per list); nested lists indent to their actual depth, with bullet lists cycling through different bullet characters by level the way Word\'s own nested-list styles do.',
   },
 ];
 ---
@@ -60,14 +60,14 @@ const faq = [
     <h2>A file, not a paste</h2>
     <p>
       Most "Markdown to Word" tools on the web actually convert to HTML and rely on your browser's or
-      Word's own paste-formatting to turn that into something Word-shaped once you paste it in — which
+      Word's own paste-formatting to turn that into something Word-shaped once you paste it in, which
       works, but only inside a document you already have open. This tool builds the <code>.docx</code>
       file itself: a ZIP archive of WordprocessingML XML, the exact format Word saves, assembled entirely
       in your browser with no external library and no server round trip.
     </p>
 
     <h2>Example</h2>
-    <p>The sample Markdown below converts to a {sampleKb} KB <code>.docx</code> — {stats.words} words,
+    <p>The sample Markdown below converts to a {sampleKb} KB <code>.docx</code>, {stats.words} words,
       {stats.headings} headings, {stats.lists} lists and {stats.tables} table across real Word styles and elements:</p>
     <div class="example-preview" set:html={sampleHtmlPreview} />
 
@@ -75,34 +75,34 @@ const faq = [
     <ul>
       <li><strong>Load sample</strong> fills the input with the Markdown shown above, so there's something to try immediately.</li>
       <li><strong>Clear</strong> empties the input and resets the preview.</li>
-      <li><strong>Download .docx</strong> builds the file fresh from the current Markdown and saves it — there is no separate "convert" step, since the preview already reflects exactly what will download.</li>
+      <li><strong>Download .docx</strong> builds the file fresh from the current Markdown and saves it; there is no separate "convert" step, since the preview already reflects exactly what will download.</li>
     </ul>
 
     <h2>Edge cases and common errors</h2>
     <ul>
       <li><strong>Images become a labelled link, not an embedded picture.</strong> <code>![alt](url)</code>
-        produces a hyperlink reading "[Image: alt text]" rather than the actual picture — embedding a
+        produces a hyperlink reading "[Image: alt text]" rather than the actual picture. Embedding a
         fetched image as a real Word media part is real added scope (a network fetch, format sniffing, a
         relationship and drawing XML per image) that this pass didn't take on. If you need the image
         itself in the document, add it in Word after downloading.</li>
-      <li><strong>Nested numbered lists restart correctly.</strong> See the FAQ — this is the one thing
-        most hand-rolled Word generators get wrong, verified here with a dedicated test for exactly that
-        case.</li>
+      <li><strong>Nested numbered lists restart correctly.</strong> See the FAQ: this is the one thing
+        most hand-rolled Word generators get wrong (verified here with a dedicated test for exactly that
+        case).</li>
       <li><strong>Footnotes, definition lists and Markdown extensions</strong> outside GitHub-flavored
         Markdown (the same engine <a href="/tools/markdown-to-google-docs">Markdown to Google Docs</a>
-        and <a href="/tools/markdown-to-plain-text">Markdown to Plain Text</a> use) are not recognised —
+        and <a href="/tools/markdown-to-plain-text">Markdown to Plain Text</a> use) are not recognised:
         headings, paragraphs, bold/italic/strikethrough/code, links, lists (including task list
         checkboxes), block quotes, fenced code blocks, tables and horizontal rules all convert; anything
         else is treated as plain text.</li>
-      <li><strong>Empty input still downloads a valid, openable file</strong> rather than erroring — a
-        blank one-page document, the same as opening Word and saving immediately.</li>
+      <li><strong>Empty input still downloads a valid, openable file</strong> rather than erroring (a
+        blank one-page document, the same as opening Word and saving immediately).</li>
       <li><strong>Nothing is kept after you close the tab.</strong> The file exists only as long as your
         browser holds it in memory before the download completes; reload the page and it's gone, the same
         as every other tool on this site.</li>
     </ul>
 
     <h2>Do the same thing in code</h2>
-    <pre><code>{`# Python (python-docx, a third-party library — pip install python-docx)
+    <pre><code>{`# Python (python-docx, a third-party library: pip install python-docx)
 from docx import Document
 doc = Document()
 doc.add_heading("Title", level=1)

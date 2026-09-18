@@ -24,28 +24,28 @@ const badHexErr = err(() => parseColor('#zzz'));
 const shortRgbErr = err(() => parseColor('rgb(1,2)'));
 
 const steps = [
-  'Paste a color as a hex code, <code>rgb()</code>/<code>rgba()</code>, or <code>hsl()</code>/<code>hsla()</code> — the format is auto-detected.',
+  'Paste a color as a hex code, <code>rgb()</code>/<code>rgba()</code>, or <code>hsl()</code>/<code>hsla()</code>. The format is auto-detected.',
   'Read the HEX, RGB and HSL rows, all computed from the same parsed color, plus a live swatch.',
-  'Check <strong>Contrast on black text</strong> and <strong>Contrast on white text</strong> if this color will sit behind text — each is labelled AA, AAA, or a fail.',
+  'Check <strong>Contrast on black text</strong> and <strong>Contrast on white text</strong> if this color will sit behind text: each is labelled AA, AAA, or a fail.',
   'Click any of HEX / RGB / HSL to copy it; <strong>Load sample</strong> inserts a worked example.',
 ];
 
 const faq = [
   {
     q: 'What do the AA and AAA labels mean?',
-    a: 'They are the WCAG 2 contrast thresholds for normal-size text against a background: 4.5:1 or higher passes AA, 7:1 or higher passes AAA, and anything below 4.5:1 fails both. Large text (about 18pt or 14pt bold and up) has lower thresholds, 3:1 and 4.5:1, which this page does not compute separately — a background that fails for normal text may still be fine for a large heading.',
+    a: 'They are the WCAG 2 contrast thresholds for normal-size text against a background: 4.5:1 or higher passes AA, 7:1 or higher passes AAA, and anything below 4.5:1 fails both. Large text (about 18pt or 14pt bold and up) has lower thresholds, 3:1 and 4.5:1, which this page does not compute separately; a background that fails for normal text may still be fine for a large heading.',
   },
   {
     q: 'Why does converting to HSL and back change the numbers slightly?',
-    a: `HSL rounds hue to a whole degree and saturation/lightness to a whole percent, so a small amount of rounding drift is normal: <code>rgb(30, 144, 255)</code> converted to HSL and back becomes <code>rgb(${roundTrip.r}, ${roundTrip.g}, ${roundTrip.b})</code> — each channel off by at most 1. This is a property of HSL itself, not a bug in the conversion.`,
+    a: `HSL rounds hue to a whole degree and saturation/lightness to a whole percent, so a small amount of rounding drift is normal: <code>rgb(30, 144, 255)</code> converted to HSL and back becomes <code>rgb(${roundTrip.r}, ${roundTrip.g}, ${roundTrip.b})</code> (each channel off by at most 1). This is a property of HSL itself, not a bug in the conversion.`,
   },
   {
     q: 'Does the # matter in a hex code?',
-    a: 'No — it is optional. Both "#3366ff" and "3366ff" parse the same way, so you can paste a hex value straight out of a design tool’s color picker without editing it first.',
+    a: 'No. It is optional. Both "#3366ff" and "3366ff" parse the same way, so you can paste a hex value straight out of a design tool’s color picker without editing it first.',
   },
   {
     q: 'What is Best text color?',
-    a: 'Whichever of pure black or pure white has the higher contrast ratio against the color you entered — a quick answer to "should this button’s label be black or white text" without comparing two numbers yourself.',
+    a: 'Whichever of pure black or pure white has the higher contrast ratio against the color you entered, a quick answer to "should this button’s label be black or white text" without comparing two numbers yourself.',
   },
 ];
 ---
@@ -56,7 +56,7 @@ const faq = [
   <Fragment slot="content">
     <h2>One color, every format design tools expect</h2>
     <p>
-      Design tools, CSS, and image editors each tend to default to a different color notation — a design file exports hex,
+      Design tools, CSS, and image editors each tend to default to a different color notation: a design file exports hex,
       a CSS-in-JS library wants an <code>rgba()</code> string, a design system's tokens are defined in HSL because it is
       easier for a human to reason about ("a bit darker" is just a lower lightness number). Converting by hand between
       them means re-deriving the math each time; this tool parses whichever one you paste and shows all three at once,
@@ -72,26 +72,26 @@ const faq = [
 
     <h2>Options explained</h2>
     <ul>
-      <li><strong>HEX / RGB / HSL</strong> are computed together from one parsed color — there is no separate "convert to"
+      <li><strong>HEX / RGB / HSL</strong> are computed together from one parsed color; there is no separate "convert to"
         step, so pasting any one of the three immediately shows the other two.</li>
       <li><strong>Contrast on black text / Contrast on white text</strong> apply the WCAG 2 formula to the color as a
-        background, assuming plain black or white text on top — see the FAQ for what the AA/AAA labels mean.</li>
-      <li><strong>Best text color</strong> — see the FAQ.</li>
+        background, assuming plain black or white text on top. See the FAQ for what the AA/AAA labels mean.</li>
+      <li><strong>Best text color</strong>: see the FAQ.</li>
       <li><strong>Load sample</strong> inserts <code>{SAMPLE_COLOR}</code>; <strong>Clear</strong> empties the box.</li>
     </ul>
 
     <h2>Edge cases and common errors</h2>
     <ul>
-      <li><strong>Invalid hex digits.</strong> <code>#zzz</code> stops with "{badHexErr}" — every character after the
+      <li><strong>Invalid hex digits.</strong> <code>#zzz</code> stops with "{badHexErr}": every character after the
         optional <code>#</code> must be 0-9 or a-f.</li>
-      <li><strong>Wrong number of values.</strong> <code>rgb(1,2)</code> stops with "{shortRgbErr}" — <code>rgb()</code>
+      <li><strong>Wrong number of values.</strong> <code>rgb(1,2)</code> stops with "{shortRgbErr}": <code>rgb()</code>
         needs exactly three values (red, green, blue) and an optional fourth (alpha); <code>hsl()</code> needs hue,
         saturation and lightness the same way.</li>
       <li><strong>A bare hex-looking word is accepted as a color.</strong> Because the leading <code>#</code> is optional,
-        a 3, 4, 6 or 8-letter word made only of the letters a-f and digits — like <code>cafe</code>, <code>dead</code> or <code>beef</code> — parses as a color rather than being rejected as text. This is intentional (it lets you paste a
+        a 3, 4, 6 or 8-letter word made only of the letters a-f and digits (like <code>cafe</code>, <code>dead</code> or <code>beef</code>) parses as a color rather than being rejected as text. This is intentional (it lets you paste a
         hex value straight from a tool that omits the <code>#</code>), but it means this box is not a safe way to detect
         "is this string definitely a color".</li>
-      <li><strong>HSL round-trip rounding</strong> — see the FAQ.</li>
+      <li><strong>HSL round-trip rounding</strong>: see the FAQ.</li>
       <li><strong>Percentage and slash syntax both work</strong> in <code>rgb()</code>: <code>rgb(100%, 0%, 0%)</code> and <code>rgb(255 0 0 / 50%)</code> (the modern space-and-slash form, alongside the older comma form) both parse.</li>
       <li><strong>Alpha only shows where it matters.</strong> A fully opaque color's hex is 6 digits and its RGB/HSL have
         no fourth value; add any alpha below 1 (via <code>rgba()</code>, <code>hsla()</code>, or an 8-digit hex) and all
@@ -99,12 +99,12 @@ const faq = [
     </ul>
 
     <h2>Do the same thing in code</h2>
-    <pre><code>// CSS itself understands all of these natively — no conversion needed at all
+    <pre><code>// CSS itself understands all of these natively: no conversion needed at all
 // if the value only needs to reach a browser:
 .button {'{'} background: {SAMPLE_COLOR}; {'}'}
 .button {'{'} background: rgb(51, 102, 255); {'}'}
 .button {'{'} background: hsl(225, 100%, 60%); {'}'}</code></pre>
-    <p class="muted">Conversion only matters once something other than CSS needs the value in a specific format — a
+    <p class="muted">Conversion only matters once something other than CSS needs the value in a specific format: a
       design token file, an image-processing library, or a contrast check like the one this page runs.</p>
   </Fragment>
 </ToolLayout>

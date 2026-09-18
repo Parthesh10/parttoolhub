@@ -24,7 +24,7 @@ if (tooManyErr.ok) throw new Error('page claims a count above the max is refused
 const tooManyMsg = tooManyErr.error;
 
 const steps = [
-  'Choose a <strong>unit</strong> — Paragraphs, Sentences or Words.',
+  'Choose a <strong>unit</strong>: Paragraphs, Sentences or Words.',
   'Set <strong>How many</strong>, from 1 to 50.',
   'Leave <strong>Start with "Lorem ipsum dolor sit amet…"</strong> on to open with the traditional line, or turn it off for text that starts mid-sentence like the rest of the passage.',
   '<strong>Copy to clipboard</strong> or <strong>Download .txt</strong>. Click <strong>Generate</strong> again any time for a fresh batch.',
@@ -33,15 +33,15 @@ const steps = [
 const faq = [
   {
     q: 'What does Lorem Ipsum actually mean?',
-    a: 'Nothing, on purpose. It\'s scrambled Latin from a passage of Cicero\'s De Finibus Bonorum et Malorum (45 BC) — "Lorem ipsum" itself isn\'t even a real Latin phrase, just a fragment of "dolorem ipsum" ("pain itself") cut mid-word. Printers have used it as placeholder text since the 1500s specifically because it looks like real prose at a glance without anyone reading its meaning and getting distracted by it.',
+    a: 'Nothing, on purpose. It\'s scrambled Latin from a passage of Cicero\'s De Finibus Bonorum et Malorum (45 BC). "Lorem ipsum" itself isn\'t even a real Latin phrase, just a fragment of "dolorem ipsum" ("pain itself") cut mid-word. Printers have used it as placeholder text since the 1500s specifically because it looks like real prose at a glance without anyone reading its meaning and getting distracted by it.',
   },
   {
     q: 'Why use Lorem Ipsum instead of real text, or just repeating the word text?',
-    a: 'A design needs to be judged on layout, spacing and typography before real content exists — repeated words draw the eye to an obvious pattern instead, and real sentences in your own language get read for meaning rather than looked at as shapes. Lorem Ipsum has a roughly normal distribution of word and letter lengths, so paragraphs, line breaks and justified text behave the way they would with genuine copy, without anyone stopping to read it.',
+    a: 'A design needs to be judged on layout, spacing and typography before real content exists; repeated words draw the eye to an obvious pattern instead, and real sentences in your own language get read for meaning rather than looked at as shapes. Lorem Ipsum has a roughly normal distribution of word and letter lengths, so paragraphs, line breaks and justified text behave the way they would with genuine copy, without anyone stopping to read it.',
   },
   {
     q: 'Is this randomly generated, or the same text every time?',
-    a: `Randomly generated on every click — this tool draws words from the traditional word bank at random rather than repeating one fixed passage, so a whole page of placeholder blocks doesn't visibly repeat itself. It uses JavaScript's ordinary random source, not the cryptographically secure one this site's UUID and Password generators use, because nothing about placeholder text needs to be unpredictable to an attacker — see the <a href="/generators">Generators hub</a> for why that distinction matters for the other two tools.`,
+    a: `Randomly generated on every click: this tool draws words from the traditional word bank at random rather than repeating one fixed passage, so a whole page of placeholder blocks doesn't visibly repeat itself. It uses JavaScript's ordinary random source, not the cryptographically secure one this site's UUID and Password generators use, because nothing about placeholder text needs to be unpredictable to an attacker. See the <a href="/generators">Generators hub</a> for why that distinction matters for the other two tools.`,
   },
   {
     q: 'Why does the text sometimes not start with Lorem ipsum dolor sit amet?',
@@ -57,7 +57,7 @@ const faq = [
     <h2>Classic placeholder text, generated fresh</h2>
     <p>
       Lorem Ipsum is filler text used to preview how a design looks with realistic-length words and
-      sentences before real copy is ready — in a website mockup, a print layout, a CMS template or a
+      sentences before real copy is ready, whether that's a website mockup, a print layout, a CMS template or a
       slide deck. It has looked the same, more or less, since the 1500s, and every major design tool
       (Figma, Adobe InDesign, Sketch) still ships it as the default placeholder for exactly this reason:
       it reads as "text-shaped" without anyone stopping to read what it says.
@@ -73,7 +73,7 @@ const faq = [
 
     <h2>Options explained</h2>
     <ul>
-      <li><strong>Unit</strong> — Words for a single short line (a button label or heading mockup),
+      <li><strong>Unit.</strong> Words for a single short line (a button label or heading mockup),
         Sentences for a line of body copy, Paragraphs for full blocks of text.</li>
       <li><strong>How many</strong> sets the count of whichever unit is selected, from {MIN_COUNT} to {MAX_COUNT}.</li>
       <li><strong>Start with "Lorem ipsum dolor sit amet…"</strong> opens the very first word/sentence/
@@ -86,8 +86,8 @@ const faq = [
     <h2>Edge cases and common errors</h2>
     <ul>
       <li><strong>Count is capped at {MAX_COUNT}</strong> per click to keep the page responsive:
-        "{tooManyMsg}" — click Generate again for another batch rather than requesting one enormous one.</li>
-      <li><strong>Every click replaces the text</strong> rather than appending to it — copy or download a
+        "{tooManyMsg}"; click Generate again for another batch rather than requesting one enormous one.</li>
+      <li><strong>Every click replaces the text</strong> rather than appending to it, so copy or download a
         batch before generating a new one if you need to keep it.</li>
       <li><strong>Words mode has no punctuation</strong> by design, since a short run of words is usually
         going into a label or heading, not a sentence.</li>
@@ -96,12 +96,12 @@ const faq = [
     </ul>
 
     <h2>Do the same thing in code</h2>
-    <pre><code>{`// JavaScript — a minimal version of this tool's own approach
+    <pre><code>{`// JavaScript: a minimal version of this tool's own approach
 const words = ["lorem", "ipsum", "dolor", "sit", "amet", "consectetur", "adipiscing", "elit"];
 const text = Array.from({ length: 12 }, () => words[Math.floor(Math.random() * words.length)]).join(" ");
-// Math.random() is fine here — nothing about placeholder text is security-sensitive.`}</code></pre>
+// Math.random() is fine here: nothing about placeholder text is security-sensitive.`}</code></pre>
     <p>
-      Once your layout has placeholder text in it, a real identifier is often the next thing you need — the <a href="/tools/uuid-generator">UUID Generator</a> for a mock database row, or the <a href="/tools/password-generator">Password Generator</a> for a test account.
+      Once your layout has placeholder text in it, a real identifier is often the next thing you need: the <a href="/tools/uuid-generator">UUID Generator</a> for a mock database row, or the <a href="/tools/password-generator">Password Generator</a> for a test account.
     </p>
   </Fragment>
 </ToolLayout>

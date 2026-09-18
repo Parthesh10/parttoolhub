@@ -32,7 +32,7 @@ const steps = [
 const faq = [
   {
     q: 'Does this verify the token is genuine?',
-    a: 'No — decoding and verifying are different operations. Decoding just reads the header and payload, which are Base64URL-encoded but not encrypted, so anyone can read them. Verifying checks the signature against the secret or public key the token was signed with, which this page never has and never asks for.',
+    a: 'No. Decoding and verifying are different operations. Decoding just reads the header and payload, which are Base64URL-encoded but not encrypted, so anyone can read them. Verifying checks the signature against the secret or public key the token was signed with, which this page never has and never asks for.',
   },
   {
     q: 'Is it safe to paste a real production token here?',
@@ -40,11 +40,11 @@ const faq = [
   },
   {
     q: 'What do exp, iat and nbf mean?',
-    a: '<code>iat</code> is when the token was issued, <code>exp</code> is when it expires, and <code>nbf</code> ("not before") is when it becomes valid — all three are Unix timestamps in seconds since 1970, which this tool converts to a readable UTC date and a relative time like "in 2 hours". To convert one by hand outside a token, use the <a href="/tools/unix-timestamp-converter">Unix Timestamp Converter</a>.',
+    a: '<code>iat</code> is when the token was issued, <code>exp</code> is when it expires, and <code>nbf</code> ("not before") is when it becomes valid; all three are Unix timestamps in seconds since 1970, which this tool converts to a readable UTC date and a relative time like "in 2 hours". To convert one by hand outside a token, use the <a href="/tools/unix-timestamp-converter">Unix Timestamp Converter</a>.',
   },
   {
     q: 'Why do I see three sections separated by dots?',
-    a: 'A JWT is always header.payload.signature — three Base64URL segments joined by periods. The header names the signing algorithm, the payload carries the claims (the actual data), and the signature is what a server checks to confirm neither part was tampered with.',
+    a: 'A JWT is always header.payload.signature: three Base64URL segments joined by periods. The header names the signing algorithm, the payload carries the claims (the actual data), and the signature is what a server checks to confirm neither part was tampered with.',
   },
 ];
 ---
@@ -57,13 +57,13 @@ const faq = [
     <p>
       A JSON Web Token is three pieces of Base64URL-encoded JSON joined by dots: a header describing how the token
       is signed, a payload holding the actual claims (user ID, roles, expiry, and whatever else the issuer put in), and a
-      signature. The header and payload are encoded, not encrypted — anyone who has the token can read them, which is exactly
+      signature. The header and payload are encoded, not encrypted; anyone who has the token can read them, which is exactly
       why JWTs travel over HTTPS and why sensitive data should not go in the payload. The format is defined in RFC 7519; the
       Base64URL alphabet it uses is the same one the <a href="/tools/base64-encode-decode">Base64 tool</a> offers as “URL-safe”.
     </p>
     <p>
       This is why a JWT debugger is genuinely useful during development: when an API call fails with a 401, decoding the
-      token you sent instantly answers the two most common questions — did it expire, and does the payload actually contain
+      token you sent instantly answers the two most common questions: did it expire, and does the payload actually contain
       the claim the server is checking for?
     </p>
 
@@ -77,27 +77,27 @@ const faq = [
 
     <h2>Reading the result</h2>
     <ul>
-      <li><strong>Header</strong> — typically just <code>alg</code> (the signing algorithm, such as HS256 or RS256) and <code>typ</code> (“JWT”). Some issuers add <code>kid</code>, the ID of the key they signed with.</li>
-      <li><strong>Payload</strong> — the claims. Some are standard (<code>sub</code>, <code>iss</code>, <code>aud</code>, <code>exp</code>, <code>iat</code>, <code>nbf</code>, <code>jti</code>); most APIs add their own on top. Shown as-is, formatted with two-space indent.</li>
-      <li><strong>Issued / Expires / Not before</strong> — computed from <code>iat</code>, <code>exp</code> and <code>nbf</code> against your device's current time, in UTC, with a relative time (“in 2 hours”, “3 days ago”). Expires is coloured red once the token has expired; Not before only appears when the claim is present.</li>
-      <li><strong>Header claims / Payload claims tables</strong> — every field in the header and payload, one row each, with a plain-English label for the seven RFC 7519 registered claim names (<code>iss</code> “Issuer”, <code>sub</code> “Subject”, and so on); a field your API added on its own keeps its own key as the label, since this tool has no way to know what it means.</li>
+      <li><strong>Header:</strong> typically just <code>alg</code> (the signing algorithm, such as HS256 or RS256) and <code>typ</code> (“JWT”). Some issuers add <code>kid</code>, the ID of the key they signed with.</li>
+      <li><strong>Payload.</strong> The claims. Some are standard (<code>sub</code>, <code>iss</code>, <code>aud</code>, <code>exp</code>, <code>iat</code>, <code>nbf</code>, <code>jti</code>); most APIs add their own on top. Shown as-is, formatted with two-space indent.</li>
+      <li><strong>Issued / Expires / Not before:</strong> computed from <code>iat</code>, <code>exp</code> and <code>nbf</code> against your device's current time, in UTC, with a relative time (“in 2 hours”, “3 days ago”). Expires is coloured red once the token has expired; Not before only appears when the claim is present.</li>
+      <li><strong>Header claims / Payload claims tables</strong> list every field in the header and payload, one row each, with a plain-English label for the seven RFC 7519 registered claim names (<code>iss</code> “Issuer”, <code>sub</code> “Subject”, and so on); a field your API added on its own keeps its own key as the label, since this tool has no way to know what it means.</li>
       <li><strong>Load sample</strong> inserts the token above; <strong>Clear</strong> empties the box; <strong>Copy header</strong> and <strong>Copy payload</strong> copy the formatted JSON.</li>
     </ul>
 
     <h2>Edge cases and common errors</h2>
     <ul>
       <li><strong>The signature is never checked.</strong> Tokens with <code>"alg": "none"</code>, an empty third segment, or a signature made of random letters all decode normally. This tool tells you what a token says, not whether to trust it.</li>
-      <li><strong>Wrong number of segments</strong> — <code>aaa.bbb</code> is reported as “{twoParts}”. Five segments (“{fiveParts}”) usually means a JWE, an encrypted token, which cannot be read without the key.</li>
-      <li><strong><code>exp</code> in milliseconds.</strong> RFC 7519 defines the timing claims in seconds. A 13-digit value from a library that used milliseconds is read as seconds and shows a date tens of thousands of years away — paste the raw number into the <a href="/tools/unix-timestamp-converter">Unix Timestamp Converter</a> with <em>Auto-detect</em> to see which unit it actually is. An <code>exp</code> written as a string is ignored, and no expiry is shown.</li>
-      <li><strong>No <code>exp</code> claim</strong> — Expires shows “—” and no valid/expired verdict, because the token has no expiry.</li>
-      <li><strong>Segments that are not JSON objects</strong> — a header that decodes but is not JSON gives “{notJson}”; a payload that is a JSON array rather than an object gives “{arrayPayload}”.</li>
+      <li><strong>Wrong number of segments.</strong> <code>aaa.bbb</code> is reported as “{twoParts}”. Five segments (“{fiveParts}”) usually means a JWE, an encrypted token, which cannot be read without the key.</li>
+      <li><strong><code>exp</code> in milliseconds.</strong> RFC 7519 defines the timing claims in seconds. A 13-digit value from a library that used milliseconds is read as seconds and shows a date tens of thousands of years away. Paste the raw number into the <a href="/tools/unix-timestamp-converter">Unix Timestamp Converter</a> with <em>Auto-detect</em> to see which unit it actually is. An <code>exp</code> written as a string is ignored, and no expiry is shown.</li>
+      <li><strong>No <code>exp</code> claim:</strong> Expires shows “—” and no valid/expired verdict, because the token has no expiry.</li>
+      <li><strong>Segments that are not JSON objects.</strong> A header that decodes but is not JSON gives “{notJson}”; a payload that is a JSON array rather than an object gives “{arrayPayload}”.</li>
       <li><strong>Your clock decides “expired”.</strong> A device clock that is a few minutes off will mis-report a token that is about to expire or has just been issued. Check the absolute UTC time shown next to it.</li>
-      <li><strong>Copied with extra text</strong> — a leading <code>Bearer </code> is stripped and whitespace inside the token is ignored, but surrounding quotes or a trailing comma from a JSON body are not; remove those first.</li>
+      <li><strong>Copied with extra text:</strong> a leading <code>Bearer </code> is stripped and whitespace inside the token is ignored, but surrounding quotes or a trailing comma from a JSON body are not; remove those first.</li>
     </ul>
 
     <h2>Verifying a token instead of just reading it</h2>
     <p>
-      If you need to confirm a token is authentic — not just well-formed — that check has to happen wherever the signing key
+      If you need to confirm a token is authentic (not just well-formed), that check has to happen wherever the signing key
       lives, typically your backend:
     </p>
     <h3>Node.js</h3>

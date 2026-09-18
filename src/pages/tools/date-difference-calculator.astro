@@ -29,7 +29,7 @@ const parseErr = dateDiff('not a date', '2025-01-01');
 if (parseErr.ok) throw new Error('page claims an unparseable date is refused');
 
 const steps = [
-  'Type or paste a <strong>Start</strong> and an <strong>End</strong> date — a date on its own (<code>2025-01-15</code>) or with a time (<code>2025-01-15T10:30:00</code>).',
+  'Type or paste a <strong>Start</strong> and an <strong>End</strong> date: a date on its own (<code>2025-01-15</code>) or with a time (<code>2025-01-15T10:30:00</code>).',
   'Pick <strong>Interpret as</strong> (UTC or your browser\'s local time) for whichever inputs have no time zone of their own.',
   'Read the headline sentence for the calendar breakdown, or the row below it for totals in weeks, days, hours, minutes, seconds and weekdays.',
   'Use <strong>⇅</strong> to swap the two dates, <strong>Set end to now</strong> for "how long ago/until", or <strong>Copy result</strong> to take the whole answer.',
@@ -38,19 +38,19 @@ const steps = [
 const faq = [
   {
     q: 'Why does a month not always mean the same number of days?',
-    a: `Because months genuinely aren't the same length — 28 to 31 days depending which one. This tool reports the largest whole years and months that fit between your two dates, then whatever's left over as days (and, if relevant, hours/minutes/seconds) — the same convention most date calculators use, rather than a fixed 30-day average that would make "1 month" mean something different depending on which months it actually spans.`,
+    a: `Because months genuinely aren't the same length; they run 28 to 31 days depending which one. This tool reports the largest whole years and months that fit between your two dates, then whatever's left over as days (and, if relevant, hours/minutes/seconds), the same convention most date calculators use, rather than a fixed 30-day average that would make "1 month" mean something different depending on which months it actually spans.`,
   },
   {
     q: 'What happens right at a month-length edge, like 31 January to 1 March?',
-    a: `That exact case is worth naming because a naive day-by-day subtraction gets it wrong: from ${'`2024-01-31`'} to ${'`2024-03-01`'} this tool reports ${edgeSentence} — advancing 31 January by one month lands on 29 February (2024 is a leap year), one day short of 1 March, rather than incorrectly borrowing January's 31 days against February, which only has 28 or 29.`,
+    a: `That exact case is worth naming because a naive day-by-day subtraction gets it wrong: from ${'`2024-01-31`'} to ${'`2024-03-01`'} this tool reports ${edgeSentence}. Advancing 31 January by one month lands on 29 February (2024 is a leap year), one day short of 1 March, rather than incorrectly borrowing January's 31 days against February, which only has 28 or 29.`,
   },
   {
     q: 'What if the end date is earlier than the start date?',
-    a: 'It still works — the tool shows the same breakdown for the gap between them and adds a note that the order was reversed, rather than erroring. Swapping the two dates with the ⇅ button gives the identical answer without the note.',
+    a: 'It still works. The tool shows the same breakdown for the gap between them and adds a note that the order was reversed, rather than erroring. Swapping the two dates with the ⇅ button gives the identical answer without the note.',
   },
   {
     q: 'Why do I get a different answer depending on Interpret as?',
-    a: `Only when a date has no time zone written into it — the same reasoning the <a href="/tools/unix-timestamp-converter">Unix Timestamp Converter</a> uses for the same option. ${'`2025-01-01T00:00:00`'} to ${'`2025-01-01T10:00:00`'} is exactly ${utcInterpret.ok ? formatCalendarDiff(utcInterpret.value.calendar) : ''} either way here, since both inputs share the same missing zone and cancel out — but comparing a zone-less date against one with an explicit offset (or against "now", which is always a fixed instant) can genuinely shift by hours depending which zone the zone-less one is read in.`,
+    a: `Only when a date has no time zone written into it: the same reasoning the <a href="/tools/unix-timestamp-converter">Unix Timestamp Converter</a> uses for the same option. ${'`2025-01-01T00:00:00`'} to ${'`2025-01-01T10:00:00`'} is exactly ${utcInterpret.ok ? formatCalendarDiff(utcInterpret.value.calendar) : ''} either way here, since both inputs share the same missing zone and cancel out. But comparing a zone-less date against one with an explicit offset (or against "now", which is always a fixed instant) can genuinely shift by hours depending which zone the zone-less one is read in.`,
   },
 ];
 ---
@@ -63,8 +63,8 @@ const faq = [
     <p>
       The gap between two dates has two honest answers that don't agree: "exactly how many seconds/days/weeks apart" (a
       fixed number, easy to compute) and "how many years, months and days" (a calendar concept, where the same number of
-      days means a different number of months depending which months they fall in). This tool gives both — a plain-English
-      calendar breakdown as the headline, and exact totals in every fixed unit underneath it — rather than picking one and
+      days means a different number of months depending which months they fall in). This tool gives both: a plain-English
+      calendar breakdown as the headline, and exact totals in every fixed unit underneath it, rather than picking one and
       hiding the other.
     </p>
 
@@ -75,7 +75,7 @@ const faq = [
 
     <h2>Options explained</h2>
     <ul>
-      <li><strong>Interpret as: UTC / Local time</strong> only matters for whichever of your two inputs has no time zone written into it — see the FAQ.</li>
+      <li><strong>Interpret as: UTC / Local time</strong> only matters for whichever of your two inputs has no time zone written into it (see the FAQ).</li>
       <li><strong>⇅ (swap)</strong> exchanges Start and End; the totals are identical either way, since the calculation always uses the absolute gap.</li>
       <li><strong>Set end to now</strong> fills End with the current instant, for a quick "how long ago was Start" or, if Start is in the future, "how long until Start".</li>
       <li><strong>Load sample</strong> inserts the worked example above; <strong>Clear</strong> empties both fields.</li>
@@ -84,25 +84,25 @@ const faq = [
     <h2>Edge cases and common errors</h2>
     <ul>
       <li><strong>Both fields are required.</strong> Leaving either one empty stops with "{emptyErr.ok ? '' : emptyErr.error}" rather than guessing a default for the missing side.</li>
-      <li><strong>Unparseable dates.</strong> Free text that matches no recognised shape, like <code>not a date</code>, stops with "{parseErr.ok ? '' : parseErr.error}" — the same parser (and the same accepted formats) as the Unix Timestamp Converter.</li>
-      <li><strong>End before start is handled, not rejected</strong> — see the FAQ.</li>
-      <li><strong>The month/day edge case</strong> (31 January to 1 March and similar) — see the FAQ; every field in the breakdown is guaranteed non-negative.</li>
-      <li><strong>Weekdays counts whole calendar days only</strong> (Monday through Friday, UTC-day boundaries), not partial days — a span that starts mid-afternoon still counts that day if it's a weekday.</li>
+      <li><strong>Unparseable dates.</strong> Free text that matches no recognised shape, like <code>not a date</code>, stops with "{parseErr.ok ? '' : parseErr.error}", the same parser (and the same accepted formats) as the Unix Timestamp Converter.</li>
+      <li><strong>End before start is handled, not rejected</strong>: see the FAQ.</li>
+      <li><strong>The month/day edge case</strong> (31 January to 1 March and similar) is explained in the FAQ; every field in the breakdown is guaranteed non-negative.</li>
+      <li><strong>Weekdays counts whole calendar days only</strong> (Monday through Friday, UTC-day boundaries), not partial days; a span that starts mid-afternoon still counts that day if it's a weekday.</li>
     </ul>
 
     <h2>Do the same thing in code</h2>
-    <pre><code>{`// JavaScript — total days is straightforward; a real calendar (years/months/days)
+    <pre><code>{`// JavaScript: total days is straightforward; a real calendar (years/months/days)
 // breakdown needs month-length-aware logic like this page's own src/lib/date-diff.ts
 const ms = new Date('2025-06-01') - new Date('2025-01-15');
 const days = Math.floor(ms / 86400000);
 
-# Python — dateutil.relativedelta gives a real calendar breakdown out of the box
+# Python: dateutil.relativedelta gives a real calendar breakdown out of the box
 from dateutil.relativedelta import relativedelta
 from datetime import date
 relativedelta(date(2025, 6, 1), date(2025, 1, 15))`}</code></pre>
     <p>
       Working with a raw Unix timestamp instead of a date string? The <a href="/tools/unix-timestamp-converter">Unix Timestamp Converter</a>
-      converts it to a date first — paste that result straight into either field here.
+      converts it to a date first. Paste that result straight into either field here.
     </p>
   </Fragment>
 </ToolLayout>

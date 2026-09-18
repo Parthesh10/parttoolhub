@@ -35,7 +35,7 @@ const steps = [
 const faq = [
   {
     q: 'What is the difference between the three encode options?',
-    a: 'A single value (encodeURIComponent) escapes everything that isn’t a letter, digit or a small set of safe symbols — use it for one query parameter\'s value. A whole URL (encodeURI) leaves characters like : / ? # & = alone since they are structural, not data — use it when you have a complete URL you don’t want to break. Form field encoding is the same as a single value but turns spaces into "+", matching how HTML forms submit data.',
+    a: 'A single value (encodeURIComponent) escapes everything that isn’t a letter, digit or a small set of safe symbols; use it for one query parameter\'s value. A whole URL (encodeURI) leaves characters like : / ? # & = alone since they are structural, not data, so use it when you have a complete URL you don’t want to break. Form field encoding is the same as a single value but turns spaces into "+", matching how HTML forms submit data.',
   },
   {
     q: 'Why would encoding the same text two different ways give different results for spaces?',
@@ -43,7 +43,7 @@ const faq = [
   },
   {
     q: 'When does decoding fail?',
-    a: 'Percent-encoding is only valid when a "%" is followed by exactly two hexadecimal digits, and the bytes those digits spell out must form valid UTF-8. Text that was cut off mid-sequence, contains a literal "%" that was never encoded, or was encoded in Latin-1 by an old system fails to decode — the tool says which of the two it was rather than guessing.',
+    a: 'Percent-encoding is only valid when a "%" is followed by exactly two hexadecimal digits, and the bytes those digits spell out must form valid UTF-8. Text that was cut off mid-sequence, contains a literal "%" that was never encoded, or was encoded in Latin-1 by an old system fails to decode. The tool says which of the two it was rather than guessing.',
   },
 ];
 ---
@@ -54,13 +54,13 @@ const faq = [
   <Fragment slot="content">
     <h2>Why URLs need percent-encoding</h2>
     <p>
-      A URL can only safely contain a limited set of characters — letters, digits, and a handful of punctuation marks that
+      A URL can only safely contain a limited set of characters: letters, digits, and a handful of punctuation marks that
       have no special meaning in that position. Everything else (spaces, ampersands inside a value, non-English characters,
       slashes inside a value rather than as a path separator) has to be percent-encoded: replaced with <code>%</code> followed
       by its byte value in hex, as laid out in RFC 3986 §2.1. A space becomes <code>%20</code>, an ampersand becomes <code>%26</code>, and a character outside ASCII becomes one <code>%XX</code> group per UTF-8 byte.
     </p>
     <p>
-      Get this wrong and a URL either breaks outright or, worse, silently does the wrong thing — an unencoded <code>&amp;</code>
+      Get this wrong and a URL either breaks outright or, worse, silently does the wrong thing. An unencoded <code>&amp;</code>
       inside a query value looks like the start of the next parameter, quietly truncating or corrupting the one before it.
     </p>
 
@@ -83,8 +83,8 @@ const faq = [
     <ul>
       <li><strong>Encode as: A single value (encodeURIComponent)</strong> escapes everything except letters, digits and <code>- _ . ! ~ * ' ( )</code>. Use it for one query value or one path segment.</li>
       <li><strong>A whole URL, keep :/?#&amp;= intact (encodeURI)</strong> leaves the characters that give a URL its structure alone and escapes only spaces, non-ASCII and a few others, as in the example above.</li>
-      <li><strong>A form field — spaces become "+"</strong> is single-value encoding with <code>%20</code> replaced by <code>+</code>, matching <code>application/x-www-form-urlencoded</code>. A literal <code>+</code> in the input becomes <code>%2B</code>, so it stays unambiguous: <code>a b+c</code> → <code>{formEncoded}</code>.</li>
-      <li><strong>Treat "+" as a space</strong> (decode only) — on, <code>a+b%20c</code> → <code>{plusOn}</code>; off, <code>{plusOff}</code>. Turn it off for path segments and for Base64 values, where <code>+</code> is data.</li>
+      <li><strong>A form field (spaces become "+")</strong> is single-value encoding with <code>%20</code> replaced by <code>+</code>, matching <code>application/x-www-form-urlencoded</code>. A literal <code>+</code> in the input becomes <code>%2B</code>, so it stays unambiguous: <code>a b+c</code> → <code>{formEncoded}</code>.</li>
+      <li><strong>Treat "+" as a space</strong> (decode only): on, <code>a+b%20c</code> → <code>{plusOn}</code>; off, <code>{plusOff}</code>. Turn it off for path segments and for Base64 values, where <code>+</code> is data.</li>
       <li><strong>⇄ Swap</strong> moves the output into the input and flips the direction. <strong>Load sample</strong> inserts a URL with a space in its query string in Encode mode, or an already-encoded value in Decode mode.</li>
     </ul>
 
@@ -92,12 +92,12 @@ const faq = [
     <ul>
       <li><strong>Already-encoded text gets encoded again.</strong> <code>a%20b</code> → <code>{doubleEncoded}</code>. Decode first if you are unsure where a value came from; <code>%2520</code> decodes back to <code>%20</code> one layer at a time.</li>
       <li><strong>Whole-URL mode does not protect values.</strong> It leaves <code>?</code>, <code>#</code> and <code>&amp;</code> alone even inside a query value, so <code>https://x.y/?q=a&amp;b</code> stays ambiguous. Encode the value on its own with single-value mode and build the URL around it.</li>
-      <li><strong>A stray <code>%</code></strong> — <code>100%</code> or a sequence cut short like <code>%E0%A4%A</code> fails with “{badEscape}”. Encode a literal percent sign as <code>%25</code>.</li>
-      <li><strong>Valid hex, invalid text</strong> — <code>%FF</code> is well-formed but is not UTF-8, so it fails with “{notUtf8}”. Latin-1 URLs from older systems hit this; decode them with a tool that lets you pick the charset.</li>
+      <li><strong>A stray <code>%</code>:</strong> <code>100%</code> or a sequence cut short like <code>%E0%A4%A</code> fails with “{badEscape}”. Encode a literal percent sign as <code>%25</code>.</li>
+      <li><strong>Valid hex, invalid text:</strong> <code>%FF</code> is well-formed but is not UTF-8, so it fails with “{notUtf8}”. Latin-1 URLs from older systems hit this; decode them with a tool that lets you pick the charset.</li>
       <li><strong>Non-ASCII becomes UTF-8 bytes</strong>: <code>é</code> → <code>%C3%A9</code>, and an emoji becomes four <code>%XX</code> groups. Newlines are encoded as <code>%0A</code>.</li>
-      <li><strong>Half an emoji</strong> — a lone surrogate left behind by a truncated paste is not a valid character. The browser's own <code>encodeURIComponent</code> throws on it; this tool substitutes the replacement character instead, so <code>a</code> + a lone surrogate + <code>b</code> encodes as <code>{loneSurrogate}</code>, the same as the <a href="/tools/base64-encode-decode">Base64 tool</a> does.</li>
+      <li><strong>Half an emoji:</strong> a lone surrogate left behind by a truncated paste is not a valid character. The browser's own <code>encodeURIComponent</code> throws on it; this tool substitutes the replacement character instead, so <code>a</code> + a lone surrogate + <code>b</code> encodes as <code>{loneSurrogate}</code>, the same as the <a href="/tools/base64-encode-decode">Base64 tool</a> does.</li>
       <li><strong><code>! * ' ( )</code> are left unescaped</strong> by <code>encodeURIComponent</code> even though RFC 3986 lists them as reserved sub-delimiters. Most servers accept either form; if a strict API rejects them, replace by hand: <code>!</code>→<code>%21</code>, <code>'</code>→<code>%27</code>, <code>(</code>→<code>%28</code>, <code>)</code>→<code>%29</code>, <code>*</code>→<code>%2A</code>.</li>
-      <li><strong>Base64 in a query string</strong> needs encoding too, because <code>+</code> and <code>/</code> are not safe — or use the <a href="/tools/base64-encode-decode">URL-safe Base64 alphabet</a> and skip this step.</li>
+      <li><strong>Base64 in a query string</strong> needs encoding too, because <code>+</code> and <code>/</code> are not safe. Alternatively, use the <a href="/tools/base64-encode-decode">URL-safe Base64 alphabet</a> and skip this step.</li>
     </ul>
 
     <h2>Do the same thing in code</h2>
@@ -105,7 +105,7 @@ const faq = [
     <pre><code>encodeURIComponent("hello world &amp; more");  // "hello%20world%20%26%20more"
 encodeURI("https://x.y/p q?a=b c");        // "https://x.y/p%20q?a=b%20c"
 decodeURIComponent("hello%20world");       // "hello world"
-new URLSearchParams({'{ q: "a b+c" }'}).toString(); // "q=a+b%2Bc" — form encoding</code></pre>
+new URLSearchParams({'{ q: "a b+c" }'}).toString(); // "q=a+b%2Bc" (form encoding)</code></pre>
     <h3>Python</h3>
     <pre><code>from urllib.parse import quote, unquote, quote_plus
 quote("hello world &amp; more")   # 'hello%20world%20%26%20more'

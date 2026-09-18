@@ -24,7 +24,7 @@ const accented = titleCaseLine('über die brücke');
 const steps = [
   'Paste one title per line; each line is converted on its own.',
   'Pick a <strong>Mode</strong>: Title Case, Sentence case, UPPERCASE, lowercase, Capitalize Each Word, aLtErNaTiNg cAsE or tOGGLE cASE.',
-  'For Title Case, choose the <strong>Title case style</strong> — APA, Chicago, AP or MLA. The result updates as you switch, so you can compare them.',
+  'For Title Case, choose the <strong>Title case style</strong>: APA, Chicago, AP or MLA. The result updates as you switch, so you can compare them.',
   'Leave <strong>Keep acronyms and brand names (NASA, iPhone) as typed</strong> on unless you want every word forced through the rule.',
   '<strong>Copy to clipboard</strong>, or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> from the input box.',
 ];
@@ -32,19 +32,19 @@ const steps = [
 const faq = [
   {
     q: 'Which style should I use?',
-    a: 'APA and AP both lowercase short prepositions and articles of three letters or fewer; Chicago and MLA lowercase every preposition regardless of length. If a publication or professor has assigned a style guide, use that one — otherwise APA is a safe, widely used default.',
+    a: 'APA and AP both lowercase short prepositions and articles of three letters or fewer; Chicago and MLA lowercase every preposition regardless of length. If a publication or professor has assigned a style guide, use that one. Otherwise, APA is a safe default.',
   },
   {
     q: 'Why does it keep “NASA” or “iPhone” unchanged?',
-    a: 'A word with a capital letter after its first letter is treated as intentional casing — an acronym or a stylised brand name — and is left exactly as typed by default. Untick “Keep acronyms and brand names” to force every word through the same capitalization rule.',
+    a: 'A word with a capital letter after its first letter (an acronym, or a stylised brand name) is treated as intentional casing and left exactly as typed by default. Untick “Keep acronyms and brand names” to force every word through the same capitalization rule.',
   },
   {
     q: 'Does it handle titles that are already in ALL CAPS?',
-    a: 'Yes. An all-caps line carries no information about which words should be capitalized, so it is lowercased first and then title-cased normally. That also lowercases acronyms in the line — retype those in mixed case if you need them kept.',
+    a: 'Yes. An all-caps line carries no information about which words should be capitalized, so it is lowercased first and then title-cased normally. That also lowercases acronyms in the line, so retype those in mixed case if you need them kept.',
   },
   {
     q: 'What happens to hyphenated words?',
-    a: 'Each part of a hyphenated compound is capitalized on its own terms — for example “Self-Driving” and “State-of-the-Art” — matching how style guides treat compound modifiers in titles.',
+    a: 'Each part of a hyphenated compound is capitalized on its own terms (for example, “Self-Driving” and “State-of-the-Art”), matching how style guides treat compound modifiers in titles.',
   },
 ];
 ---
@@ -58,14 +58,14 @@ const faq = [
       Title case is not simply capitalizing every word. Style guides agree that the first and last word of a title are always
       capitalized, and that short articles (<em>a, an, the</em>) and coordinating conjunctions (<em>and, but, or</em>) stay
       lowercase in the middle of a title. Where they disagree is prepositions: APA and AP capitalize any word of four or more
-      letters — so “With” is capitalized but “to” is not — while Chicago and MLA lowercase every preposition no matter its
+      letters (so “With” is capitalized but “to” is not), while Chicago and MLA lowercase every preposition no matter its
       length.
     </p>
     <p>
       Getting this right by hand means checking a list of exceptions for every word, which is exactly the kind of small,
       repetitive rule-following that is easy to get slightly wrong under a deadline. This tool applies the rule set
       consistently and instantly as you type, one line at a time, and links the APA rules it follows at the bottom of the page.
-      Converting a variable or function name instead of a headline is a different job with different rules — use the <a href="/tools/code-case-converter">Code Case Converter</a> for camelCase, snake_case and the like.
+      Converting a variable or function name instead of a headline is a different job with different rules. Use the <a href="/tools/code-case-converter">Code Case Converter</a> for camelCase, snake_case and the like.
     </p>
 
     <h2>Example: the same title, four ways</h2>
@@ -112,7 +112,7 @@ const faq = [
     <h2>Do the same thing in code</h2>
     <p>The built-in helpers capitalize every word and know nothing about style guides, which is usually not what a title needs:</p>
     <h3>Python</h3>
-    <pre><code>"the art of war".title()        # 'The Art Of War'  — capitalizes "Of"
+    <pre><code>"the art of war".title()        # 'The Art Of War' (capitalizes "Of")
 "state-of-the-art".title()      # 'State-Of-The-Art'
 # for real style-guide rules: pip install titlecase</code></pre>
     <h3>JavaScript</h3>

@@ -32,7 +32,7 @@ const steps = [
 const faq = [
   {
     q: 'Is my JSON uploaded to a server?',
-    a: 'No. Parsing and formatting happen with the browser’s own JSON engine, on your device. Nothing you paste is sent anywhere — useful when the JSON contains API keys, tokens or customer data.',
+    a: 'No. Parsing and formatting happen with the browser’s own JSON engine, on your device. Nothing you paste is sent anywhere, which matters when the JSON contains API keys, tokens or customer data.',
   },
   {
     q: 'How do I find exactly where a syntax error is?',
@@ -48,7 +48,7 @@ const faq = [
   },
   {
     q: 'Why does a large number come out changed?',
-    a: 'JSON numbers are read as 64-bit floating point, so integers above 2<sup>53</sup> (about 9 quadrillion) lose their last digits. If an ID that large must survive, store it as a string in the source system — the formatter cannot recover digits the parser has already rounded.',
+    a: 'JSON numbers are read as 64-bit floating point, so integers above 2<sup>53</sup> (about 9 quadrillion) lose their last digits. If an ID that large must survive, store it as a string in the source system. The formatter cannot recover digits the parser has already rounded.',
   },
 ];
 ---
@@ -83,22 +83,22 @@ const faq = [
       <li><strong>Format</strong> parses the input and re-emits it with one value per line, nested by the chosen indent. Key order is kept exactly as written unless sorting is on.</li>
       <li><strong>Minify</strong> does the same parse and emits it with no whitespace at all: <code>{'{ "a" : [ 1 , 2 ] }'}</code> becomes <code>{'{"a":[1,2]}'}</code>. The Indent menu is disabled while Minify is selected because it has no effect.</li>
       <li><strong>Indent: 2 spaces / 4 spaces / Tab</strong> sets the indentation unit for Format. Tab inserts a real tab character, which some editors display as 8 columns.</li>
-      <li><strong>Sort keys alphabetically</strong> reorders the keys of every object at every depth, in code-point order — so <code>Zebra</code> sorts before <code>apple</code>. Arrays keep their order and no value is changed.</li>
+      <li><strong>Sort keys alphabetically</strong> reorders the keys of every object at every depth, in code-point order, so <code>Zebra</code> sorts before <code>apple</code>. Arrays keep their order and no value is changed.</li>
       <li><strong>Load sample</strong> fills the input with a small nested object; <strong>Clear</strong> empties it.</li>
     </ul>
 
     <h2>Edge cases and common errors</h2>
     <ul>
-      <li><strong>Trailing comma</strong> — <code>{'{"a": 1,}'}</code> is valid in a JavaScript object literal but not in JSON. Reported as “{trailingComma}”: the column points at the closing brace after the comma.</li>
-      <li><strong>Single-quoted or unquoted keys</strong> — <code>{"{'a': 1}"}</code> and <code>{'{a: 1}'}</code> both fail with “{singleQuotes}”. If the text uses single quotes and <code>True</code>/<code>None</code>, it is a Python literal rather than JSON — the <a href="/tools/python-dict-to-json">Python Dict to JSON converter</a> reads that directly.</li>
-      <li><strong>Comments and second documents</strong> — JSON has no comment syntax, and a file holds exactly one value. <code>// note</code> after the JSON, or two objects pasted one after the other, both fail with “{comment}”.</li>
-      <li><strong>NaN, Infinity, undefined</strong> — none of these are JSON values; they are reported as an unexpected token at the position of the first letter.</li>
-      <li><strong>Byte-order mark</strong> — a file saved by Windows Notepad can start with an invisible U+FEFF, reported as an unexpected token at line 1, column 1. Delete the first character, or run the text through the <a href="/tools/ai-text-cleaner">AI Text Cleaner</a>, which strips it.</li>
+      <li><strong>Trailing comma:</strong> <code>{'{"a": 1,}'}</code> is valid in a JavaScript object literal but not in JSON. Reported as “{trailingComma}”: the column points at the closing brace after the comma.</li>
+      <li><strong>Single-quoted or unquoted keys.</strong> <code>{"{'a': 1}"}</code> and <code>{'{a: 1}'}</code> both fail with “{singleQuotes}”. If the text uses single quotes and <code>True</code>/<code>None</code>, it is a Python literal rather than JSON, and the <a href="/tools/python-dict-to-json">Python Dict to JSON converter</a> reads that directly.</li>
+      <li><strong>Comments and second documents:</strong> JSON has no comment syntax, and a file holds exactly one value. <code>// note</code> after the JSON, or two objects pasted one after the other, both fail with “{comment}”.</li>
+      <li><strong>NaN, Infinity, undefined:</strong> none of these are JSON values; they are reported as an unexpected token at the position of the first letter.</li>
+      <li><strong>Byte-order mark.</strong> A file saved by Windows Notepad can start with an invisible U+FEFF, reported as an unexpected token at line 1, column 1. Delete the first character, or run the text through the <a href="/tools/ai-text-cleaner">AI Text Cleaner</a>, which strips it.</li>
       <li><strong>Duplicate keys are not an error.</strong> <code>{'{"a": 1, "a": 2}'}</code> formats as <code>{'{"a": 2}'}</code>: the last value wins silently, which is also what <code>JSON.parse</code> does in every browser. Check for this by hand if the document was assembled by concatenation.</li>
       <li><strong>Numbers are 64-bit floats.</strong> <code>{'{"id": 12345678901234567890}'}</code> comes out as <code>{bigInt}</code>; <code>0.1000</code> becomes <code>0.1</code>, <code>-0</code> becomes <code>0</code>, and <code>1e400</code> becomes <code>null</code>. IDs above 2<sup>53</sup> need to be strings.</li>
-      <li><strong>Empty or whitespace-only input</strong> simply clears the output and shows no error — there is nothing to report until you paste something.</li>
+      <li><strong>Empty or whitespace-only input</strong> simply clears the output and shows no error, since there is nothing to report until you paste something.</li>
       <li><strong>Unicode</strong> round-trips: <code>"é"</code> is emitted as <code>"é"</code>, and emoji and CJK text are kept as typed.</li>
-      <li><strong>Absurd nesting</strong> — ten thousand nested arrays parse, but re-serialising them overflows the browser's call stack, so the tool reports “{tooDeep}” instead of freezing. Real documents never come close; this only happens with generated input.</li>
+      <li><strong>Absurd nesting.</strong> Ten thousand nested arrays parse, but re-serialising them overflows the browser's call stack, so the tool reports “{tooDeep}” instead of freezing. Real documents never come close; this only happens with generated input.</li>
     </ul>
 
     <h2>Do the same thing in code</h2>

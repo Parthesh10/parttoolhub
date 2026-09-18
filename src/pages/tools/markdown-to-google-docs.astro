@@ -29,9 +29,9 @@ if (emptyOut !== '') throw new Error('page claims empty input gives empty output
 if (!/<a href="https:\/\/example.com">ok<\/a>/.test(unsafe) || /javascript:/.test(unsafe)) throw new Error('page claims javascript: links are dropped');
 
 const steps = [
-  'Paste the Markdown into the left box. The preview on the right shows the formatted result as you type — headings, bold, lists, tables, code, links.',
+  'Paste the Markdown into the left box. The preview on the right shows the formatted result as you type: headings, bold, lists, tables, code, links.',
   'Click <strong>Copy for Google Docs</strong> (or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the input box). The formatted text and a plain-text copy both go on the clipboard.',
-  'Open your document — <strong>Open a new Google Doc ↗</strong> creates one — and press <kbd>Ctrl</kbd>+<kbd>V</kbd> (<kbd>⌘</kbd>+<kbd>V</kbd> on a Mac). Word, Gmail, Outlook, Teams and Notion accept the same paste.',
+  'Open your document (<strong>Open a new Google Doc ↗</strong> creates one) and press <kbd>Ctrl</kbd>+<kbd>V</kbd> (<kbd>⌘</kbd>+<kbd>V</kbd> on a Mac). Word, Gmail, Outlook, Teams and Notion accept the same paste.',
   'Need the code instead? <strong>Copy HTML</strong> or <strong>Download .html</strong> give you the fragment the preview is made of.',
 ];
 
@@ -41,12 +41,12 @@ const faq = [
     a: 'A normal paste carries plain text, and Google Docs shows plain text as typed: **bold** stays four characters, not a bold word. Formatting only travels when the clipboard also holds an HTML version of the text, which is what this tool puts there. Docs then reads the HTML and applies its own styles: Heading 1–6, bold, italic, lists, a real table, links.',
   },
   {
-    q: 'Google Docs has a “Paste from Markdown” option — why use this?',
+    q: 'Google Docs has a “Paste from Markdown” option, so why use this?',
     a: 'It does, since July 2024: Tools → Preferences → Enable Markdown, then right-click → Paste from Markdown. If it is on for your account, use it. This page is for when it is not (a Workspace admin has not enabled it, or the destination is Word, Gmail, Outlook, Teams or Notion rather than Docs), when you want to see the result before it lands in the document, or when you need the HTML itself.',
   },
   {
     q: 'Do tables and code blocks survive the paste?',
-    a: 'Tables paste as real tables: the HTML carries a bordered table with a header row, and Google Docs, Word and Outlook build one from it. Code pastes as monospace text — Docs has no "code block" style, so the tool marks code with a monospace font (Consolas / Courier New) that the editor keeps. Nested lists paste as nested lists; task items paste with ☑ and ☐ characters, since checkboxes are not something HTML can carry into Docs.',
+    a: 'Tables paste as real tables: the HTML carries a bordered table with a header row, and Google Docs, Word and Outlook build one from it. Code pastes as monospace text; Docs has no "code block" style, so the tool marks code with a monospace font (Consolas / Courier New) that the editor keeps. Nested lists paste as nested lists; task items paste with ☑ and ☐ characters, since checkboxes are not something HTML can carry into Docs.',
   },
   {
     q: 'Can I download a .docx file?',
@@ -72,7 +72,7 @@ const faq = [
     </p>
     <p>
       This tool converts the Markdown to HTML in your browser, shows you that HTML rendered, and on <strong>Copy for Google Docs</strong> writes both the HTML and a plain-text version to the clipboard. Any editor
-      that understands formatted paste — Google Docs, Microsoft Word, Gmail, Outlook, Teams, Notion, Confluence — reads
+      that understands formatted paste (Google Docs, Microsoft Word, Gmail, Outlook, Teams, Notion, Confluence) reads
       the HTML and applies its native styles. A plain text box, a terminal or a code editor takes the text version. The
       HTML is deliberately simple: semantic tags, a monospace font on code, a border on tables, nothing else, so the
       destination's own styles apply rather than fighting inline ones.
@@ -95,7 +95,7 @@ const faq = [
     <h2>Options explained</h2>
     <ul>
       <li><strong>Copy for Google Docs</strong> puts the formatted result on the clipboard as HTML plus plain text. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the input box does the same. If your browser cannot write HTML to the clipboard directly (older Firefox), the tool selects the preview and copies that instead, which carries the same formatting.</li>
-      <li><strong>Open a new Google Doc ↗</strong> opens <code>docs.new</code> in a new tab — a blank document ready for the paste. It is a plain link; nothing is sent to it.</li>
+      <li><strong>Open a new Google Doc ↗</strong> opens <code>docs.new</code> in a new tab, a blank document ready for the paste. It is a plain link; nothing is sent to it.</li>
       <li><strong>Copy HTML</strong> copies the HTML fragment as text, for a CMS field, an email template or a page.</li>
       <li><strong>Download .html</strong> saves the fragment wrapped in a minimal page (<code>&lt;meta charset="utf-8"&gt;</code> and a title) as <code>document.html</code>, which Word opens directly.</li>
       <li><strong>Load sample</strong> inserts the checklist shown above; <strong>Clear</strong> empties the input and the preview.</li>
@@ -106,8 +106,8 @@ const faq = [
     <ul>
       <li><strong>Nested lists</strong> nest in the HTML, so they nest in Docs: <code>- a / (two spaces) - b / (four) 1. c</code> gives <code>{nested}</code>.</li>
       <li><strong>Tight and loose lists</strong> follow Markdown: items with no blank line between them paste as plain list items (<code>{tight}</code>); items separated by blank lines carry a paragraph each (<code>{loose}</code>), which Docs shows with extra spacing.</li>
-      <li><strong>Task lists</strong> become <code>{tasks}</code> — a character, not a checkbox, because HTML on the clipboard cannot create Docs checkboxes.</li>
-      <li><strong>Code keeps its characters</strong> and gets the monospace font through <code>{codeTag}</code>; the language name after the opening fence is not carried over. Syntax colouring is not applied — Docs has nowhere to keep it.</li>
+      <li><strong>Task lists</strong> become <code>{tasks}</code>: a character, not a checkbox, because HTML on the clipboard cannot create Docs checkboxes.</li>
+      <li><strong>Code keeps its characters</strong> and gets the monospace font through <code>{codeTag}</code>; the language name after the opening fence is not carried over. Syntax colouring is not applied. Docs has nowhere to keep it.</li>
       <li><strong>Images</strong> are passed as their address: <code>{image}</code>. Whether the destination fetches and shows the picture is up to that application; Docs generally does for a public URL, an email draft may not.</li>
       <li><strong>Links with a <code>javascript:</code> or <code>data:</code> address are dropped</strong>, keeping only their text, so a pasted document can never carry a script: <code>{unsafe}</code>.</li>
       <li><strong>HTML typed into the Markdown is text, not markup.</strong> <code>&lt;b&gt;typed&lt;/b&gt;</code> is escaped and shows as those characters: <code>{rawHtml}</code>. If you have HTML already, paste it into the destination directly.</li>

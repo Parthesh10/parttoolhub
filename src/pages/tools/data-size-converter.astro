@@ -26,27 +26,27 @@ if (nonNumericErr.ok) throw new Error('page claims non-numeric input is refused'
 
 const steps = [
   'Type a size and choose which <strong>From unit</strong> it\'s in.',
-  'Pick <strong>Decimal (1000)</strong> or <strong>Binary (1024)</strong> — see the FAQ if you\'re not sure which one you need.',
-  'Every unit updates at once — bytes through petabytes, plus bits.',
+  'Pick <strong>Decimal (1000)</strong> or <strong>Binary (1024)</strong> (see the FAQ if you\'re not sure which one you need).',
+  'Every unit updates at once: bytes through petabytes, plus bits.',
   'Click any result to copy just that value.',
 ];
 
 const faq = [
   {
     q: 'Why does my 1 TB hard drive show as only 931 GB in Windows?',
-    a: `Manufacturers advertise storage in decimal terabytes (1 TB = 1,000,000,000,000 bytes — the "Decimal" mode here), but Windows reports free space in binary gibibytes while still calling them "GB" (1 GiB = 1,073,741,824 bytes). The same ${driveExample.value.bytes.toLocaleString()} bytes reads as <strong>${formatSize(driveExample.value.values.GB)} GB</strong> in decimal but only <strong>${formatSize(driveActualBinaryGB.value.values.GB)} ${unitLabel('GB', 'binary')}</strong> in binary — nothing is missing, it's the same number of bytes measured against two different definitions of "giga".`,
+    a: `Manufacturers advertise storage in decimal terabytes (1 TB = 1,000,000,000,000 bytes, the "Decimal" mode here), but Windows reports free space in binary gibibytes while still calling them "GB" (1 GiB = 1,073,741,824 bytes). The same ${driveExample.value.bytes.toLocaleString()} bytes reads as <strong>${formatSize(driveExample.value.values.GB)} GB</strong> in decimal but only <strong>${formatSize(driveActualBinaryGB.value.values.GB)} ${unitLabel('GB', 'binary')}</strong> in binary: nothing is missing, it's the same number of bytes measured against two different definitions of "giga".`,
   },
   {
-    q: 'Which one should I use — decimal or binary?',
+    q: 'Which one should I use, decimal or binary?',
     a: 'Decimal (1000-based) is what storage manufacturers, network speeds and most marketing use. Binary (1024-based) is what operating systems, RAM and file managers usually display, and the technically correct meaning of KiB/MiB/GiB. If a number you were given doesn\'t match what this tool shows, try the other base before assuming either is wrong.',
   },
   {
     q: 'What is the difference between MB and Mb (or MB/s and Mbps)?',
-    a: `Capital B is bytes, lowercase b is bits — and there are 8 bits in a byte. An internet plan advertised as "100 Mbps" (100 megabits per second) downloads at about ${formatSize(mbpsExample.value.bytes / 8)} bytes per second, roughly <strong>${formatSize(mbpsExample.value.values.MB / 8)} MB/s</strong> — not 100 MB/s, which is 8 times faster. This tool always shows both bytes and bits side by side for exactly this mix-up.`,
+    a: `Capital B is bytes, lowercase b is bits. There are 8 bits in a byte. An internet plan advertised as "100 Mbps" (100 megabits per second) downloads at about ${formatSize(mbpsExample.value.bytes / 8)} bytes per second, roughly <strong>${formatSize(mbpsExample.value.values.MB / 8)} MB/s</strong>, not 100 MB/s, which is 8 times faster. This tool always shows both bytes and bits side by side for exactly this mix-up.`,
   },
   {
     q: 'Does this handle fractional sizes, like 2.5 GB?',
-    a: 'Yes — any decimal number is accepted, not just whole numbers. Negative sizes and non-numeric text are refused, since neither means anything as a data size.',
+    a: 'Yes. Any decimal number is accepted, not just whole numbers. Negative sizes and non-numeric text are refused, since neither means anything as a data size.',
   },
 ];
 ---
@@ -61,7 +61,7 @@ const faq = [
       manufacturers, network speeds and most marketing use <strong>decimal</strong> (1 GB =
       1000<sup>3</sup> bytes, matching the metric prefix "giga"), while operating systems, RAM
       capacity and file managers usually mean <strong>binary</strong> (1 GiB = 1024<sup>3</sup>
-      bytes — the correct unit is GiB, though "GB" gets used for it constantly). Neither is wrong;
+      bytes, the correct unit is GiB, though "GB" gets used for it constantly). Neither is wrong;
       picking the wrong one for the number you already have is what produces a mismatch. This tool
       keeps the two separate instead of quietly picking one.
     </p>
@@ -76,27 +76,27 @@ const faq = [
 
     <h2>Options explained</h2>
     <ul>
-      <li><strong>From unit</strong> — Bytes, KB, MB, GB, TB or PB. Selecting a unit shows every other unit's equivalent value; the row for the unit you entered is highlighted.</li>
-      <li><strong>Decimal (1000) / Binary (1024)</strong> — see the FAQ for which one you likely want. Switching this option re-labels KB/MB/GB… as KiB/MiB/GiB… for binary, since those are the unit's real names.</li>
+      <li><strong>From unit</strong>: Bytes, KB, MB, GB, TB or PB. Selecting a unit shows every other unit's equivalent value; the row for the unit you entered is highlighted.</li>
+      <li><strong>Decimal (1000) / Binary (1024)</strong> chooses the base; see the FAQ for which one you likely want. Switching this option re-labels KB/MB/GB… as KiB/MiB/GiB… for binary, since those are the unit's real names.</li>
       <li>Click any result row to copy just that value.</li>
     </ul>
 
     <h2>Edge cases and common errors</h2>
     <ul>
-      <li><strong>Negative sizes are refused.</strong> "{negativeErr.ok ? '' : negativeErr.error}" — a negative amount of data doesn't mean anything here, so it's rejected rather than silently made positive.</li>
+      <li><strong>Negative sizes are refused.</strong> "{negativeErr.ok ? '' : negativeErr.error}": a negative amount of data doesn't mean anything here, so it's rejected rather than silently made positive.</li>
       <li><strong>Non-numeric input is refused</strong> with "{nonNumericErr.ok ? '' : nonNumericErr.error}" rather than converting as if it were zero.</li>
       <li><strong>Astronomically large sizes are refused</strong> once the byte count would exceed what a JavaScript number can represent exactly (about 9 quadrillion), rather than silently returning an imprecise answer.</li>
-      <li><strong>Bits vs bytes</strong> — see the FAQ; this is the single most common mix-up this tool exists to prevent.</li>
+      <li><strong>Bits vs bytes</strong>, covered in the FAQ, is the single most common mix-up this tool exists to prevent.</li>
       <li><strong>Zero is a valid size</strong> and converts to zero in every unit, not an error.</li>
     </ul>
 
     <h2>Do the same thing in code</h2>
-    <pre><code>{`// JavaScript — decimal
+    <pre><code>{`// JavaScript: decimal
 const gb = bytes / 1000 ** 3;
-// JavaScript — binary (the correct unit is GiB, not GB)
+// JavaScript: binary (the correct unit is GiB, not GB)
 const gib = bytes / 1024 ** 3;
 
-# Python — same distinction
+# Python: same distinction
 gb = bytes / 1000 ** 3
 gib = bytes / 1024 ** 3`}</code></pre>
     <p>

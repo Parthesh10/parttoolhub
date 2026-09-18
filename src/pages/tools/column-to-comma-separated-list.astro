@@ -45,7 +45,7 @@ const faq = [
     a: 'Yes. Select a column in your spreadsheet, copy it, and paste here. Each cell becomes one line, which is exactly what the converter expects. Trailing spaces from cells are trimmed automatically.',
   },
   {
-    q: 'How do I go the other way — from a comma list back into a column?',
+    q: 'How do I go the other way, from a comma list back into a column?',
     a: 'Use the companion <a href="/tools/comma-separated-list-to-column">comma separated list to column</a> tool, or click <em>Split back to column</em> under the result box, which opens that tool with your list already loaded.',
   },
 ];
@@ -90,7 +90,7 @@ const faq = [
     <h3>Building a SQL <code>IN</code> clause</h3>
     <p>
       You have a column of IDs from a report and need to query those exact rows. Paste the IDs, click <strong>SQL IN</strong>, and
-      drop the result straight after <code>WHERE id IN</code>. For numeric IDs you may prefer no quotes at all — use the <strong>Plain</strong>
+      drop the result straight after <code>WHERE id IN</code>. For numeric IDs you may prefer no quotes at all; use the <strong>Plain</strong>
       preset and wrap the whole list in parentheses:
     </p>
     <pre><code>SELECT * FROM orders WHERE customer_id IN ({sqlExample});</code></pre>
@@ -104,7 +104,7 @@ const faq = [
 
     <h3>Turning spreadsheet rows into code</h3>
     <p>
-      Product SKUs, country codes, feature flags — data often starts life in a spreadsheet and needs to end up in an array. The <strong>JSON array</strong> and <strong>Python list</strong> presets add the right quotes and brackets so the result parses
+      Product SKUs, country codes, feature flags: data often starts life in a spreadsheet and needs to end up in an array. The <strong>JSON array</strong> and <strong>Python list</strong> presets add the right quotes and brackets so the result parses
       on the first try; paste the result into the <a href="/tools/json-formatter">JSON Formatter</a> if you want it validated.
     </p>
 
@@ -112,8 +112,8 @@ const faq = [
     <ul>
       <li><strong>Presets</strong> (No spaces, Plain, SQL IN, JSON array, Python list, Semicolon, Pipe, Regex OR) fill the separator and wrapper boxes in one click. <strong>No spaces</strong> is what the page starts on. The highlighted chip is the preset that matches the current settings; edit any box by hand and the highlight clears.</li>
       <li><strong>Between items</strong> is the separator: Comma only (the default), Comma + space, Semicolon + space, Semicolon only, Pipe with spaces, Pipe only, Space, Tab, New line, or <em>Custom…</em> for anything you type, including several characters such as <code> :: </code>.</li>
-      <li><strong>Wrap each item — Before / After</strong> adds text around every item, e.g. <code>'</code> and <code>'</code> for SQL string literals. Nothing inside the item is escaped (see edge cases).</li>
-      <li><strong>Wrap whole list — Start / End</strong> adds text once at the beginning and end, e.g. <code>(</code> and <code>)</code>.</li>
+      <li><strong>Wrap each item: Before / After</strong> adds text around every item, e.g. <code>'</code> and <code>'</code> for SQL string literals. Nothing inside the item is escaped (see edge cases).</li>
+      <li><strong>Wrap whole list: Start / End</strong> adds text once at the beginning and end, e.g. <code>(</code> and <code>)</code>.</li>
       <li><strong>Trim spaces around items</strong> (on by default) removes leading and trailing spaces and tabs from each line before anything else happens.</li>
       <li><strong>Skip blank lines</strong> (on by default) drops lines that are empty after trimming and reports them as dropped. Untick it to keep them as empty items: <code>a, , b</code>.</li>
       <li><strong>Remove duplicates</strong> keeps the first occurrence of each item; <strong>…ignoring letter case</strong> makes <code>Apple</code>, <code>apple</code> and <code>APPLE</code> collapse to whichever was written first.</li>
@@ -126,8 +126,8 @@ const faq = [
     <h2>Edge cases and common errors</h2>
     <ul>
       <li><strong>Quotes inside values are not escaped.</strong> <code>O'Brien</code> with the SQL IN preset produces <code>{sqlQuoteGotcha}</code>, which is not valid SQL, and a value containing <code>"</code> breaks the JSON array preset the same way. Fix those values by hand, or run the JSON result through the <a href="/tools/json-formatter">JSON Formatter</a>, which will show exactly where it breaks.</li>
-      <li><strong>Values containing the separator</strong> — a line such as <code>Smith, John</code> becomes two items to anything that reads the output as CSV. Choose a separator that does not occur in the data (Pipe or Tab), or wrap each item in quotes.</li>
-      <li><strong>Numeric sort reads the first number it can find</strong> after stripping everything except digits, <code>.</code> and <code>-</code>: <code>$42</code> sorts as 42, <code>1,234.5</code> as 1234.5, and lines with no digits go last. Version strings do not work this way — <code>v2.10</code> reads as 2.1 and sorts as <code>{versionNumeric}</code>. Use <em>A → Z</em> instead, which compares digit runs naturally: <code>{versionNatural}</code>.</li>
+      <li><strong>Values containing the separator</strong>: a line such as <code>Smith, John</code> becomes two items to anything that reads the output as CSV. Choose a separator that does not occur in the data (Pipe or Tab), or wrap each item in quotes.</li>
+      <li><strong>Numeric sort reads the first number it can find</strong> after stripping everything except digits, <code>.</code> and <code>-</code>: <code>$42</code> sorts as 42, <code>1,234.5</code> as 1234.5, and lines with no digits go last. Version strings do not work this way. <code>v2.10</code> reads as 2.1 and sorts as <code>{versionNumeric}</code>. Use <em>A → Z</em> instead, which compares digit runs naturally: <code>{versionNatural}</code>.</li>
       <li><strong>A trailing newline counts as a blank line.</strong> Three lines followed by Enter shows “{trailingNewline.count} items · {trailingNewline.dropped} dropped”; nothing is missing, the final empty line was skipped.</li>
       <li><strong>Windows line endings</strong> (<code>\r\n</code>) and old-Mac <code>\r</code> are recognised, so pasting from any editor works.</li>
       <li><strong>Tabs inside a line are kept.</strong> Two spreadsheet columns copied together arrive as <code>a[tab]b</code> per line and become one item each. Copy a single column at a time.</li>

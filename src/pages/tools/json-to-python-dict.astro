@@ -22,17 +22,17 @@ const bigInt = (jsonToPython('{"id": 12345678901234567890}', { indent: 0 }) as {
 const singleLine = (jsonToPython('{"a": 1, "b": [1, 2]}', { indent: 0 }) as { ok: true; output: string }).output;
 
 const steps = [
-  'Paste JSON — an object, array, string, number, boolean or <code>null</code> — exactly as an API response, config file or <code>JSON.stringify</code> printed it.',
+  'Paste JSON (an object, array, string, number, boolean or <code>null</code>) exactly as an API response, config file or <code>JSON.stringify</code> printed it.',
   'Choose the indent: 2 spaces, 4 spaces, Tab, or <em>Single line</em> for one unbroken statement.',
   'Tick <strong>Sort keys alphabetically</strong> if you need a stable order for diffing against another version.',
-  'If it does not convert, the error names the character position JSON.parse stopped at — JSON is stricter than Python about quotes, commas and comments.',
+  'If it does not convert, the error names the character position JSON.parse stopped at. JSON is stricter than Python about quotes, commas and comments.',
   '<strong>Copy to clipboard</strong>, or <strong>Download .py</strong> to save it as a snippet.',
 ];
 
 const faq = [
   {
     q: 'Why doesn’t Python’s json module just do this?',
-    a: '<code>json.loads()</code> already parses JSON into native Python objects — this tool exists for when you don’t have a Python process running, only a browser: pasting an API response or a config file here gives you back the exact literal source you would type to recreate it, ready to paste into a script.',
+    a: '<code>json.loads()</code> already parses JSON into native Python objects; this tool exists for when you don’t have a Python process running, only a browser: pasting an API response or a config file here gives you back the exact literal source you would type to recreate it, ready to paste into a script.',
   },
   {
     q: 'Why are booleans and null capitalized in the output?',
@@ -40,11 +40,11 @@ const faq = [
   },
   {
     q: 'Does key order change from what I pasted?',
-    a: `Only in one case: JavaScript (and therefore this tool, which parses with <code>JSON.parse</code>) always lists keys that look like array indices — <code>"0"</code>, <code>"1"</code>, <code>"2"</code> — in ascending numeric order before any other keys, regardless of where they appeared in the source. Every other key keeps its original position. Python’s own <code>json.loads</code> does not do this reordering, so if exact order matters, sort keys explicitly or avoid all-digit keys.`,
+    a: `Only in one case: JavaScript (and therefore this tool, which parses with <code>JSON.parse</code>) always lists keys that look like array indices (<code>"0"</code>, <code>"1"</code>, <code>"2"</code>) in ascending numeric order before any other keys, regardless of where they appeared in the source. Every other key keeps its original position. Python’s own <code>json.loads</code> does not do this reordering, so if exact order matters, sort keys explicitly or avoid all-digit keys.`,
   },
   {
     q: 'Can I use the result as-is in my code?',
-    a: 'Yes — the output is a plain Python literal (dict, list, string, number, boolean or <code>None</code>), so <code>data = &lt;paste&gt;</code> or <code>ast.literal_eval()</code> on it both work without modification.',
+    a: 'Yes. The output is a plain Python literal (dict, list, string, number, boolean or <code>None</code>), so <code>data = &lt;paste&gt;</code> or <code>ast.literal_eval()</code> on it both work without modification.',
   },
 ];
 ---
@@ -57,12 +57,12 @@ const faq = [
     <p>
       JSON and Python's dict/list syntax look almost interchangeable, which is exactly what makes copying one into the other
       by hand risky: JSON requires double-quoted strings and spells its constants <code>true</code>, <code>false</code> and <code>null</code>, while Python requires the capitalized <code>True</code>, <code>False</code> and <code>None</code>
-      and is happy with either quote style. Paste raw JSON into a <code>.py</code> file and it mostly runs — until it hits
+      and is happy with either quote style. Paste raw JSON into a <code>.py</code> file and it mostly runs, until it hits
       one of those three keywords and raises a <code>NameError</code>.
     </p>
     <p>
       This tool parses the JSON with the same rules a browser's <code>JSON.parse</code> uses, then re-serialises the result
-      as Python source — the reverse of the site's <a href="/tools/python-dict-to-json">Python Dict to JSON</a> converter.
+      as Python source (the reverse of the site's <a href="/tools/python-dict-to-json">Python Dict to JSON</a> converter).
       Nothing is <code>eval()</code>'d in either direction.
     </p>
 
@@ -76,7 +76,7 @@ const faq = [
     <ul>
       <li><strong>Indent: 4 spaces / 2 spaces / Tab / Single line</strong> sets the output layout. 4 spaces is the PEP 8
         convention this tool defaults to; <em>Single line</em> writes the whole literal on one row (still valid Python,
-        e.g. <code>{singleLine}</code>, just not pretty-printed — there is no equivalent of JSON minification for source code).</li>
+        e.g. <code>{singleLine}</code>, just not pretty-printed; there is no equivalent of JSON minification for source code).</li>
       <li><strong>Sort keys alphabetically</strong> sorts every object's keys at every depth in code-point order, matching
         Python's own <code>json.dumps(obj, sort_keys=True)</code>; uppercase keys sort before lowercase ones.</li>
       <li><strong>Load sample</strong> inserts a small JSON object with a nested array and a <code>null</code>; <strong>Clear</strong> empties the box.</li>
@@ -84,31 +84,31 @@ const faq = [
 
     <h2>Edge cases and common errors</h2>
     <ul>
-      <li><strong>JSON is stricter than it looks.</strong> A trailing comma — <code>{'{"a": 1,}'}</code> — stops with
-        "{trailingCommaErr}"; Python's own dict literals allow trailing commas, JSON does not. Single-quoted JSON —
-        <code>{"{'a': 1}"}</code> — stops with "{singleQuoteErr}", and unquoted keys — <code>{'{a: 1}'}</code> — with
+      <li><strong>JSON is stricter than it looks.</strong> A trailing comma (<code>{'{"a": 1,}'}</code>) stops with
+        "{trailingCommaErr}"; Python's own dict literals allow trailing commas, JSON does not. Single-quoted JSON, like
+        <code>{"{'a': 1}"}</code>, stops with "{singleQuoteErr}", and unquoted keys, such as <code>{'{a: 1}'}</code>, with
         "{unquotedKeyErr}". None of these are valid JSON even though all three are valid Python.</li>
-      <li><strong>Comments are not allowed.</strong> Unlike Python's <code>#</code> comments (handled by the site's <a href="/tools/python-dict-to-json">Python Dict to JSON</a> tool), JSON has no comment syntax at all — a <code>//</code> or <code>/* */</code> block anywhere in the input fails the same way a syntax error would.</li>
+      <li><strong>Comments are not allowed.</strong> Unlike Python's <code>#</code> comments (handled by the site's <a href="/tools/python-dict-to-json">Python Dict to JSON</a> tool), JSON has no comment syntax at all: a <code>//</code> or <code>/* */</code> block anywhere in the input fails the same way a syntax error would.</li>
       <li><strong>Duplicate keys keep the last value</strong>, exactly as Python's own dict literal would if you typed
         it directly: <code>{'{"a": 1, "a": 2}'}</code> becomes <code>{dupKeys}</code>.</li>
-      <li><strong>Digit-only keys are reordered.</strong> <code>{'{"2": "b", "1": "a", "x": "c"}'}</code> becomes <code>{reordered}</code> — JavaScript's object model always lists array-index-shaped keys in ascending numeric
+      <li><strong>Digit-only keys are reordered.</strong> <code>{'{"2": "b", "1": "a", "x": "c"}'}</code> becomes <code>{reordered}</code>. JavaScript's object model always lists array-index-shaped keys in ascending numeric
         order first, before this tool ever sees them, so the output key order can differ from the pasted source. Every
         other key keeps its written position.</li>
       <li><strong>Large integers can lose precision.</strong> <code>12345678901234567890</code> becomes <code>{bigInt}</code>, because the number passes through a JavaScript float on the way. Python's own integers
-        have no such limit — if an ID needs every digit, keep it as a JSON string on the way in.</li>
+        have no such limit; if an ID needs every digit, keep it as a JSON string on the way in.</li>
       <li><strong>Size:</strong> a 4 MB JSON document takes well under a second to parse and re-render on a laptop, and
         typing is debounced so the page stays responsive while you edit.</li>
     </ul>
 
     <h2>Do the same thing in code</h2>
-    <p>If you're already inside a Python process, you don't need a text conversion at all — <code>json.loads()</code> gives
+    <p>If you're already inside a Python process, you don't need a text conversion at all, since <code>json.loads()</code> gives
       you the native object directly, and printing it already uses Python's own quotes and constants:</p>
     <pre><code>import json
 data = json.loads(json_text)
 print(data)</code></pre>
     <p class="muted">
       <code>print(data)</code> renders single quotes and <code>True</code>/<code>False</code>/<code>None</code> the same
-      way this tool does, but on one line. For a multi-line, indented layout closer to this page's default, use <code>pprint.pformat(data, indent=1, sort_dicts=False)</code> — it will not match this tool's formatting exactly
+      way this tool does, but on one line. For a multi-line, indented layout closer to this page's default, use <code>pprint.pformat(data, indent=1, sort_dicts=False)</code>. It will not match this tool's formatting exactly
       (it wraps long lines rather than always breaking one item per line), but it is Python's nearest built-in equivalent.
     </p>
   </Fragment>

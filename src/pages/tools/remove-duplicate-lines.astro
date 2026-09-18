@@ -17,7 +17,7 @@ const noTrim = dedupeLines('a\n a \na', { trim: false });
 const steps = [
   'Paste the list, one entry per line.',
   'Tick <strong>Ignore letter case</strong> if <code>Apple</code> and <code>apple</code> should count as the same line; leave <strong>Trim spaces before comparing</strong> on so stray spaces do not create false uniques.',
-  'Choose which copy to keep — <em>First occurrence</em> or <em>Last occurrence</em> — and whether to sort the result.',
+  'Choose which copy to keep, <em>First occurrence</em> or <em>Last occurrence</em>, and whether to sort the result.',
   'Read the counter: it shows how many unique lines remain and how many were removed.',
   '<strong>Copy to clipboard</strong> or <strong>Download .txt</strong>.',
 ];
@@ -29,11 +29,11 @@ const faq = [
   },
   {
     q: 'What does “Keep only lines that had duplicates” do?',
-    a: 'Instead of removing duplicates, it flips the filter around and shows you only the lines that appeared more than once — one copy of each — which is useful for spotting exactly what was duplicated in a large export.',
+    a: 'Instead of removing duplicates, it flips the filter around and shows you only the lines that appeared more than once (one copy of each), which is useful for spotting exactly what was duplicated in a large export.',
   },
   {
     q: 'Does trimming change the lines in the output, or just the comparison?',
-    a: 'Both — when “Trim spaces before comparing” is on, the output lines are trimmed too, so “apple” and “ apple ” are treated as the same line and the surviving copy has no stray spaces.',
+    a: 'Both: when “Trim spaces before comparing” is on, the output lines are trimmed too, so “apple” and “ apple ” are treated as the same line, and the surviving copy has no stray spaces.',
   },
   {
     q: 'How large a list can it handle?',
@@ -53,8 +53,8 @@ const faq = [
       worth of lines. This tool compares every line against every other line and keeps just one copy of each.
     </p>
     <p>
-      By default it preserves your original ordering — the first time a line appears it stays where it was, rather than the
-      whole list being resorted — so a deduplicated list is a strict subset of what you pasted in, easy to diff against the
+      By default it preserves your original ordering (the first time a line appears it stays where it was, rather than the
+      whole list being resorted), so a deduplicated list is a strict subset of what you pasted in, easy to diff against the
       original if you need to check what was removed. If the values are on one line separated by commas rather than one per
       line, split them first with the <a href="/tools/comma-separated-list-to-column">list to column</a> converter.
     </p>
@@ -70,7 +70,7 @@ const faq = [
 
     <h2>Options explained</h2>
     <ul>
-      <li><strong>Ignore letter case</strong> compares lowercased copies of each line. The surviving line keeps its original casing — whichever copy came first (or last) wins.</li>
+      <li><strong>Ignore letter case</strong> compares lowercased copies of each line. The surviving line keeps its original casing; whichever copy came first (or last) wins.</li>
       <li><strong>Trim spaces before comparing</strong> removes leading and trailing spaces and tabs from every line, in the output as well as for the comparison.</li>
       <li><strong>Remove blank lines</strong> drops empty lines entirely. Untick it and blank lines are treated like any other line: they are all duplicates of each other, so exactly one survives.</li>
       <li><strong>Keep only lines that had duplicates</strong> inverts the filter: the output is one copy of each line that appeared two or more times, and nothing else. <code>a, b, a, c, c</code> gives <code>{onlyDup}</code>; if nothing was repeated, the result is empty.</li>
@@ -80,11 +80,11 @@ const faq = [
 
     <h2>Edge cases and common errors</h2>
     <ul>
-      <li><strong>Only exact text matches.</strong> <code>café</code> typed with a precomposed é and <code>café</code> typed with a combining accent look identical but are different strings, and both survive. Normalise upstream if that matters — <code>unicodedata.normalize("NFC", s)</code> in Python.</li>
+      <li><strong>Only exact text matches.</strong> <code>café</code> typed with a precomposed é and <code>café</code> typed with a combining accent look identical but are different strings, and both survive. Normalise upstream if that matters, for example with <code>unicodedata.normalize("NFC", s)</code> in Python.</li>
       <li><strong>Trailing spaces with trimming off</strong> make <code>a</code> and <code>a </code> different lines: <code>a, [space]a[space], a</code> gives {noTrim.unique} unique lines instead of 1.</li>
       <li><strong>Windows (<code>\r\n</code>) and old-Mac (<code>\r</code>) line endings</strong> are recognised; the output always uses <code>\n</code>.</li>
       <li><strong>Blank lines are not counted as “removed”.</strong> The output counter compares non-blank lines only, so five pasted lines with two blanks reads “3 lines” with nothing removed. The input counter shows the raw line total if you need to reconcile.</li>
-      <li><strong>Empty input</strong> gives an empty output and a count of 0 — no error.</li>
+      <li><strong>Empty input</strong> gives an empty output and a count of 0. No error is raised.</li>
     </ul>
 
     <h2>Do the same thing on the command line</h2>

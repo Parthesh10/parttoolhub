@@ -20,7 +20,7 @@ const tupleKeyErr = err("{(1, 2): 'a'}");
 const mixedKeys = (pythonToJson("{1: 'a', 2.5: 'b', True: 'c', None: 'd'}", { indent: 0 }) as { ok: true; output: string }).output;
 
 const steps = [
-  'Paste the Python literal — a dict, list, tuple, set or a single value — exactly as <code>print()</code>, the REPL, a debugger or a log line showed it.',
+  'Paste the Python literal (a dict, list, tuple, set or a single value) exactly as <code>print()</code>, the REPL, a debugger or a log line showed it.',
   'Choose the indent: 2 spaces, 4 spaces, Tab, or <em>Minified</em> for a single line.',
   'Tick <strong>Sort keys alphabetically</strong> if you need a stable order for diffing.',
   'If it does not convert, read the error line: it names the first thing the parser could not treat as a literal value.',
@@ -30,7 +30,7 @@ const steps = [
 const faq = [
   {
     q: 'Why can’t I just use JSON.parse on a printed Python dict?',
-    a: 'Python’s repr() uses single quotes and the literals True, False and None, none of which are valid JSON — JSON.parse rejects them immediately. This tool understands Python’s literal syntax specifically and converts it to the equivalent JSON.',
+    a: 'Python’s repr() uses single quotes and the literals True, False and None, none of which are valid JSON. JSON.parse rejects them immediately. This tool understands Python’s literal syntax specifically and converts it to the equivalent JSON.',
   },
   {
     q: 'What happens to tuples and sets?',
@@ -38,11 +38,11 @@ const faq = [
   },
   {
     q: 'Does it handle nested dicts and multi-line dicts pasted from a debugger?',
-    a: 'Yes — any level of nesting, trailing commas, and Python comments (<code>#…</code>) are all handled, which covers most values copied from a REPL, a debugger watch panel, or a print() call.',
+    a: 'Yes, any level of nesting, trailing commas, and Python comments (<code>#…</code>) are all handled, which covers most values copied from a REPL, a debugger watch panel, or a print() call.',
   },
   {
     q: 'What if a value is a variable name, not a literal?',
-    a: 'The converter only understands literal values (strings, numbers, True/False/None, lists, dicts, tuples, sets) — the same set JSON can represent. A bare variable name like <code>some_var</code> has no fixed value to convert, so it is reported as an error rather than guessed at.',
+    a: 'The converter only understands literal values (strings, numbers, True/False/None, lists, dicts, tuples, sets): the same set JSON can represent. A bare variable name like <code>some_var</code> has no fixed value to convert, so it is reported as an error rather than guessed at.',
   },
 ];
 ---
@@ -54,14 +54,14 @@ const faq = [
     <h2>Why this conversion needs its own parser</h2>
     <p>
       When you <code>print()</code> a Python dictionary, or paste one from a Jupyter notebook, debugger or log line, what you
-      get back is Python's own literal syntax — not JSON. The two look almost identical but differ in exactly the spots that
+      get back is Python's own literal syntax, not JSON. The two look almost identical but differ in exactly the spots that
       make a strict JSON parser fail: single quotes instead of double, <code>True</code>/<code>False</code>/<code>None</code>
       instead of <code>true</code>/<code>false</code>/<code>null</code>, and Python-only types like tuples and sets that JSON
       has no syntax for at all.
     </p>
     <p>
       This tool runs a small Python-literal parser (not <code>eval()</code>, and nothing is executed) that understands that
-      syntax directly, then re-serialises the result as JSON — so you can take output straight from a Python script and paste
+      syntax directly, then re-serialises the result as JSON. That lets you take output straight from a Python script and paste
       it into a config file, an API request body, or a JSON-only tool. It follows the same rules as <code>json.dumps</code> for
       the awkward parts: non-string keys, <code>nan</code>, and duplicate keys.
     </p>
@@ -95,7 +95,7 @@ const faq = [
       <li><strong>Non-string keys follow <code>json.dumps</code>:</strong> <code>{"{1: 'a', 2.5: 'b', True: 'c', None: 'd'}"}</code> becomes <code>{mixedKeys}</code>. A tuple key such as <code>{"{(1, 2): 'a'}"}</code> is rejected with “{tupleKeyErr}”.</li>
       <li><strong><code>float('nan')</code>, <code>float('inf')</code>, <code>nan</code> and <code>inf</code> become <code>null</code></strong>, because JSON cannot express them. Python's own <code>json.dumps</code> would emit the non-standard <code>NaN</code> unless you pass <code>allow_nan=False</code>.</li>
       <li><strong>Duplicate keys keep the last value</strong>, exactly as Python does when it builds the dict.</li>
-      <li><strong>Integers above 2<sup>53</sup> lose precision</strong>: <code>12345678901234567890</code> comes out as <code>12345678901234567000</code>, because the output passes through JavaScript numbers. Python itself would keep every digit — store such IDs as strings.</li>
+      <li><strong>Integers above 2<sup>53</sup> lose precision</strong>: <code>12345678901234567890</code> comes out as <code>12345678901234567000</code>, because the output passes through JavaScript numbers. Python itself would keep every digit. Store such IDs as strings.</li>
       <li><strong>f-strings are not evaluated</strong>: <code>f'hi {'{x}'}'</code> is kept literally as <code>"hi {'{x}'}"</code>. Complex numbers (<code>1+2j</code>) are rejected outright.</li>
       <li><strong>Anything after the value is an error</strong>, not ignored: <code>{"{'a': 1} extra"}</code> stops at <code>extra</code>. Paste one value at a time.</li>
       <li><strong>Size:</strong> a 4 MB literal takes about half a second to parse on a laptop, and typing is debounced so the page stays responsive while you edit.</li>
@@ -106,6 +106,6 @@ const faq = [
     <pre><code>import json, ast
 data = ast.literal_eval(python_repr_string)
 print(json.dumps(data, indent=2))</code></pre>
-    <p class="muted"><code>ast.literal_eval</code> is the safe alternative to <code>eval()</code> — it only accepts literal values, never runs code. Like this tool, it rejects <code>datetime(…)</code> and other object reprs.</p>
+    <p class="muted"><code>ast.literal_eval</code> is the safe alternative to <code>eval()</code>: it only accepts literal values, never runs code. Like this tool, it rejects <code>datetime(…)</code> and other object reprs.</p>
   </Fragment>
 </ToolLayout>

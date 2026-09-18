@@ -28,24 +28,24 @@ const badBinaryErr = err(() => parseNumber('12', 2));
 const emptyErr = err(() => parseNumber(''));
 
 const steps = [
-  'Paste a number — with a <code>0x</code>, <code>0b</code> or <code>0o</code> prefix, or plain decimal digits — or pick its base explicitly from <strong>From base</strong>.',
+  'Paste a number (with a <code>0x</code>, <code>0b</code> or <code>0o</code> prefix, or plain decimal digits) or pick its base explicitly from <strong>From base</strong>.',
   'Read the four results: binary, octal, decimal and hexadecimal, all computed from the same parsed value.',
   'For a negative number, tick <strong>Show as two\'s complement</strong> and pick the <strong>Bit width</strong> if you need the fixed-width bit pattern rather than a plain minus sign.',
-  'Click any result to copy it — the prefix (<code>0x</code>/<code>0b</code>/<code>0o</code>) is included so it pastes straight into most languages\' source code.',
+  'Click any result to copy it: the prefix (<code>0x</code>/<code>0b</code>/<code>0o</code>) is included so it pastes straight into most languages\' source code.',
 ];
 
 const faq = [
   {
     q: 'How does it know which base I typed?',
-    a: 'By the prefix: <code>0x</code> for hexadecimal, <code>0b</code> for binary, <code>0o</code> for octal — the same convention JavaScript, Python, Rust and C all use in source code. Anything with no recognised prefix is read as plain decimal. Set <strong>From base</strong> explicitly if your input has no prefix and is not decimal.',
+    a: 'By the prefix: <code>0x</code> for hexadecimal, <code>0b</code> for binary, <code>0o</code> for octal, the same convention JavaScript, Python, Rust and C all use in source code. Anything with no recognised prefix is read as plain decimal. Set <strong>From base</strong> explicitly if your input has no prefix and is not decimal.',
   },
   {
     q: 'Why does a very large hex value convert without losing digits?',
-    a: `Because the conversion is done with an arbitrary-precision integer type, not a plain JavaScript number, which starts losing precision above 2<sup>53</sup>. <code>0xFFFFFFFFFFFFFFFF</code> (2<sup>64</sup> − 1) converts exactly to <code>${bigDec}</code> — a plain-number implementation would round that.`,
+    a: `Because the conversion is done with an arbitrary-precision integer type, not a plain JavaScript number, which starts losing precision above 2<sup>53</sup>. <code>0xFFFFFFFFFFFFFFFF</code> (2<sup>64</sup> − 1) converts exactly to <code>${bigDec}</code>; a plain-number implementation would round that.`,
   },
   {
     q: 'What’s the difference between a plain minus sign and two’s complement?',
-    a: `By default, a negative number just gets a minus sign in every base — <code>-5</code> in binary is <code>${plainNeg5}</code>, which is simple but only meaningful if you already know the number is signed. Two’s complement instead encodes the sign into a fixed number of bits, the way processors and most typed languages actually store signed integers: <code>-5</code> as a signed 8-bit integer is <code>${tcNeg5}</code>. Turn it on when you need the bit pattern a real 8/16/32/64-bit signed variable would hold.`,
+    a: `By default, a negative number just gets a minus sign in every base: <code>-5</code> in binary is <code>${plainNeg5}</code>, which is simple but only meaningful if you already know the number is signed. Two’s complement instead encodes the sign into a fixed number of bits, the way processors and most typed languages actually store signed integers: <code>-5</code> as a signed 8-bit integer is <code>${tcNeg5}</code>. Turn it on when you need the bit pattern a real 8/16/32/64-bit signed variable would hold.`,
   },
   {
     q: 'What happens if a number does not fit in the bit width I picked?',
@@ -63,12 +63,12 @@ const faq = [
       Binary is what the hardware actually stores; hexadecimal is a compact, human-readable stand-in for binary (each hex
       digit is exactly 4 bits, so conversion between them is mechanical); octal shows up mostly in Unix file permissions
       and some older systems; decimal is what everyone reads and writes by hand. Reading a value in one base while
-      thinking in another — a permission bitmask, a color's hex packed into a 32-bit integer, a memory address — is
+      thinking in another (a permission bitmask, a color's hex packed into a 32-bit integer, a memory address) is
       common enough that doing the arithmetic by hand is both slow and easy to get wrong.
     </p>
 
     <h2>Example</h2>
-    <p>The number <code>{SAMPLE_INPUT}</code> — the magic number at the start of every compiled Java <code>.class</code> file — is, in every base:</p>
+    <p>The number <code>{SAMPLE_INPUT}</code> (the magic number at the start of every compiled Java <code>.class</code> file) is, in every base:</p>
     <pre><code>{sampleBin}
 {sampleOct}
 {sampleDec}
@@ -76,23 +76,23 @@ const faq = [
 
     <h2>Options explained</h2>
     <ul>
-      <li><strong>From base: Auto-detect / Binary / Octal / Decimal / Hexadecimal</strong> — Auto-detect reads the <code>0x</code>/<code>0b</code>/<code>0o</code> prefix if present and otherwise assumes decimal; pick a base
+      <li><strong>From base: Auto-detect / Binary / Octal / Decimal / Hexadecimal</strong>: Auto-detect reads the <code>0x</code>/<code>0b</code>/<code>0o</code> prefix if present and otherwise assumes decimal; pick a base
         explicitly for input with no prefix that is not decimal (plain <code>ff</code>, for instance, is ambiguous
         between hex and an invalid decimal number without it).</li>
-      <li><strong>Show as two's complement</strong> and <strong>Bit width</strong> — see the FAQ. Only affects negative
+      <li><strong>Show as two's complement</strong> and <strong>Bit width</strong>: see the FAQ. Only affects negative
         numbers; positive numbers look the same either way.</li>
       <li><strong>Load sample</strong> inserts <code>{SAMPLE_INPUT}</code>; <strong>Clear</strong> empties the box.</li>
     </ul>
 
     <h2>Edge cases and common errors</h2>
     <ul>
-      <li><strong>Digits that don't fit the base.</strong> <code>12</code> read as binary stops with "{badBinaryErr}" — a
+      <li><strong>Digits that don't fit the base.</strong> <code>12</code> read as binary stops with "{badBinaryErr}". A
         binary number can only contain 0 and 1.</li>
       <li><strong>Empty input</strong> stops with "{emptyErr}" rather than showing four blank results.</li>
       <li><strong>Thousands separators and underscores are tolerated</strong>: <code>1,000,000</code> and <code>1_000_000</code> both parse as one million, matching how many languages let you write a large literal.</li>
-      <li><strong>Values beyond 2<sup>53</sup> convert exactly</strong> — see the FAQ; this is the one place a naive
+      <li><strong>Values beyond 2<sup>53</sup> convert exactly</strong>: see the FAQ; this is the one place a naive
         base-converter built on plain numbers would quietly give the wrong answer.</li>
-      <li><strong>Two's complement out of range</strong> — see the FAQ.</li>
+      <li><strong>Two's complement out of range</strong>: see the FAQ.</li>
       <li><strong>The prefix is always included in the copied value</strong> (<code>0x</code>, <code>0b</code>, <code>0o</code>);
         if your target expects bare digits, just drop the first two characters after copying.</li>
     </ul>
@@ -107,7 +107,7 @@ BigInt('0xcafebabe');        // 3405691582n (exact at any size)
 hex(3405691582)              # '0xcafebabe'
 int('cafebabe', 16)          # 3405691582 (Python ints have no size limit)</code></pre>
     <p class="muted">Python's integers are arbitrary-precision by default, so it never has the precision problem
-      JavaScript's plain <code>Number</code> does — this tool uses JavaScript's <code>BigInt</code> for the same reason
+      JavaScript's plain <code>Number</code> does. This tool uses JavaScript's <code>BigInt</code> for the same reason
       Python doesn't need one.</p>
   </Fragment>
 </ToolLayout>

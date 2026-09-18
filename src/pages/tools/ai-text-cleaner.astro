@@ -24,16 +24,16 @@ const steps = [
 
 const faq = [
   {
-    q: 'Is this a detector — will it tell me if text was written by AI?',
-    a: 'No. It doesn’t judge or classify text; it removes formatting and characters that make AI output look out of place once pasted into an email, document or CMS — Markdown symbols the target doesn’t render, em dashes, curly quotes, and invisible characters some models insert.',
+    q: 'Is this a detector? Will it tell me if text was written by AI?',
+    a: 'No. It doesn’t judge or classify text; it removes formatting and characters that make AI output look out of place once pasted into an email, document or CMS: Markdown symbols the target doesn’t render, em dashes, curly quotes, and invisible characters some models insert.',
   },
   {
     q: 'What are the invisible characters it removes?',
-    a: 'Mainly zero-width spaces, word joiners, a byte-order mark (BOM), soft hyphens and other Unicode formatting characters that some AI tools insert but that render as nothing — yet can break exact-match searches, URL slugs, or copy-paste into code. Non-breaking spaces are turned into ordinary spaces rather than deleted.',
+    a: 'Mainly zero-width spaces, word joiners, a byte-order mark (BOM), soft hyphens and other Unicode formatting characters that some AI tools insert but that render as nothing, yet can break exact-match searches, URL slugs, or copy-paste into code. Non-breaking spaces are turned into ordinary spaces rather than deleted.',
   },
   {
     q: 'Will it change my meaning?',
-    a: 'The default options only touch formatting and punctuation style, not wording. Replacing an em dash with a comma can occasionally read slightly differently in a sentence with several clauses — the “Leave as is” option skips that step if you’d rather keep dashes.',
+    a: 'The default options only touch formatting and punctuation style, not wording. Replacing an em dash with a comma can occasionally read slightly differently in a sentence with several clauses. The “Leave as is” option skips that step if you’d rather keep dashes.',
   },
   {
     q: 'Why remove citation markers like [1] or 【2】?',
@@ -55,7 +55,7 @@ const faq = [
       occasionally characters that don't print at all but are still sitting in the text.
     </p>
     <p>
-      This tool runs a fixed set of text transformations — no AI model involved — so the same input always produces the same
+      This tool runs a fixed set of text transformations (no AI model involved), so the same input always produces the same
       output, and nothing you paste leaves your browser. The Markdown it strips is the CommonMark syntax that every major
       assistant emits; a 1 MB paste cleans in well under a tenth of a second.
     </p>
@@ -69,26 +69,26 @@ const faq = [
 
     <h2>Options explained</h2>
     <ul>
-      <li><strong>Strip headings, bold/italic, links, code</strong> — <code>## Heading</code> → <code>Heading</code>; <code>**bold**</code>, <code>*italic*</code>, <code>__x__</code>, <code>_x_</code> and <code>~~struck~~</code> → their inner text; <code>[text](url)</code> → <code>text</code> with the URL dropped; <code>`code`</code> → <code>code</code>. Fenced <code>```</code> blocks keep their contents and lose the fence lines. Blockquote <code>&gt;</code> markers, <code>---</code> rules and table pipes are removed.</li>
-      <li><strong>…normalize bullet markers to “-”</strong> — <code>* item</code> and <code>+ item</code> become <code>- item</code>; <code>- [ ]</code> and <code>- [x]</code> task boxes are removed. Numbered lists are left as they are.</li>
+      <li><strong>Strip headings, bold/italic, links, code</strong>: <code>## Heading</code> → <code>Heading</code>; <code>**bold**</code>, <code>*italic*</code>, <code>__x__</code>, <code>_x_</code> and <code>~~struck~~</code> → their inner text; <code>[text](url)</code> → <code>text</code> with the URL dropped; <code>`code`</code> → <code>code</code>. Fenced <code>```</code> blocks keep their contents and lose the fence lines. Blockquote <code>&gt;</code> markers, <code>---</code> rules and table pipes are removed.</li>
+      <li><strong>…normalize bullet markers to “-”</strong>: <code>* item</code> and <code>+ item</code> become <code>- item</code>; <code>- [ ]</code> and <code>- [x]</code> task boxes are removed. Numbered lists are left as they are.</li>
       <li><strong>Em dash (—)</strong>: <em>Replace with comma</em>, <em>hyphen</em>, <em>" - "</em>, <em>space</em>, or <em>Leave as is</em>. An en dash between words gets the same treatment (a spaced hyphen in comma mode); a numeric range always becomes a plain hyphen: <code>2010–2020 and A–B</code> → <code>{rangeDash}</code>. In comma mode a dash right before punctuation is dropped rather than producing <code>, .</code></li>
-      <li><strong>Straighten curly quotes (“ ” → ")</strong> — also <code>‘ ’</code> → <code>'</code>, <code>« »</code> → <code>"</code>, and prime marks.</li>
-      <li><strong>Replace … with ...</strong> — the single ellipsis character becomes three periods.</li>
-      <li><strong>Remove invisible / zero-width characters</strong> — zero-width spaces and joiners, soft hyphens, byte-order marks, bidirectional controls and C0/C1 control codes are deleted; non-breaking and other Unicode spaces become a normal space.</li>
-      <li><strong>Remove citation markers ([1], 【2】)</strong> — <code>[1]</code>, <code>[2, 3]</code>, <code>[4-6]</code>, <code>[^5]</code>, <code>【7†source】</code> and <code>[citation needed]</code>.</li>
-      <li><strong>Remove emoji</strong> (off by default) — pictographic emoji, flag pairs and keycap sequences. Unicode also classes <code>©</code> and <code>™</code> as pictographic, so they go too, while <code>★</code> stays: <code>© 2024 ™ ★</code> → <code>{symbols}</code>.</li>
-      <li><strong>Tidy extra spaces and blank lines</strong> — collapses runs of spaces, removes trailing spaces, limits blank lines to one, and removes a space before <code>, . ; : ! ?</code>.</li>
+      <li><strong>Straighten curly quotes (“ ” → ")</strong>, also <code>‘ ’</code> → <code>'</code>, <code>« »</code> → <code>"</code>, and prime marks.</li>
+      <li><strong>Replace … with ...</strong>: the single ellipsis character becomes three periods.</li>
+      <li><strong>Remove invisible / zero-width characters</strong>: zero-width spaces and joiners, soft hyphens, byte-order marks, bidirectional controls and C0/C1 control codes are deleted; non-breaking and other Unicode spaces become a normal space.</li>
+      <li><strong>Remove citation markers ([1], 【2】)</strong>: <code>[1]</code>, <code>[2, 3]</code>, <code>[4-6]</code>, <code>[^5]</code>, <code>【7†source】</code> and <code>[citation needed]</code>.</li>
+      <li><strong>Remove emoji</strong> (off by default): pictographic emoji, flag pairs and keycap sequences. Unicode also classes <code>©</code> and <code>™</code> as pictographic, so they go too, while <code>★</code> stays: <code>© 2024 ™ ★</code> → <code>{symbols}</code>.</li>
+      <li><strong>Tidy extra spaces and blank lines</strong>: collapses runs of spaces, removes trailing spaces, limits blank lines to one, and removes a space before <code>, . ; : ! ?</code>.</li>
     </ul>
 
     <h2>Edge cases and common errors</h2>
     <ul>
       <li><strong>Array indexes look like citations.</strong> <code>items[0] and arr[12]</code> becomes <code>{arrayIndex}</code>. Untick <em>Remove citation markers</em> before cleaning code or anything with bracketed numbers you need.</li>
       <li><strong>Asterisks used as symbols are safe.</strong> <code>2 * 3 * 4</code> and <code>a*b*c</code> are untouched, because emphasis needs the marker touching the text on the inside and not touching a letter on the outside. Underscores inside identifiers (<code>snake_case_name</code>) are also safe.</li>
-      <li><strong>Markdown tables lose their structure</strong>: cells become space-separated words, one line per row — <code>| a | b |</code> plus a separator row and <code>| 1 | 2 |</code> → <code>{table}</code>.</li>
+      <li><strong>Markdown tables lose their structure</strong>: cells become space-separated words, one line per row, as in <code>| a | b |</code> plus a separator row and <code>| 1 | 2 |</code> → <code>{table}</code>.</li>
       <li><strong>Links keep only their label.</strong> Copy the URLs out first if you need them; nested formatting is unwrapped completely (<code>[**x**](u)</code> → <code>x</code>).</li>
       <li><strong>Emoji stay unless you ask</strong>, because plenty of pasted text is meant to keep them.</li>
       <li><strong>Windows line endings</strong> are normalised: the output always uses plain <code>\n</code>.</li>
-      <li><strong>The character count can go up</strong>, not just down — <code>…</code> becomes three characters and an em dash in comma mode becomes <code>, </code>.</li>
+      <li><strong>The character count can go up</strong>, not just down: <code>…</code> becomes three characters, and an em dash in comma mode becomes <code>, </code>.</li>
     </ul>
 
     <h2>Do the same thing in code</h2>

@@ -69,7 +69,7 @@ const faq = [
   },
   {
     q: 'How do I know what image format a Base64 string is?',
-    a: 'Decode it here and read the line under the preview: PNG, JPEG, GIF, WebP, SVG, BMP, ICO or AVIF, taken from the file signature. As a shortcut, PNG Base64 starts with iVBOR, JPEG with /9j/, GIF with R0lGOD, WebP with UklGR and SVG with PHN2Zy or PD94bWw — those are the first bytes of each format encoded.',
+    a: 'Decode it here and read the line under the preview: PNG, JPEG, GIF, WebP, SVG, BMP, ICO or AVIF, taken from the file signature. As a shortcut, PNG Base64 starts with iVBOR, JPEG with /9j/, GIF with R0lGOD, WebP with UklGR and SVG with PHN2Zy or PD94bWw: those are the first bytes of each format encoded.',
   },
   {
     q: 'Can I decode a Base64 PDF or other file here?',
@@ -113,7 +113,7 @@ const faq = [
     <ul>
       <li><strong>Load sample</strong> inserts the data URI above, the same string the Example section shows.</li>
       <li><strong>Clear</strong> empties the box and the preview.</li>
-      <li><strong>Preview background</strong> — <strong>Checker</strong>, <strong>Light</strong> or <strong>Dark</strong> — changes only the backdrop behind the image, not the image. Transparent PNG corners show the pattern through them; a white icon on a transparent background is invisible on Light and obvious on Dark.</li>
+      <li><strong>Preview background</strong> (<strong>Checker</strong>, <strong>Light</strong> or <strong>Dark</strong>) changes only the backdrop behind the image, not the image. Transparent PNG corners show the pattern through them; a white icon on a transparent background is invisible on Light and obvious on Dark.</li>
       <li><strong>Download image</strong> saves the decoded bytes as <code>image.png</code>, <code>image.jpg</code>, <code>image.gif</code>, <code>image.webp</code>, <code>image.svg</code>, <code>image.bmp</code>, <code>image.ico</code> or <code>image.avif</code>, according to the detected format. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the text box does the same.</li>
       <li><strong>Copy data URI</strong> copies <code>data:&lt;type&gt;;base64,…</code> rebuilt from the detected type and freshly encoded bytes, so it is clean even if what you pasted had line breaks or the wrong prefix.</li>
       <li><strong>Download as file anyway</strong> appears only when the Base64 decoded fine but the bytes are not an image; it saves them as <code>.pdf</code>, <code>.zip</code>, <code>.gz</code> or <code>.bin</code>.</li>
@@ -127,7 +127,7 @@ const faq = [
       <li><strong>Copied from JSON or a database.</strong> <code>{jsonForm}</code> with its quotes, or a value where every <code>/</code> became <code>\/</code>, decodes after the quotes and escapes are removed; the status line lists “removed quotes and JSON escapes”.</li>
       <li><strong>Line-wrapped or space-broken Base64</strong> (email, PEM, a wrapped terminal) decodes as-is: whitespace inside the string is ignored.</li>
       <li><strong>URL-safe alphabet and missing padding.</strong> The sample with <code>-</code> and <code>_</code> in place of <code>+</code> and <code>/</code> and no trailing <code>=</code> decodes, with both repairs noted. A string that was percent-encoded for a query string (<code>%2B</code>, <code>%2F</code>, <code>%3D</code>) is decoded first.</li>
-      <li><strong>SVG data URIs are often not Base64.</strong> <code>data:image/svg+xml,%3Csvg…</code> and <code>data:image/svg+xml;utf8,&lt;svg…</code> are percent-encoded or raw text; both are handled, and the size comes from the <code>width</code>/<code>height</code> attributes or the <code>viewBox</code> — the example above reports {svgSize} px. SVG is previewed through an <code>&lt;img&gt;</code>, which does not run scripts inside it.</li>
+      <li><strong>SVG data URIs are often not Base64.</strong> <code>data:image/svg+xml,%3Csvg…</code> and <code>data:image/svg+xml;utf8,&lt;svg…</code> are percent-encoded or raw text; both are handled, and the size comes from the <code>width</code>/<code>height</code> attributes or the <code>viewBox</code>; the example above reports {svgSize} px. SVG is previewed through an <code>&lt;img&gt;</code>, which does not run scripts inside it.</li>
       <li><strong>Text, not an image.</strong> <code>SGVsbG8sIHdvcmxkIQ==</code> reports “{textErr}” and offers the text decoder.</li>
       <li><strong>Some other file.</strong> A Base64 PDF reports “{pdfErr}”; unrecognised bytes such as <code>/w==</code> report “{binaryErr}”. Both offer <strong>Download as file anyway</strong>.</li>
       <li><strong>Invalid Base64.</strong> A stray character gives “{alphabetErr}”; a length Base64 cannot produce gives “{danglingErr}”; <code>data:image/png;base64</code> with nothing after it gives “{noCommaErr}”.</li>
@@ -144,7 +144,7 @@ const faq = [
     <h3>Shell</h3>
     <pre><code>{shSnippet}</code></pre>
     <p>
-      To go the other way — a file into a data URI — use <a href="/tools/image-to-base64">Image to Base64</a>. If the
+      To go the other way (a file into a data URI), use <a href="/tools/image-to-base64">Image to Base64</a>. If the
       Base64 came out of a JWT, the <a href="/tools/jwt-decoder">JWT decoder</a> splits and decodes all three segments
       at once; if it was pasted from a URL, the <a href="/tools/url-encode-decode">URL decoder</a> shows the un-escaped
       form.

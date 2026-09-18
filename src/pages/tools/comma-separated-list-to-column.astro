@@ -27,7 +27,7 @@ const faq = [
   },
   {
     q: 'My values contain commas inside quotes. Will they be split incorrectly?',
-    a: 'Yes — this tool performs a simple split and does not parse quoted CSV fields, so a value like <code>"Smith, John"</code> is broken into two items. For that kind of data, choose a separator that does not appear inside the values, or export tab-separated from the spreadsheet first.',
+    a: 'Yes. This tool performs a simple split and does not parse quoted CSV fields, so a value like <code>"Smith, John"</code> is broken into two items. For that kind of data, choose a separator that does not appear inside the values, or export tab-separated from the spreadsheet first.',
   },
   {
     q: 'Can I paste a JSON or Python array directly?',
@@ -46,7 +46,7 @@ const faq = [
   <Fragment slot="content">
     <h2>When you need a column instead of a list</h2>
     <p>
-      Data tends to travel as a single line — a comma separated field in a CRM export, a JSON array in an API response, a
+      Data tends to travel as a single line: a comma separated field in a CRM export, a JSON array in an API response, a
       semicolon separated recipient list in an email header. But spreadsheets, form fields and many scripts want each value on
       its own row. This tool makes that switch without opening a text editor and doing a find-and-replace, and it strips the
       brackets and quotes that a JSON array, Python list or SQL <code>IN (…)</code> clause wraps around the values.
@@ -61,27 +61,27 @@ const faq = [
     <h3>Read an ID list out of a query</h3>
     <p>
       Copy the contents of an <code>IN (…)</code> clause, paste it here, and the parentheses and quotes are stripped so you are
-      left with the raw IDs — ready for a lookup or a VLOOKUP.
+      left with the raw IDs, ready for a lookup or a VLOOKUP.
     </p>
 
     <h3>Count and de-duplicate</h3>
     <p>
       The item counter shows how many values you actually have. Tick <em>Remove duplicates</em> and the counter shows how many
-      were dropped — a quick sanity check on messy exports. For a column that is already one-per-line, the dedicated <a href="/tools/remove-duplicate-lines">Remove Duplicate Lines</a> tool adds case-insensitive matching and keep-last.
+      were dropped (a quick sanity check on messy exports). For a column that is already one-per-line, the dedicated <a href="/tools/remove-duplicate-lines">Remove Duplicate Lines</a> tool adds case-insensitive matching and keep-last.
     </p>
 
     <h2>Example</h2>
     <p>A JSON array pasted whole:</p>
     <pre><code>{sample}</code></pre>
-    <p>comes out as one bare value per line — the brackets and quotes are removed and the comma is detected as the separator:</p>
+    <p>comes out as one bare value per line. The brackets and quotes are removed and the comma is detected as the separator:</p>
     <pre><code>{sampleOut}</code></pre>
 
     <h2>Options explained</h2>
     <ul>
       <li><strong>Separator: Detect automatically</strong> counts commas, semicolons, pipes, tabs and new lines and splits on the most frequent one; on a tie the earlier in that list wins (comma first). If none appears at all, the text is split on whitespace.</li>
       <li><strong>Comma / Semicolon / Pipe / Tab / Any whitespace / Custom…</strong> force a separator. <em>Any whitespace</em> splits on runs of spaces, tabs and newlines together. <em>Custom…</em> uses exactly the characters you type, spaces included; leaving the custom box empty falls back to automatic detection.</li>
-      <li><strong>Trim spaces around items</strong> — <code>a , b</code> gives <code>a</code> and <code>b</code>, not <code>a </code> and <code> b</code>.</li>
-      <li><strong>Skip empty items</strong> — <code>a,,b</code> gives two items and reports one dropped. Untick to keep an empty line in the output.</li>
+      <li><strong>Trim spaces around items</strong>: <code>a , b</code> gives <code>a</code> and <code>b</code>, not <code>a </code> and <code> b</code>.</li>
+      <li><strong>Skip empty items</strong> turns <code>a,,b</code> into two items and reports one dropped; untick it to keep an empty line in the output.</li>
       <li><strong>Remove surrounding quotes</strong> strips one matching pair of <code>'</code>, <code>"</code> or <code>`</code> from each item; a quote on one side only is left alone.</li>
       <li><strong>Remove duplicates</strong> matches exact text, so <code>a</code> and <code>A</code> are different items.</li>
       <li><strong>Reverse order</strong>, <strong>Sort</strong> and <strong>Letter case</strong> behave as in the <a href="/tools/column-to-comma-separated-list">column to list</a> tool: natural-order A → Z, numeric sorts that read the first number in each item, and simple case changes.</li>

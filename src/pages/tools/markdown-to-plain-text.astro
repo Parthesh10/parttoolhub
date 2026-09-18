@@ -37,7 +37,7 @@ if (snake !== 'use snake_case_name and init here') throw new Error('page claims 
 if (emptyOut !== '') throw new Error('page claims empty input gives empty output');
 
 const steps = [
-  'Paste the Markdown — an answer from ChatGPT, Claude, Copilot or Cursor, a README, a Notion export — into the left box.',
+  'Paste the Markdown (an answer from ChatGPT, Claude, Copilot or Cursor, a README, a Notion export) into the left box.',
   'Pick <strong>Output for</strong>: <strong>Plain text</strong> drops every symbol; <strong>Slack</strong>, <strong>WhatsApp</strong> and <strong>Google Chat</strong> rewrite the formatting in that app\'s own markup so it renders bold and italic there.',
   'Choose how <strong>Links</strong> are written: the text with the URL in brackets, the URL alone, or the text alone.',
   '<strong>Copy to clipboard</strong> (or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the input box) and paste into the chat, form or email.',
@@ -46,7 +46,7 @@ const steps = [
 const faq = [
   {
     q: 'Why do asterisks and hashes show up when I paste an AI answer into Teams or a web form?',
-    a: 'Because the answer is written in Markdown — **double asterisks** for bold, # for headings, backticks for code — and the box you pasted into does not interpret it, so the symbols appear as typed. The AI app rendered them for you; the chat app does not. Converting to plain text first removes the symbols while keeping the bullets, numbers and tables the answer was organised with.',
+    a: 'Because the answer is written in Markdown: **double asterisks** for bold, # for headings, backticks for code. The box you pasted into does not interpret any of it, so the symbols appear as typed. The AI app rendered them for you; the chat app does not. Converting to plain text first removes the symbols while keeping the bullets, numbers and tables the answer was organised with.',
   },
   {
     q: 'Does this remove the structure too, or only the symbols?',
@@ -54,7 +54,7 @@ const faq = [
   },
   {
     q: 'What is the difference between Plain text and the Slack, WhatsApp and Google Chat modes?',
-    a: 'Plain text has no formatting at all. The three chat modes translate Markdown into the markup those apps document: single asterisks for bold, underscores for italic, single tildes for strikethrough, backticks for code, > for quotes. They differ in lists — Slack\'s markup mode has none, so bullets are • characters, while WhatsApp and Google Chat turn "- " into a bulleted list — and all three turn headings into a bold line, since none of them has headings.',
+    a: 'Plain text has no formatting at all. The three chat modes translate Markdown into the markup those apps document: single asterisks for bold, underscores for italic, single tildes for strikethrough, backticks for code, > for quotes. They differ in lists (Slack\'s markup mode has none, so bullets are • characters, while WhatsApp and Google Chat turn "- " into a bulleted list), and all three turn headings into a bold line, since none of them has headings.',
   },
   {
     q: 'Can I keep the links clickable?',
@@ -94,8 +94,8 @@ const faq = [
     </p>
     <pre><code>{plainOut}</code></pre>
     <p>
-      Switch to <strong>Slack</strong> and the same input starts <code>{slackHead.split('\n')[0]}</code> — the heading as a bold
-      line — with <code>*full test suite*</code> and <code>_two minutes_</code> in Slack's own markup, the table and the
+      Switch to <strong>Slack</strong> and the same input starts <code>{slackHead.split('\n')[0]}</code>, the heading as a bold
+      line, with <code>*full test suite*</code> and <code>_two minutes_</code> in Slack's own markup, the table and the
       command wrapped in <code>```</code> so they stay monospace. <strong>WhatsApp</strong> writes the task list as <code>{whatsappTail.split('\n')[0]}</code>, using its "- " list syntax instead of the • character.
     </p>
 
@@ -103,7 +103,7 @@ const faq = [
     <ul>
       <li><strong>Output for: Plain text</strong> removes all formatting. Bullets are • characters, numbered items keep their numbers, quotes keep a <code>&gt; </code> prefix, tables are aligned in columns, code is written as-is with no fences.</li>
       <li><strong>Output for: Slack</strong> writes <code>*bold*</code>, <code>_italic_</code>, <code>~strike~</code>, <code>`code`</code>, <code>```</code> blocks and <code>&gt;</code> quotes, as Slack documents for its markup mode. Slack has no list syntax in that mode, so bullets stay • characters: <code>{bulletsSlack.split('\n')[0]}</code>. Headings become a bold line: <code>{headingSlack}</code>.</li>
-      <li><strong>Output for: WhatsApp</strong> uses the same bold, italic, strikethrough and code markup, plus WhatsApp's own list syntax — <code>{bulletsWhatsapp.split('\n')[0]}</code> — which it renders as a bulleted list, and <code>1. </code> for numbered items.</li>
+      <li><strong>Output for: WhatsApp</strong> uses the same bold, italic, strikethrough and code markup, plus WhatsApp's own list syntax, which renders <code>{bulletsWhatsapp.split('\n')[0]}</code> as a bulleted list, and <code>1. </code> for numbered items.</li>
       <li><strong>Output for: Google Chat</strong> matches WhatsApp: Google Chat documents <code>- </code> bullets and <code>&gt;</code> quotes alongside the same emphasis characters.</li>
       <li><strong>Links: Text (URL)</strong> writes <code>{linkDefault}</code>; <strong>URL only</strong> writes <code>{linkUrl}</code>; <strong>Text only</strong> writes <code>{linkText}</code>. A link whose text is already its address is written once: <code>{sameLink}</code>.</li>
       <li><strong>Load sample</strong> inserts the checklist shown above; <strong>Clear</strong> empties both boxes.</li>
@@ -114,7 +114,7 @@ const faq = [
     <ul>
       <li><strong>Nested lists keep their depth</strong> by indentation: <code>- a / - b / (two spaces) - b1 / (four) 1. deep / - c</code> becomes <code>{nested.replace(/\n/g, ' ⏎ ')}</code>, so a chat message still reads as an outline.</li>
       <li><strong>Underscores inside words are not emphasis.</strong> <code>snake_case_name</code> stays as written, as the CommonMark rules require; <code>__init__</code> on its own, however, is bold in Markdown, so it comes out as <code>init</code>: <code>{snake}</code>.</li>
-      <li><strong>An unclosed marker stays literal.</strong> <code>a **never closed and *this* is fine</code> gives <code>{unclosed}</code> — the lone <code>**</code> is kept because nothing closes it, exactly as GitHub would show it.</li>
+      <li><strong>An unclosed marker stays literal.</strong> <code>a **never closed and *this* is fine</code> gives <code>{unclosed}</code>: the lone <code>**</code> is kept because nothing closes it, exactly as GitHub would show it.</li>
       <li><strong>Task lists</strong> become <code>{tasks.replace(/\n/g, ' ⏎ ')}</code>, using ☑ and ☐ so the state survives without brackets.</li>
       <li><strong>Images</strong> have no text form, so <code>![Logo](https://example.com/logo.png)</code> becomes <code>{image}</code>.</li>
       <li><strong>Code blocks</strong>: plain text keeps the code and drops the fences (<code>{codePlain}</code>); the chat modes keep the fences because the apps render them as monospace: <code>{codeSlack.replace(/\n/g, ' ⏎ ')}</code>. The language tag after the opening fence is dropped in every mode.</li>
