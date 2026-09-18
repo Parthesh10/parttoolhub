@@ -299,6 +299,25 @@ body.no-scroll { overflow: hidden; }
 
 .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 @media (max-width: 760px) { .panes { grid-template-columns: 1fr; } }
+/* SITE-001: draggable resize handle between the two panes, desktop only. The handle
+   element itself is inserted by per-tool JS (UX-001 pattern) — a plain .panes with no
+   handle keeps this base 1fr/1fr rule and needs no markup change to stay unaffected.
+   JS also sets the actual split as an inline grid-template-columns while dragging;
+   this only styles the handle and gives it a starting column via the .is-resizable hook. */
+.panes.is-resizable { grid-template-columns: 1fr 7px 1fr; }
+.resize-handle {
+  align-self: stretch; cursor: col-resize; position: relative; background: none; border: 0; padding: 0;
+  touch-action: none;
+}
+.resize-handle::before {
+  content: ""; position: absolute; top: 0.5rem; bottom: 0.5rem; left: 50%; width: 1px;
+  background: var(--border); transform: translateX(-50%); transition: background 0.12s, width 0.12s;
+}
+.resize-handle:hover::before,
+.resize-handle:focus-visible::before,
+.resize-handle.is-dragging::before { background: var(--accent); width: 2px; }
+.resize-handle:focus-visible { outline: none; }
+@media (max-width: 760px) { .resize-handle { display: none; } }
 /* A grid item defaults to min-width:auto, so a pane holding something with intrinsic width (a
    rendered table, a wide <pre>) would widen its column past the viewport. Let panes shrink; the
    wide thing scrolls inside its own overflow container instead. */
