@@ -31,7 +31,7 @@ function renderDetection(raw: string) {
   const tool = toolBySlug(detection.slug);
   detectBanner.hidden = false;
   detectLink.href = toolPath(tool);
-  detectLink.textContent = `${detection.label} — try ${tool.name} instead →`;
+  detectLink.textContent = `${detection.label}: try ${tool.name} instead →`;
 }
 
 function render() {
@@ -45,7 +45,7 @@ function render() {
   const result = cleanText(raw, DEFAULT_CLEAN);
   output.value = result.output;
   const applied = Object.keys(result.changes);
-  summary.textContent = applied.length ? `Fixed: ${applied.map((k) => CHANGE_LABELS[k] ?? k).join(', ')}` : 'Already clean — nothing to fix';
+  summary.textContent = applied.length ? `Fixed: ${applied.map((k) => CHANGE_LABELS[k] ?? k).join(', ')}` : 'Already clean, nothing to fix';
   renderDetection(raw);
 }
 

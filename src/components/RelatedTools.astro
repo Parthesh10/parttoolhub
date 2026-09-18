@@ -19,7 +19,7 @@ const related = relatedTools(current, max);
     {related.map((t) => (
       <li>
         <a href={toolPath(t)}>{t.name}</a>
-        <span class="muted"> — {t.short}</span>
+        <span class="muted">: {t.short}</span>
       </li>
     ))}
   </ul>

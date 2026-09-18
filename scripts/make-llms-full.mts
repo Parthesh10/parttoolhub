@@ -115,7 +115,7 @@ function main() {
   }
 
   const out: string[] = [
-    `# ${SITE.name} — Full Content`,
+    `# ${SITE.name}: Full Content`,
     '',
     `> ${SITE.tagline}. This file inlines each tool's full page content (how to use it, options, edge cases, FAQ) for deep indexing. For a short linked index instead, see /llms.txt.`,
     '',

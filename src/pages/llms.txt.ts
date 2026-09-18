@@ -17,7 +17,7 @@ export const GET: APIRoute = () => {
   const lines: string[] = [
     `# ${SITE.name}`,
     '',
-    `> ${SITE.tagline}. Every tool runs entirely in the browser — nothing pasted is uploaded to a server. For full page content (how to use each tool, options, edge cases, FAQ) rather than just links, see /llms-full.txt.`,
+    `> ${SITE.tagline}. Every tool runs entirely in the browser, and nothing pasted is uploaded to a server. For full page content (how to use each tool, options, edge cases, FAQ) rather than just links, see /llms-full.txt.`,
     '',
   ];
 

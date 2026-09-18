@@ -27,7 +27,7 @@ const categoryCount = CATEGORIES.length;
     <p>
       I'm <strong>{SITE.author}</strong>{SITE.linkedin && <> (<a href={SITE.linkedin} rel="noopener">LinkedIn</a>)</>}, and I
       build and maintain everything here: the conversion engines, their tests, the pages and the hosting. I work as a
-      backend-focused software developer, which is exactly why these tools exist — most of them started as small scripts I
+      backend-focused software developer, which is exactly why these tools exist: most of them started as small scripts I
       kept rewriting for myself before I put them behind a UI. The site started on {formatDate(SITE.launched)} as two
       converters, column-to-list and list-to-column, that I wanted in a form I could bookmark, and has grown one tool at a
       time since. There is no team and no company behind it.
@@ -37,8 +37,8 @@ const categoryCount = CATEGORIES.length;
     <p>
       Most "online converter" pages send what you paste to a server, wrap the result in a page of filler, and stop at the
       easy cases. I wanted the opposite: a page that does the conversion on your own device, tells you exactly what it
-      changed (the counters and status lines on every tool), and documents the awkward inputs — quotes inside values,
-      tokens with the wrong number of segments, integers too large for JSON — because those are the cases you actually
+      changed (the counters and status lines on every tool), and documents the awkward inputs: quotes inside values,
+      tokens with the wrong number of segments, integers too large for JSON. Those are the cases you actually
       search for.
     </p>
 
@@ -56,7 +56,7 @@ const categoryCount = CATEGORIES.length;
       The text on a tool page comes from running the tool against real and deliberately broken input and writing down
       what happens. I sometimes use writing tools to draft or tidy prose, but every sentence is checked against the
       running tool and edited by me before it is published, and each page shows the date I last did that review. If you
-      find a claim on a page that the tool does not live up to, that is a bug — please tell me.
+      find a claim on a page that the tool does not live up to, that is a bug: please tell me.
     </p>
 
     <h2 id="privacy">What happens to your data</h2>
@@ -69,7 +69,7 @@ const categoryCount = CATEGORIES.length;
 
     <h2 id="funding">How the site is funded</h2>
     <p>
-      The plan is to cover hosting and development with display advertising through Google AdSense — the account is
+      The plan is to cover hosting and development with display advertising through Google AdSense. The account is
       currently under review, so no ads are running yet and I'm covering costs myself in the meantime. Once approved,
       ads will never appear above a tool or between its input and output, there will be at most two on a page, and the
       tools will work identically with an ad blocker on. Text you paste into a tool is never used for advertising,
@@ -80,7 +80,7 @@ const categoryCount = CATEGORIES.length;
     <p>
       {SITE.github ? (
         <>
-          The source code is public at <a href={SITE.github} rel="noopener">GitHub</a> — open an
+          The source code is public at <a href={SITE.github} rel="noopener">GitHub</a>. Open an
           {' '}<a href={`${SITE.github}/issues`} rel="noopener">issue</a> with the tool name, the browser you used, a small
           sample of the input and what you expected. I read everything and usually reply within a few working days.
         </>
