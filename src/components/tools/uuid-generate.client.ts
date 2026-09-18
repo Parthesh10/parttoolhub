@@ -15,12 +15,29 @@ const count = $<HTMLSelectElement>('opt-count');
 const uppercase = $<HTMLInputElement>('opt-uppercase');
 const hyphens = $<HTMLInputElement>('opt-hyphens');
 const braces = $<HTMLInputElement>('opt-braces');
+const fullscreenBtn = $<HTMLButtonElement>('btn-fullscreen');
+const toolSection = $('tool');
 
 let version: UuidVersion = 4;
 
 function plural(n: number, word: string) {
   return `${n.toLocaleString()} ${word}${n === 1 ? '' : 's'}`;
 }
+
+// --- UX-003: fullscreen / focus mode ---------------------------------------
+// No paste here — this tool only ever generates fresh UUIDs, it never
+// transforms pasted text, so there's nothing for a Paste button to feed.
+function setFullscreen(on: boolean) {
+  toolSection.classList.toggle('is-fullscreen', on);
+  document.body.classList.toggle('no-scroll', on);
+  fullscreenBtn.setAttribute('aria-pressed', String(on));
+  fullscreenBtn.textContent = on ? '✕ Exit fullscreen' : '⛶ Fullscreen';
+  track('tool_option', { option: 'fullscreen', value: String(on) });
+}
+fullscreenBtn.addEventListener('click', () => setFullscreen(!toolSection.classList.contains('is-fullscreen')));
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && toolSection.classList.contains('is-fullscreen')) setFullscreen(false);
+});
 
 // --- Analytics (docs/ANALYTICS.md) -----------------------------------------
 // Duplicated per tool on purpose: no shared JS across tools (seo-rules §4).
