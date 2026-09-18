@@ -3,6 +3,9 @@
 ---
 
 <section class="tool card" id="tool" data-tool="url-encode">
+  <div class="tool-toolbar">
+    <button type="button" class="btn btn-sm" id="btn-fullscreen" aria-pressed="false">⛶ Fullscreen</button>
+  </div>
   <div class="options">
     <fieldset>
       <legend>Direction</legend>
@@ -20,11 +23,16 @@
         <label for="input" id="input-label">Plain text or URL</label>
         <span class="stat" id="input-stat" aria-live="polite">0 characters</span>
       </div>
-      <textarea id="input" rows="8" spellcheck="false" autocomplete="off" placeholder="https://example.com/search?q=hello world&lang=en"></textarea>
+      <div class="code-wrap">
+        <div class="gutter" id="input-gutter" aria-hidden="true"><span>1</span></div>
+        <textarea id="input" rows="8" spellcheck="false" autocomplete="off" placeholder="https://example.com/search?q=hello world&lang=en"></textarea>
+      </div>
       <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-paste">Paste</button>
         <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
         <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
       </div>
+      <p class="muted drop-hint">Or drop a .txt file onto the box above.</p>
     </div>
 
     <div class="pane">
@@ -32,9 +40,13 @@
         <label for="output" id="output-label">Encoded</label>
         <span class="stat" id="output-stat" aria-live="polite"></span>
       </div>
-      <textarea id="output" rows="8" readonly spellcheck="false"></textarea>
+      <div class="code-wrap">
+        <div class="gutter" id="output-gutter" aria-hidden="true"></div>
+        <textarea id="output" rows="8" readonly spellcheck="false"></textarea>
+      </div>
       <div class="pane-actions">
         <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy to clipboard</button>
+        <button type="button" class="btn btn-sm" id="btn-wrap" aria-pressed="false">No-wrap</button>
       </div>
       <p class="status-banner" id="status" hidden></p>
     </div>
@@ -68,9 +80,4 @@
 </section>
 
 <script src="./url-encode.client.ts"></script>
-
-<style>
-  #mode-encode[aria-pressed="true"], #mode-decode[aria-pressed="true"] {
-    background: var(--accent-btn); border-color: var(--accent-btn); color: #fff;
-  }
-</style>
+<!-- Encode/Decode pressed-state color now comes from the global .btn[aria-pressed="true"] rule. -->
