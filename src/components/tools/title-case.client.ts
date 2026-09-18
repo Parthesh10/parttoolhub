@@ -56,6 +56,68 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && toolSection.classList.contains('is-fullscreen')) setFullscreen(false);
 });
 
+// --- SITE-001: draggable resize handle between the two panes, desktop only -
+// Inserted by JS rather than static markup so a tool that hasn't adopted this yet
+// needs no Astro change (see the .is-resizable comment in global.css). Below the
+// 760px breakpoint the panes stack into one column, where a horizontal split has
+// no meaning, so the handle is simply never created.
+const panesEl = toolSection.querySelector<HTMLElement>('.panes');
+if (panesEl && window.matchMedia('(min-width: 761px)').matches) {
+  const paneEls = panesEl.querySelectorAll<HTMLElement>(':scope > .pane');
+  if (paneEls.length === 2) {
+    panesEl.classList.add('is-resizable');
+    const handle = document.createElement('div');
+    handle.className = 'resize-handle';
+    handle.setAttribute('role', 'separator');
+    handle.setAttribute('aria-orientation', 'vertical');
+    handle.setAttribute('aria-label', 'Resize the two panes');
+    handle.tabIndex = 0;
+    paneEls[0].after(handle);
+
+    const MIN_PCT = 20;
+    const MAX_PCT = 80;
+    function applySplit(pct: number) {
+      panesEl!.style.gridTemplateColumns = `${pct}% 7px 1fr`;
+    }
+    function pctFromEvent(clientX: number): number {
+      const rect = panesEl!.getBoundingClientRect();
+      return Math.min(MAX_PCT, Math.max(MIN_PCT, ((clientX - rect.left) / rect.width) * 100));
+    }
+    let dragging = false;
+    handle.addEventListener('pointerdown', (e) => {
+      dragging = true;
+      handle.classList.add('is-dragging');
+      handle.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    handle.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      applySplit(pctFromEvent(e.clientX));
+    });
+    function stopDragging() {
+      dragging = false;
+      handle.classList.remove('is-dragging');
+    }
+    handle.addEventListener('pointerup', stopDragging);
+    handle.addEventListener('pointercancel', stopDragging);
+    handle.addEventListener('keydown', (e) => {
+      const current = panesEl!.style.gridTemplateColumns;
+      const currentPct = current ? parseFloat(current) : 50;
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        applySplit(Math.max(MIN_PCT, currentPct - 5));
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        applySplit(Math.min(MAX_PCT, currentPct + 5));
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        applySplit(50);
+      }
+    });
+    handle.addEventListener('dblclick', () => applySplit(50));
+  }
+}
+
 // --- UX-002: paste from clipboard + drag-and-drop file upload -------------
 async function pasteFromClipboard() {
   try {
