@@ -208,6 +208,18 @@ export const TOOLS: Tool[] = [
     reviewedOn: '2026-09-18',
   },
   {
+    slug: 'aspect-ratio-calculator',
+    name: 'Aspect Ratio Calculator',
+    title: 'Aspect Ratio Calculator: Ratio + Scale Dimensions',
+    description: 'Find the exact aspect ratio of any width and height, name it (16:9, 4:3, 1:1…), and scale a new width or height to match it instantly.',
+    short: 'Get the simplified ratio of any width and height, then scale a new dimension to match it.',
+    category: 'converters',
+    features: ['Simplifies to the exact whole-number ratio, decimals included', 'Names common ratios (16:9, 4:3, 1:1, 21:9, 4:5…)', 'Scale a new width or height while keeping the ratio', 'Matching common resolutions at that exact ratio'],
+    intent: 'aspect ratio calculator',
+    reviewedBy: SITE.author,
+    reviewedOn: '2026-09-19',
+  },
+  {
     slug: 'html-to-markdown',
     name: 'HTML to Markdown',
     title: 'HTML to Markdown Converter',

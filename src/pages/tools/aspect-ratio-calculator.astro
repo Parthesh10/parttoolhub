@@ -1,0 +1,123 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import AspectRatioTool from '../../components/tools/AspectRatioTool.astro';
+import { toolBySlug } from '../../data/tools';
+import { computeAspectRatio, scaleToWidth, standardResolutions } from '../../lib/aspect-ratio';
+
+const tool = toolBySlug('aspect-ratio-calculator');
+
+// Every fact and error message below comes from the real engine at build time.
+const hdSample = computeAspectRatio(1920, 1080);
+if (!hdSample.ok) throw new Error('the 1920x1080 worked example must succeed');
+
+const paperSample = computeAspectRatio(8.5, 11, '8.5', '11');
+if (!paperSample.ok) throw new Error('the US Letter worked example must succeed');
+
+const ultrawideSample = computeAspectRatio(3440, 1440);
+if (!ultrawideSample.ok) throw new Error('the ultrawide worked example must succeed');
+// 21:9 itself is not in lowest terms (gcd(21,9) = 3) — any pixel pair truly at that ratio,
+// like 2520x1080, reduces to 7:3, never to "21:9" literally. Verified in Node before writing
+// this FAQ answer, since the first draft assumed 21:9 would appear as-is.
+const exact21x9 = computeAspectRatio(2520, 1080);
+if (!exact21x9.ok) throw new Error('the exact-21:9-family comparison must succeed');
+
+const scaledHeight = scaleToWidth(1280, 1920, 1080);
+const zeroErr = computeAspectRatio(0, 1080);
+if (zeroErr.ok) throw new Error('page claims zero dimensions are refused');
+const negativeErr = computeAspectRatio(1920, -1);
+if (negativeErr.ok) throw new Error('page claims negative dimensions are refused');
+
+const igResolutions = standardResolutions(9, 16);
+
+const steps = [
+  'Type the original <strong>width</strong> and <strong>height</strong>: pixels, inches, millimeters, anything.',
+  'The simplified ratio, its decimal value and its common name (if it has one) appear instantly.',
+  'Under <strong>Scale to a new size</strong>, type a new width or height, and the other one updates to keep the same ratio.',
+  'Click any resolution in the list, or the Copy result button, to copy it.',
+];
+
+const faq = [
+  {
+    q: 'How is the aspect ratio actually calculated?',
+    a: `Width and height are reduced to the smallest whole-number ratio that produces the same value when divided, using the greatest common divisor: the same arithmetic as reducing a fraction. 1920 × 1080 reduces to <strong>${hdSample.value.ratioW}:${hdSample.value.ratioH}</strong> because both numbers share a greatest common divisor of ${1920 / hdSample.value.ratioW}. Decimal inputs work the same way: 8.5 × 11 (US Letter paper) reduces to <strong>${paperSample.value.ratioW}:${paperSample.value.ratioH}</strong> exactly, not a rounded approximation, by scaling both numbers up before reducing.`,
+  },
+  {
+    q: 'Why does a “21:9” ultrawide monitor show as 43:18 or 7:3, never literally 21:9?',
+    a: `Two separate reasons stack here. First, <strong>21:9 isn't a reduced fraction</strong>: 21 and 9 share a common factor of 3, so its true lowest terms is <strong>7:3</strong>, and a genuine 21:9-family resolution like 2520×1080 reduces to exactly ${exact21x9.value.ratioW}:${exact21x9.value.ratioH} here, never to "21:9" itself. Second, most monitors sold as "21:9" aren't even that: a 3440×1440 panel reduces to <strong>${ultrawideSample.value.ratioW}:${ultrawideSample.value.ratioH}</strong> (${ultrawideSample.value.decimal.toFixed(4)}), noticeably different from 7:3's ${(7/3).toFixed(4)}. "21:9" is the marketing name for a family of similar wide ratios, not one exact pixel ratio, so this tool always shows the real reduced ratio, meaning a mismatch with a spec sheet points at the marketing name, not this page.`,
+  },
+  {
+    q: 'How does the “scale to a new size” section work?',
+    a: `It multiplies your new dimension by the current ratio: a 1920×1080 (16:9) image resized to 1280 wide becomes exactly ${scaledHeight} tall, calculated as 1280 × (1080 ÷ 1920). Typing into either the new width or new height field updates the other one, so you can work from whichever dimension you actually know.`,
+  },
+  {
+    q: 'What is the “CSS padding-hack %” value for?',
+    a: `It's the percentage used in the classic CSS technique for a responsive, ratio-locked box before the <code>aspect-ratio</code> property existed: <code>padding-bottom: ${hdSample.value.percentage}%</code> on an element with <code>height: 0</code> keeps a 16:9 box in ratio at any width. Modern CSS can use <code>aspect-ratio: ${hdSample.value.ratioW} / ${hdSample.value.ratioH};</code> directly instead, but the percentage is still needed for older browser support or email HTML.`,
+  },
+  {
+    q: 'Does it work for portrait (taller-than-wide) sizes, like Instagram Reels or Stories?',
+    a: `Yes. Enter the taller height as the second number and it's marked "Portrait" rather than "Landscape," with no separate mode to switch. 1080×1920 reduces to 9:16, the standard vertical video ratio, and ${igResolutions.map((r) => `${r.width}×${r.height}`).join(', ')} are the exact resolutions this tool lists for it.`,
+  },
+  {
+    q: 'What happens with zero, negative or non-numeric input?',
+    a: `Both are refused rather than guessed at: a zero or negative width or height returns "${negativeErr.ok ? '' : negativeErr.error}", and non-numeric text names the specific field, since a ratio needs two positive numbers to mean anything.`,
+  },
+];
+---
+
+<ToolLayout {tool} {steps} {faq}>
+  <AspectRatioTool />
+
+  <Fragment slot="content">
+    <h2>One ratio, two directions</h2>
+    <p>
+      This tool solves the two problems that come up together in practice: <em>what ratio is this
+      image already</em>, and <em>what height do I need for a new width at that same ratio</em>
+      (or the reverse). Entering a width and height answers the first; the scale section answers
+      the second, using the exact ratio just computed rather than a rounded version of it, so a
+      long chain of resizes never drifts off the original proportions.
+    </p>
+
+    <h2>Example</h2>
+    <p>1920 × 1080 (a common HD video frame) reduces to:</p>
+    <pre><code>{hdSample.value.ratioW}:{hdSample.value.ratioH} ({hdSample.value.knownName})
+Decimal: {hdSample.value.decimal.toFixed(4)}
+CSS padding-hack: {hdSample.value.percentage}%</code></pre>
+    <p>Scaled to a 1280px-wide version, the height becomes:</p>
+    <pre><code>1280 × {scaledHeight} (same 16:9 ratio, smaller size)</code></pre>
+
+    <h2>Options explained</h2>
+    <ul>
+      <li><strong>Width / Height</strong>: any positive number, in pixels, inches, millimeters or any other unit, as long as both use the same one. Decimals are supported and reduced exactly.</li>
+      <li><strong>Swap (⇅)</strong>: exchanges width and height, turning a landscape ratio into its portrait equivalent (16:9 ↔ 9:16) in one click.</li>
+      <li><strong>New width / New height</strong>: type either one to solve for the other at the current ratio. Clearing one clears the other, since there's nothing to scale from.</li>
+      <li><strong>Common resolutions</strong>: exact integer multiples of the simplified ratio near well-known video and display widths. Click any one to copy it.</li>
+    </ul>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>Zero or negative dimensions are refused</strong>: "{zeroErr.ok ? '' : zeroErr.error}" (a ratio needs two positive numbers).</li>
+      <li><strong>Non-numeric input</strong> names the specific field that failed, rather than a generic error.</li>
+      <li><strong>Some ratios never land exactly on a "nice" resolution.</strong> 21:9, 3:2 and similar odd ratios don't divide evenly into common video widths (1280, 1920, 2560, 3840…), so their resolution list is left shorter or skipped for a given size rather than shown as a misleading rounded value. See the FAQ on ultrawide monitors for the specific reason.</li>
+      <li><strong>A ratio with no common name</strong> (most arbitrary width/height pairs) shows "No common name for this exact ratio" instead of forcing a nearest match. The 0.5% tolerance used for naming is tight enough that it won't mislabel a genuinely different ratio.</li>
+      <li><strong>Square images</strong> (equal width and height) are labeled "Square," a third category alongside landscape and portrait, not folded into either.</li>
+    </ul>
+
+    <h2>Do the same thing in code</h2>
+    <pre><code>{`// JavaScript: reduce width/height to a ratio
+function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+const g = gcd(width, height);
+const ratio = \`\${width / g}:\${height / g}\`;
+
+// Scale a new width to match an existing ratio
+const newHeight = newWidth * (height / width);
+
+/* CSS: lock an element to a ratio without JavaScript */
+.box { aspect-ratio: 16 / 9; }`}</code></pre>
+    <p>
+      Converting the other direction (pixels into a file size instead of a shape) is a job for the
+      <a href="/tools/data-size-converter">Data Size Converter</a>. If the number you're scaling is a
+      timestamp or a duration rather than a dimension, see the
+      <a href="/tools/unix-timestamp-converter">Unix Timestamp Converter</a>.
+    </p>
+  </Fragment>
+</ToolLayout>
