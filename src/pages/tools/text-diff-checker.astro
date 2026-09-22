@@ -1,0 +1,113 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import TextDiffTool from '../../components/tools/TextDiffTool.astro';
+import { toolBySlug } from '../../data/tools';
+import { diffText, diffWords, MAX_LINES, MAX_WORDS } from '../../lib/text-diff';
+import { detectLanguage } from '../../lib/syntax-highlight';
+
+const tool = toolBySlug('text-diff-checker');
+
+// Every fact and error message below comes from the real engine at build time.
+const lineSample = diffText('The quick brown fox jumps.\nSecond line.', 'The quick red fox jumps.\nSecond line.');
+if (!lineSample.ok) throw new Error('the line-diff worked example must succeed');
+const changedGroup = lineSample.value.groups.find((g) => g.type === 'replace');
+if (!changedGroup || changedGroup.type !== 'replace' || !changedGroup.wordDiff) throw new Error('the worked example must produce an inline word diff');
+const changedWords = changedGroup.wordDiff.filter((o) => o.type !== 'equal').map((o) => o.value);
+
+const rewrapA = 'The quick brown\nfox jumps over\nthe lazy dog.';
+const rewrapB = 'The quick brown fox\njumps over the\nlazy dog.';
+const rewrapWordDiff = diffWords(rewrapA, rewrapB);
+if (!rewrapWordDiff.ok) throw new Error('the rewrap worked example must succeed');
+const rewrapChangedCount = rewrapWordDiff.value.filter((o) => o.type !== 'equal' && o.value.trim()).length;
+
+const langSample = detectLanguage('function greet(name) {\n  return `Hi, ${name}`;\n}');
+
+const tooManyLines = Array.from({ length: MAX_LINES + 1 }, (_, i) => `line ${i}`).join('\n');
+const linesLimitErr = diffText(tooManyLines, 'a');
+if (linesLimitErr.ok) throw new Error('page claims a line-count limit exists');
+
+const tooManyWords = Array.from({ length: MAX_WORDS + 1 }, (_, i) => `w${i}`).join(' ');
+const wordsLimitErr = diffWords(tooManyWords, 'a');
+if (wordsLimitErr.ok) throw new Error('page claims a word-count limit exists');
+
+const steps = [
+  'Paste the <strong>original</strong> version on the left and the <strong>changed</strong> version on the right.',
+  'Choose <strong>Line diff</strong> (default) or <strong>Word diff</strong> for the whole document.',
+  'Pick a language to highlight code, or leave it on <strong>Auto-detect</strong>.',
+  'Added lines/words are green, removed are red; a single changed line also shows exactly which word changed.',
+];
+
+const faq = [
+  {
+    q: 'What is the difference between line diff and word diff?',
+    a: `Line diff (the default) compares the two texts line by line: an unchanged line shows plain, a changed line shows removed and added versions with the specific changed word or words highlighted inside them (in this page's own worked example, only "${changedWords.join('" and "')}" are highlighted, not the whole line). Word diff instead compares the whole document word by word, ignoring line breaks entirely, which matters for prose: reflowing a paragraph to a different width changes where the line breaks fall without changing a single word, and line diff would show that as a wall of red and green even though nothing was actually edited.`,
+  },
+  {
+    q: 'Does word diff get confused by a paragraph that was just rewrapped, with no real edits?',
+    a: `No, by design. This exact case, "${rewrapA.replace(/\n/g, ' / ')}" reflowed as "${rewrapB.replace(/\n/g, ' / ')}", contains only different line breaks, no changed words, and word diff correctly reports ${rewrapChangedCount} word${rewrapChangedCount === 1 ? '' : 's'} changed. Line breaks and single spaces are treated as interchangeable for word diff specifically; an actual blank line inserted between paragraphs is still detected, since that is a real structural change, not just rewrapping.`,
+  },
+  {
+    q: 'How good is the syntax highlighting?',
+    a: `Basic and deliberately so: keywords, strings, comments and numbers for JavaScript/TypeScript, Python, JSON, HTML/XML, CSS, SQL and Bash, detected from simple patterns rather than a full parser. Auto-detect guessed "${langSample}" for a short JavaScript snippet correctly, but it is a heuristic, not a certainty; pick the language yourself if it guesses wrong. On a line with an inline word-level change, the word-diff colors take over from syntax colors for that line, since highlighting what changed matters more there than what kind of token it is.`,
+  },
+  {
+    q: 'Is there a size limit?',
+    a: `Yes: ${MAX_LINES.toLocaleString()} lines per side for line diff, or ${MAX_WORDS.toLocaleString()} words per side for word diff. Past that, the message is "${linesLimitErr.ok ? '' : linesLimitErr.error}" (line diff) or "${wordsLimitErr.ok ? '' : wordsLimitErr.error}" (word diff), rather than freezing the tab: the underlying algorithm's running time grows with how different the two texts are, and a genuinely huge, completely unrelated pair of documents could otherwise lock up the page.`,
+  },
+  {
+    q: 'Does anything get uploaded?',
+    a: 'No. Both texts are compared entirely in your browser; this page is a static file with no server behind it, so neither version is ever sent anywhere.',
+  },
+];
+---
+
+<ToolLayout {tool} {steps} {faq}>
+  <TextDiffTool />
+
+  <Fragment slot="content">
+    <h2>Two ways to compare, because "changed" means different things</h2>
+    <p>
+      A config file or source code has meaningful line structure: which line something is on is
+      part of what changed. Prose usually does not: a paragraph can be rewrapped at a different
+      width with zero real edits. Line diff serves the first case, and inline-highlights the exact
+      word inside a changed line rather than just marking the whole line different. Word diff serves
+      the second case by ignoring line breaks altogether.
+    </p>
+
+    <h2>Example</h2>
+    <p>Line diff on a single changed word:</p>
+    <pre><code>- The quick brown fox jumps.
++ The quick red fox jumps.
+  Second line.</code></pre>
+    <p>Word diff correctly ignoring a rewrapped paragraph with no real edits ({rewrapChangedCount} words changed):</p>
+    <pre><code>{rewrapA}
+{'->'}
+{rewrapB}</code></pre>
+
+    <h2>Options explained</h2>
+    <ul>
+      <li><strong>Line diff / Word diff</strong>: see the FAQ for when to use each.</li>
+      <li><strong>Language</strong>: Auto-detect guesses from simple patterns (brackets and colons for JSON, angle brackets for HTML, <code>SELECT</code>/<code>FROM</code> for SQL, and so on); pick one directly if it guesses wrong, or Plain text to turn highlighting off entirely.</li>
+      <li><strong>Swap (⇅)</strong>: exchanges Original and Changed.</li>
+    </ul>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>Identical inputs</strong> show "No differences found." rather than an empty, ambiguous result.</li>
+      <li><strong>A multi-line block replaced by a different number of lines</strong> shows as a plain removed block plus a plain added block, with no inline word highlighting: word-level highlighting only applies when exactly one line was replaced by exactly one other line, since matching words across a different number of lines has no single obviously-correct pairing.</li>
+      <li><strong>Very large inputs are refused</strong> past {MAX_LINES.toLocaleString()} lines or {MAX_WORDS.toLocaleString()} words per side, with the specific limit named in the error, rather than freezing the page.</li>
+      <li><strong>Syntax highlighting only applies to line diff</strong>, and is skipped on a line with an inline word-level change in favor of the word-diff colors on that line.</li>
+    </ul>
+
+    <h2>Do the same thing in code</h2>
+    <pre><code>{`# Python: a quick line diff using the standard library
+import difflib
+diff = difflib.unified_diff(a.splitlines(), b.splitlines())
+print('\\n'.join(diff))`}</code></pre>
+    <p>
+      Comparing two JSON documents instead of plain text? A line diff will flag a reordered key as a
+      change even though nothing meaningful is different; the <a href="/tools/json-diff-checker">JSON Diff Checker</a>
+      compares by key path instead, so that never happens.
+    </p>
+  </Fragment>
+</ToolLayout>

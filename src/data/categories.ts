@@ -58,6 +58,16 @@ export const CATEGORIES: Category[] = [
       'Use the <a href="/tools/uuid-generator">UUID Generator</a> when you need a unique identifier: version 4 for a plain random ID with no hidden structure, or version 7 when the ID also needs to sort roughly by creation time, which matters for database primary keys and anywhere insertion order should still be recoverable from the ID itself. Use the <a href="/tools/password-generator">Password Generator</a> when the value is for a person to type or a password manager to store. It reports the real entropy in bits, not just a length, and can guarantee at least one of each character type you ask for. Use the <a href="/tools/lorem-ipsum-generator">Lorem Ipsum Generator</a> when you need filler text for a mockup, a CMS template or a print layout, by words, sentences or paragraphs.',
     ],
   },
+  {
+    slug: 'compare',
+    name: 'Compare & Diff Tools',
+    description: 'Compare two blocks of text or two JSON documents and see exactly what changed, line by line, word by word or key by key, entirely in your browser.',
+    blurb: 'See exactly what changed between two versions of anything, without either one leaving your browser.',
+    intro: [
+      'Nothing in this category converts or reshapes what you paste; both sides are compared exactly as given, and the only output is a description of the difference between them. That makes the comparison itself the whole product, so how each tool decides two things are "the same" matters more here than anywhere else on the site: a plain line-by-line comparison treats an untouched paragraph that got rewrapped, or a JSON object whose keys came back in a different order, as a wall of false changes, which is the single most common complaint about basic diff tools.',
+      'Use the <a href="/tools/text-diff-checker">Text Diff Checker</a> for prose, config files, logs or source code: it diffs by line by default, highlights the specific word that changed within an edited line, and can diff by word across the whole document when line breaks alone would drown out the actual edits (a rewrapped paragraph shows no difference at all, since only the words are compared, not how they happen to be wrapped). Use the <a href="/tools/json-diff-checker">JSON Diff Checker</a> for API responses and config files: it compares by key path rather than by text, so a reordered key or re-indented file never shows as a change, and inserting one item into the middle of an array is reported as one addition, not a false "changed" entry for every item after it.',
+    ],
+  },
 ];
 
 export const categoryBySlug = (slug: string): Category => {

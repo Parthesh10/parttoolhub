@@ -453,7 +453,7 @@ fallback must always agree, or the button shows the wrong icon on first load), a
 (the toggle button, which cycles the three states, persists the choice, and keeps the `theme-color`
 meta tag in sync — its initial value in `Base.astro`'s `<head>` is the dark surface color to match).
 
-**Category hub pages** (`/converters`, `/text-tools`, `/encoders`, `/generators`) are one dynamic route,
+**Category hub pages** (`/converters`, `/text-tools`, `/encoders`, `/generators`, `/compare`) are one dynamic route,
 `src/pages/[category].astro`, using `getStaticPaths()` over `CATEGORIES` — not one file per category.
 Adding a category means adding it to `categories.ts` *and* to the URL-structure list in `README.md`
 and this paragraph — `tests/registry.test.ts` checks both mention every hub.

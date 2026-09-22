@@ -442,6 +442,31 @@ export const TOOLS: Tool[] = [
     reviewedOn: '2026-09-18',
     spec: { name: 'RFC 3986 §2.1 (percent-encoding)', url: 'https://www.rfc-editor.org/rfc/rfc3986#section-2.1' },
   },
+  // ---- Compare & Diff Tools ------------------------------------------------
+  {
+    slug: 'text-diff-checker',
+    name: 'Text Diff Checker',
+    title: 'Text Diff Checker: Compare Two Texts Online',
+    description: 'Compare two blocks of text and see every line and word that changed. Line or word diff mode, basic syntax highlighting for code, nothing uploaded.',
+    short: 'Paste two versions of text or code and see every line and word that changed, entirely in your browser.',
+    category: 'compare',
+    features: ['Line-level diff with inline word highlighting', 'Whole-document word diff for reflowed prose', 'Basic syntax highlighting for 7 languages', 'Nothing you paste ever leaves your browser'],
+    intent: 'text diff checker',
+    reviewedBy: SITE.author,
+    reviewedOn: '2026-09-21',
+  },
+  {
+    slug: 'json-diff-checker',
+    name: 'JSON Diff Checker',
+    title: 'JSON Diff Checker: Compare Two JSON Objects',
+    description: 'Compare two JSON documents by key, not by text position. Reordered keys and re-indented whitespace never show as a false change. Nothing uploaded.',
+    short: 'Compare two JSON documents by key path, so reordering or re-indenting never shows as a false change.',
+    category: 'compare',
+    features: ['Structural diff by key path, not text position', 'Array comparison detects insertions, not just index shifts', 'Reordered keys and whitespace never count as a change', 'Full pretty-printed output for both sides'],
+    intent: 'json diff checker',
+    reviewedBy: SITE.author,
+    reviewedOn: '2026-09-21',
+  },
 ];
 
 export const toolBySlug = (slug: string): Tool => {

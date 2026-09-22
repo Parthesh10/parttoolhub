@@ -1,0 +1,103 @@
+---
+/** Structural JSON diff by key path. Behaviour in ./json-diff.client.ts */
+---
+
+<section class="tool card" id="tool" data-tool="json-diff-checker">
+  <div class="tool-toolbar">
+    <button type="button" class="btn btn-sm" id="btn-fullscreen" aria-pressed="false">⛶ Fullscreen</button>
+  </div>
+
+  <div class="panes">
+    <div class="pane">
+      <div class="pane-head">
+        <label for="input-old">Original JSON</label>
+        <span class="stat" id="stat-old" aria-live="polite"></span>
+      </div>
+      <textarea id="input-old" rows="12" spellcheck="false" autocomplete="off" placeholder={'{\n  "name": "Ada"\n}'}></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-paste-old">Paste</button>
+      </div>
+    </div>
+    <div class="pane">
+      <div class="pane-head">
+        <label for="input-new">Changed JSON</label>
+        <span class="stat" id="stat-new" aria-live="polite"></span>
+      </div>
+      <textarea id="input-new" rows="12" spellcheck="false" autocomplete="off" placeholder={'{\n  "name": "Ada Lovelace"\n}'}></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-paste-new">Paste</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pane-actions jd-actions">
+    <button type="button" class="btn btn-sm jd-swap" id="btn-swap" aria-label="Swap original and changed">⇅</button>
+    <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+    <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+  </div>
+
+  <p class="status-banner" id="status" hidden></p>
+
+  <div class="jd-result" id="result" hidden>
+    <p class="diff-stats" id="stats"></p>
+    <div class="jd-changes" id="changes"></div>
+    <div class="pane-actions">
+      <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy result</button>
+    </div>
+
+    <div class="jd-pretty-details">
+      <button type="button" class="btn btn-sm" id="btn-toggle-pretty" aria-pressed="false" aria-expanded="false" aria-controls="pretty-panes">
+        Show full pretty-printed JSON (both sides)
+      </button>
+      <div class="panes jd-pretty-panes" id="pretty-panes" hidden>
+        <div class="pane">
+          <div class="pane-head"><label>Original, formatted</label></div>
+          <pre class="jd-pretty" id="pretty-old"></pre>
+        </div>
+        <div class="pane">
+          <div class="pane-head"><label>Changed, formatted</label></div>
+          <pre class="jd-pretty" id="pretty-new"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<script src="./json-diff.client.ts"></script>
+
+<style>
+  .jd-actions { margin-top: 0.85rem; }
+  .jd-swap { font-size: 1.1rem; line-height: 1; }
+  @media (max-width: 640px) { .jd-swap { transform: rotate(90deg); } }
+
+  .jd-result { margin-top: 1.25rem; }
+  .diff-stats { font-size: 0.9rem; color: var(--text-muted); margin: 0 0 0.6rem; }
+
+  .jd-changes { display: flex; flex-direction: column; gap: 0.4rem; }
+  :global(.jd-row) {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; padding: 0.5rem 0.7rem;
+    border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--mono); font-size: 0.85rem;
+  }
+  :global(.jd-added) { border-color: color-mix(in srgb, var(--success) 40%, var(--border)); background: color-mix(in srgb, var(--success) 8%, var(--surface)); }
+  :global(.jd-removed) { border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); background: color-mix(in srgb, var(--danger) 8%, var(--surface)); }
+  :global(.jd-changed) { border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+  :global(.jd-badge) { flex: 0 0 auto; font-weight: 700; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.03em; }
+  :global(.jd-added .jd-badge) { color: var(--success); }
+  :global(.jd-removed .jd-badge) { color: var(--danger); }
+  :global(.jd-changed .jd-badge) { color: var(--accent); }
+  :global(.jd-path) { flex: 0 0 auto; font-weight: 600; word-break: break-all; }
+  :global(.jd-val) { color: var(--text-muted); word-break: break-all; }
+  :global(.jd-val-old) { color: var(--danger); text-decoration: line-through; word-break: break-all; }
+  :global(.jd-val-new) { color: var(--success); word-break: break-all; }
+  :global(.jd-arrow) { color: var(--text-muted); }
+
+  .jd-pretty-details { margin-top: 1.25rem; }
+  .jd-pretty-panes { margin-top: 0.75rem; }
+  .jd-pretty {
+    font-family: var(--mono); font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); padding: 0.75rem;
+    max-height: 40vh; overflow: auto; margin: 0;
+  }
+</style>

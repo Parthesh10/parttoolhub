@@ -1,0 +1,103 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import JsonDiffTool from '../../components/tools/JsonDiffTool.astro';
+import { toolBySlug } from '../../data/tools';
+import { diffJson, SAMPLE_OLD, SAMPLE_NEW } from '../../lib/json-diff';
+
+const tool = toolBySlug('json-diff-checker');
+
+// Every fact and error message below comes from the real engine at build time.
+const sampleResult = diffJson(SAMPLE_OLD, SAMPLE_NEW);
+if (!sampleResult.ok) throw new Error('the shared sample pair must succeed');
+const samplePaths = sampleResult.value.changes.map((c) => c.path);
+
+const reorderResult = diffJson('{"a":1,"b":2}', '{"b":2,"a":1}');
+if (!reorderResult.ok) throw new Error('the reorder worked example must succeed');
+
+const arrayResult = diffJson('{"list":[1,2,3]}', '{"list":[1,99,2,3]}');
+if (!arrayResult.ok) throw new Error('the array-insertion worked example must succeed');
+const arrayChange = arrayResult.value.changes[0];
+if (arrayChange.type !== 'added') throw new Error('the array-insertion example must show exactly one addition');
+
+const badOld = diffJson('{"a":}', '{"a":1}');
+if (badOld.ok) throw new Error('page claims invalid JSON on the original side is refused');
+const emptyErr = diffJson('', '{"a":1}');
+if (emptyErr.ok) throw new Error('page claims empty input is refused');
+
+const steps = [
+  'Paste the <strong>original JSON</strong> on the left and the <strong>changed JSON</strong> on the right.',
+  'Every added, removed and changed key appears in the list below, by key path.',
+  'Reordering keys or re-indenting either side never shows as a change.',
+  'Open "Full pretty-printed JSON" to see both sides formatted for context, or copy the change list.',
+];
+
+const faq = [
+  {
+    q: 'Why does reordering keys not show as a change?',
+    a: `Because the comparison is by key path, not by text position: {"a":1,"b":2} and {"b":2,"a":1} have their keys in a different order but describe the exact same object, so this tool reports ${reorderResult.value.changes.length} changes between them. A plain text or line diff of the same two strings would show every line as different, purely from the reordering, which is the single most common complaint about feeding JSON into a generic diff tool instead of one built for it.`,
+  },
+  {
+    q: 'How are array changes handled? Does inserting one item shift everything after it?',
+    a: `No. Arrays are compared by matching elements, not by index position, so inserting one item in the middle of a list reports exactly that one addition. [1,2,3] changed to [1,99,2,3] reports only <code>${arrayChange.path}</code> added (value ${JSON.stringify(arrayChange.value)}), not three separate "index 1 changed, index 2 changed, index 3 added" entries the way a naive position-by-position comparison would.`,
+  },
+  {
+    q: 'What happens if a value changes type, like an object becoming an array?',
+    a: 'It is reported as a single "changed" entry at that path with both the old and new value shown in full, rather than trying to diff an object against an array as though they were comparable structures.',
+  },
+  {
+    q: 'What if one side is not valid JSON?',
+    a: `The error names which side is the problem and where: pasting {"a":} on the original side gives "${badOld.ok ? '' : badOld.error}" labeled as the Original JSON, with the line and column when the parser can determine one. Leaving a side empty is refused too, with a message naming that specific side ("${emptyErr.ok ? '' : emptyErr.error}") rather than a generic "invalid input."`,
+  },
+  {
+    q: 'Does anything get uploaded?',
+    a: 'No. Both documents are parsed and compared entirely in your browser; this page is a static file with no server behind it.',
+  },
+];
+---
+
+<ToolLayout {tool} {steps} {faq}>
+  <JsonDiffTool />
+
+  <Fragment slot="content">
+    <h2>Structural diff, not text diff</h2>
+    <p>
+      Two JSON documents can be byte-for-byte different and mean exactly the same thing: different
+      key order, different indentation, a trailing newline. A text or line diff sees all of that as
+      "changed." This tool parses both sides first and compares the resulting values by key path, so
+      only an actual difference in meaning, a key added, removed or holding a different value, ever
+      shows up.
+    </p>
+
+    <h2>Example</h2>
+    <p>The shared sample pair reports exactly these changes:</p>
+    <pre><code>{samplePaths.join('\n')}</code></pre>
+    <p>An object with reordered keys reports zero changes:</p>
+    <pre><code>{'{"a":1,"b":2}'} vs {'{"b":2,"a":1}'}
+{'->'} {reorderResult.value.changes.length} changes</code></pre>
+
+    <h2>Options explained</h2>
+    <ul>
+      <li><strong>Original JSON / Changed JSON</strong>: any valid JSON value, not just objects (arrays and bare primitives work too).</li>
+      <li><strong>Swap (⇅)</strong>: exchanges Original and Changed.</li>
+      <li><strong>Full pretty-printed JSON</strong>: both sides reformatted with 2-space indent, for context alongside the change list. Collapsed by default so a long document does not push the change list below the fold.</li>
+    </ul>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>Identical documents</strong> (including ones that only differ in key order or whitespace) report "No differences," not an empty, ambiguous list.</li>
+      <li><strong>A key present with value <code>null</code></strong> is distinguished from the key being entirely absent: removing a <code>null</code>-valued key is reported as removed, with <code>null</code> as its value.</li>
+      <li><strong>A non-identifier key name</strong> like <code>"a b"</code> is shown bracket-quoted in the path (<code>$["a b"]</code>) rather than as an invalid <code>$.a b</code>.</li>
+      <li><strong>Extremely deeply nested documents</strong> (several thousand levels) are refused with a clear message rather than crashing the tab, the same limit the JSON Formatter uses.</li>
+    </ul>
+
+    <h2>Do the same thing in code</h2>
+    <pre><code>{`// JavaScript: a quick structural diff for simple cases
+function deepEqual(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
+// Note: this is order-sensitive for object keys unless you sort them first,
+// and doesn't tell you *what* changed the way this tool's key-path list does.`}</code></pre>
+    <p>
+      Comparing plain text or source code instead of JSON? The <a href="/tools/text-diff-checker">Text Diff Checker</a>
+      handles line and word-level changes, with basic syntax highlighting for common languages.
+    </p>
+  </Fragment>
+</ToolLayout>
