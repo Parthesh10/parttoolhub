@@ -81,5 +81,13 @@
   }
   .single textarea, .ts-result textarea { min-height: 60px; }
   .ts-result { margin-top: 1rem; }
+  /* The shared textarea look (global.css) only targets .pane/.single boxes, so this result box
+     fell back to browser defaults: ~85px wide, the date wrapped onto two lines (UI check 2026-09-25). */
+  .ts-result textarea {
+    width: 100%; resize: vertical; font-family: var(--mono); font-size: 0.95rem; line-height: 1.5;
+    padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--surface); color: var(--text);
+  }
+  .ts-result textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
   .ts-grid { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; margin-top: 1rem; font-size: 0.9rem; }
 </style>
