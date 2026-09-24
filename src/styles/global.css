@@ -322,7 +322,9 @@ th { background: var(--surface-2); font-weight: 650; }
    nothing else on the page moves. */
 @media (min-width: 1300px) {
   .tool:not(.is-fullscreen):has(> .panes) {
-    --tool-w: min(100vw - 6rem, 1400px);
+    /* 7.5rem each side keeps the card clear of the floating buttons column (~87px wide with the
+       search button's ⌘K label, plus its 1.1rem inset), measured at 1300-1600px. */
+    --tool-w: max(100%, min(100vw - 15rem, 1400px));
     width: var(--tool-w); margin-inline: calc((100% - var(--tool-w)) / 2);
   }
 }
