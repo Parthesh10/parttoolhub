@@ -433,6 +433,8 @@ body.no-scroll { overflow: hidden; }
 }
 .gutter span { display: block; }
 .gutter span.active { color: var(--text); font-weight: 700; }
+/* The line a parser error points at (JSON Formatter). Gutter spans are built with innerHTML. */
+.gutter span.err { color: var(--danger); font-weight: 700; }
 .pane-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem; }
 
 /* Syntax-coloured read-only output (B1). A <textarea> can only show one colour, so a <pre> holding

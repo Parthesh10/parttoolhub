@@ -24,6 +24,7 @@
           autocomplete="off"
           placeholder={'{\n  "name": "Ada",\n  "active": true,\n  "tags": ["admin", "beta"]\n}'}
         ></textarea>
+        <div class="err-band" id="input-err-band" aria-hidden="true" hidden></div>
       </div>
       <div class="pane-actions">
         <button type="button" class="btn btn-sm" id="btn-paste">Paste</button>
@@ -44,9 +45,16 @@
         <label for="output">Result</label>
         <span class="stat" id="output-stat" aria-live="polite"></span>
       </div>
+      <p class="json-summary" id="json-summary" hidden></p>
       <div class="code-wrap" id="output-code-wrap">
         <div class="gutter" id="output-gutter" aria-hidden="true"></div>
         <textarea id="output" rows="14" readonly spellcheck="false" placeholder="Formatted JSON appears here as you type"></textarea>
+      </div>
+      <div class="tree-tools" id="tree-tools" hidden>
+        <input type="search" id="tree-search" placeholder="Filter keys and values…" aria-label="Filter the tree by key or value" autocomplete="off" spellcheck="false" />
+        <button type="button" class="btn btn-sm" id="tree-expand">Expand all</button>
+        <button type="button" class="btn btn-sm" id="tree-collapse">Collapse all</button>
+        <span class="stat" id="tree-count" aria-live="polite"></span>
       </div>
       <div class="jt-root" id="output-tree"></div>
       <div class="pane-actions">
@@ -140,6 +148,36 @@
   /* SEO-002 perf fix: the "N more items" notice for a truncated large array — deliberately not
      .jt-leaf (no cursor:pointer/hover, nothing to click or copy, just an explanation). */
   :global(.jt-truncated) { padding: 0.05rem 0 0.05rem 1rem; color: var(--text-muted); font-style: italic; }
+  /* Redesign round 1: tree filter. .jt-leaf/.jt-node set their own display, so a filtered-out
+     node needs an explicit rule to stay hidden; a match is tinted, not re-coloured, so the
+     syntax colours still read. */
+  :global(.jt-root [hidden]) { display: none !important; }
+  :global(.jt-root .jt-hit) { background: color-mix(in srgb, var(--accent-2) 22%, transparent); }
+  .tree-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+  .tree-tools[hidden] { display: none; }
+  .tree-tools input {
+    flex: 1 1 12rem; min-width: 0; font: inherit; font-size: 0.875rem; color: var(--text);
+    padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+  }
+  .tree-tools input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  @media (pointer: coarse) { .tree-tools input { min-height: 44px; } }
+
+  /* Redesign round 1: shape of the valid document at a glance. Chips are built via innerHTML. */
+  .json-summary { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0 0 0.45rem; }
+  .json-summary[hidden] { display: none; }
+  .json-summary :global(span) {
+    font-size: 0.78rem; font-variant-numeric: tabular-nums; color: var(--text-muted);
+    padding: 0.1rem 0.5rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2);
+  }
+
+  /* Redesign round 1: the failing input line is tinted where it is, positioned by the client
+     script from the (wrap-aware) gutter row of that line, so the problem is visible in place
+     rather than only in the banner below. */
+  .err-band {
+    position: absolute; left: 0; right: 0; pointer-events: none;
+    background: color-mix(in srgb, var(--danger) 16%, transparent);
+    border-left: 3px solid var(--danger);
+  }
 
   /* SITE-002: the status banner becomes a click target to jump to the error's line/column,
      only when it actually names one (toggled in json-formatter.client.ts). Starting here per

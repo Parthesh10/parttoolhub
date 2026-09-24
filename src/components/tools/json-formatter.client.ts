@@ -3,6 +3,7 @@ import { renderJsonTree } from '../../lib/json-tree';
 import { jsonToTsInterface } from '../../lib/json-to-ts';
 import { sendToTool } from '../../lib/transfer';
 import { attachJsonHighlight } from './json-highlight-layer';
+import { jsonStats, describeStats } from '../../lib/json-stats';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -31,6 +32,11 @@ const viewTreeBtn = $<HTMLButtonElement>('view-tree');
 const viewTsBtn = $<HTMLButtonElement>('view-ts');
 const sampleSelect = $<HTMLSelectElement>('sample-select');
 const autofixBtn = $<HTMLButtonElement>('btn-autofix');
+const summaryEl = $('json-summary');
+const errBand = $('input-err-band');
+const treeTools = $('tree-tools');
+const treeSearch = $<HTMLInputElement>('tree-search');
+const treeCount = $('tree-count');
 
 // B1: coloured keys/strings/numbers/booleans/null in the Text view (the TS view stays plain).
 const outputHl = attachJsonHighlight(output);
@@ -51,6 +57,7 @@ function setViewMode(next: 'text' | 'tree' | 'ts') {
   // element hidden/shown, so re-running render() is what actually swaps the textarea's content.
   outputCodeWrap.hidden = next === 'tree';
   outputTree.classList.toggle('is-visible', next === 'tree');
+  treeTools.hidden = next !== 'tree';
   track('tool_option', { option: 'view', value: next }, 'opt:view');
   $('btn-download').textContent = next === 'ts' ? 'Download .ts' : 'Download .json';
   render();
@@ -155,7 +162,7 @@ function updateGutterLines(el: HTMLTextAreaElement, gutter: HTMLElement) {
   gutter.scrollTop = el.scrollTop;
   updateActiveLine(el, gutter);
 }
-input.addEventListener('scroll', () => { inputGutter.scrollTop = input.scrollTop; });
+input.addEventListener('scroll', () => { inputGutter.scrollTop = input.scrollTop; positionErrBand(); });
 input.addEventListener('click', () => updateActiveLine(input, inputGutter));
 input.addEventListener('keyup', () => updateActiveLine(input, inputGutter));
 output.addEventListener('scroll', () => { outputGutter.scrollTop = output.scrollTop; });
@@ -331,6 +338,7 @@ function render() {
   if (!raw.trim()) {
     output.value = '';
     outputHl.update();
+    setSummary([]);
     updateGutterLines(output, outputGutter);
     outputTree.innerHTML = '';
     outputStat.textContent = '';
@@ -358,6 +366,8 @@ function render() {
     status.hidden = true;
     setErrorLocation();
     outputTree.innerHTML = parsed.ok ? renderJsonTree(parsed.value) : '';
+    if (treeSearch.value.trim()) filterTree();
+    setSummary(parsed.ok ? describeStats(jsonStats(parsed.value)) : []);
     // UX-009: only offer the handoff when JSON to CSV could actually do something with it —
     // it requires a top-level array (an object or scalar errors immediately on arrival).
     handoffActions.hidden = result.kind !== 'array';
@@ -365,6 +375,7 @@ function render() {
   } else {
     output.value = '';
     outputHl.update();
+    setSummary([]);
     updateGutterLines(output, outputGutter);
     outputTree.innerHTML = '';
     outputStat.textContent = 'Invalid JSON';
@@ -378,8 +389,94 @@ function render() {
   }
 }
 
+// --- Redesign round 1: the failing input line is marked where it is ----------------
+// Red line number in the gutter plus a tinted band over the line itself, positioned from
+// that line's gutter row (whose height already follows soft-wrapping, see B7), so the band
+// covers every visual row of a wrapped line. Re-positioned on scroll and resize.
+let errLine = 0;
+function markErrorLine() {
+  inputGutter.querySelector('.err')?.classList.remove('err');
+  if (errLine) inputGutter.children[errLine - 1]?.classList.add('err');
+  positionErrBand();
+}
+function positionErrBand() {
+  const row = errLine ? (inputGutter.children[errLine - 1] as HTMLElement | undefined) : undefined;
+  if (!row) {
+    errBand.hidden = true;
+    return;
+  }
+  const top = row.offsetTop - input.scrollTop;
+  const visible = top + row.offsetHeight > 0 && top < input.clientHeight;
+  errBand.hidden = !visible;
+  errBand.style.top = `${top}px`;
+  errBand.style.height = `${row.offsetHeight}px`;
+}
+new ResizeObserver(() => positionErrBand()).observe(input);
+
+// --- Redesign round 1: summary strip -------------------------------------------------
+function setSummary(parts: string[]) {
+  summaryEl.hidden = parts.length === 0;
+  // Parts are generated counts and fixed words, never user text.
+  summaryEl.innerHTML = parts.map((p) => `<span>${p}</span>`).join('');
+}
+
+// --- Redesign round 1: tree filter, expand / collapse all ----------------------------
+// A leaf matches on its key or value; a container matches on its own key, and then shows its
+// whole subtree. Containers stay visible (and open) while any descendant matches.
+function filterTree() {
+  const q = treeSearch.value.trim().toLowerCase();
+  const leaves = outputTree.querySelectorAll<HTMLElement>('.jt-leaf');
+  const nodes = [...outputTree.querySelectorAll<HTMLDetailsElement>('details.jt-node')];
+  outputTree.querySelectorAll('.jt-hit').forEach((el) => el.classList.remove('jt-hit'));
+  if (!q) {
+    leaves.forEach((l) => (l.hidden = false));
+    nodes.forEach((n) => (n.hidden = false));
+    treeCount.textContent = '';
+    return;
+  }
+  let hits = 0;
+  leaves.forEach((l) => {
+    const hit = (l.textContent ?? '').toLowerCase().includes(q);
+    l.hidden = !hit;
+    l.classList.toggle('jt-hit', hit);
+    if (hit) hits++;
+  });
+  const keyHits: HTMLDetailsElement[] = [];
+  for (const node of nodes.reverse()) { // deepest first, so a parent sees its children's result
+    const summary = node.querySelector(':scope > summary') as HTMLElement;
+    const key = summary.querySelector('.jt-key')?.textContent ?? '';
+    const selfHit = key.toLowerCase().includes(q);
+    const childShown = node.querySelector(':scope > .jt-children > :not([hidden])') !== null;
+    node.hidden = !(selfHit || childShown);
+    if (!node.hidden) node.open = true;
+    if (selfHit) {
+      summary.classList.add('jt-hit');
+      keyHits.push(node);
+      hits++;
+    }
+  }
+  for (const node of keyHits) node.querySelectorAll<HTMLElement>('[hidden]').forEach((el) => (el.hidden = false));
+  treeCount.textContent = hits ? `${hits} match${hits === 1 ? '' : 'es'}` : 'No matches';
+}
+let treeSearchTimer: number | undefined;
+treeSearch.addEventListener('input', () => {
+  window.clearTimeout(treeSearchTimer);
+  treeSearchTimer = window.setTimeout(filterTree, 120);
+});
+function setAllOpen(open: boolean) {
+  outputTree.querySelectorAll<HTMLDetailsElement>('details.jt-node').forEach((d, i) => {
+    // Collapse all keeps the root open, so the top-level keys stay visible.
+    d.open = open || i === 0;
+  });
+  track('tool_option', { option: 'tree', value: open ? 'expand-all' : 'collapse-all' });
+}
+$('tree-expand').addEventListener('click', () => setAllOpen(true));
+$('tree-collapse').addEventListener('click', () => setAllOpen(false));
+
 // --- SITE-002: click the error banner to jump the cursor to that line/column ------
 function setErrorLocation(line?: number, column?: number) {
+  errLine = line ?? 0;
+  markErrorLine();
   if (line) {
     status.dataset.errLine = String(line);
     status.dataset.errCol = String(column ?? 1);
