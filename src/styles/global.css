@@ -394,6 +394,27 @@ body.no-scroll { overflow: hidden; }
   /* Header nav/toggle sizing lives in Header.astro (scoped styles win there). */
 }
 
+/* Result tiles and label/value stats that tool scripts build with innerHTML (Code Case, Color,
+   Number Base, Data Size, Aspect Ratio, Date Difference, Timestamp, JWT). They must live here, not
+   in a component's scoped <style>: Astro only stamps its data-astro-cid attribute on server-rendered
+   markup, so scoped rules silently never matched these and they rendered as bare browser buttons
+   (UI audit 2026-09-24, A1). A tool-specific variant goes in its component wrapped in :global(). */
+.cc-row {
+  display: flex; flex-direction: column; gap: 0.25rem; text-align: left; cursor: pointer;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+  padding: 0.55rem 0.75rem; font: inherit; color: inherit; min-height: 44px;
+  transition: border-color 0.15s, transform 0.15s var(--ease-spring);
+}
+.cc-row:hover, .cc-row:focus-visible { border-color: var(--accent); }
+.cc-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cc-row:active { transform: scale(0.98); }
+.cc-row .k, .ts-grid .item .k, .jwt-timing .item .k {
+  color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em;
+}
+.cc-row .v { font-weight: 600; font-family: var(--mono); word-break: break-all; }
+.ts-grid .item, .jwt-timing .item { display: flex; flex-direction: column; }
+.ts-grid .item .v, .jwt-timing .item .v { font-weight: 600; }
+
 .chip {
   font: inherit; font-size: 0.82rem; font-weight: 600; padding: 0.3rem 0.7rem;
   border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text);

@@ -83,20 +83,13 @@
   .ar-headline { font-size: 1.6rem; font-weight: 700; font-family: var(--mono); margin: 0; }
   .ar-match { margin: 0.15rem 0 0.9rem; font-size: 0.9rem; }
   .ts-grid { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; margin: 0 0 1rem; font-size: 0.9rem; }
-  .ts-grid .item { display: flex; flex-direction: column; }
-  .ts-grid .item .k { color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
-  .ts-grid .item .v { font-weight: 600; }
 
   .ar-scale, .ar-resolutions { margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid var(--border); }
   .ar-scale h3, .ar-resolutions h3 { margin: 0 0 0.35rem; font-size: 1rem; }
   .ar-scale-hint { margin: 0 0 0.25rem; font-size: 0.85rem; }
 
   .cc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.6rem; margin-top: 0.75rem; }
-  .cc-row {
-    display: flex; align-items: center; justify-content: center; cursor: pointer; text-align: center;
-    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
-    padding: 0.55rem 0.75rem; font: inherit; font-family: var(--mono); font-weight: 600; color: inherit; min-height: 44px;
-  }
-  .cc-row:hover, .cc-row:focus-visible { border-color: var(--accent); }
+  /* Resolution presets: a single centered value, unlike the shared label-over-value .cc-row. */
+  .cc-grid :global(.cc-row) { align-items: center; justify-content: center; text-align: center; font-family: var(--mono); font-weight: 600; }
   .cc-note { font-size: 0.85rem; margin-top: 0.6rem; }
 </style>

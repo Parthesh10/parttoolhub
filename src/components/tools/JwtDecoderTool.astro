@@ -67,11 +67,8 @@
   .jwt-panes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
   @media (max-width: 760px) { .jwt-panes { grid-template-columns: 1fr; } }
   .jwt-timing { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; margin-top: 1rem; font-size: 0.9rem; }
-  .jwt-timing .item { display: flex; flex-direction: column; }
-  .jwt-timing .item .k { color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
-  .jwt-timing .item .v { font-weight: 600; }
-  .jwt-timing .v.expired { color: var(--danger); }
-  .jwt-timing .v.valid { color: var(--success); }
+  .jwt-timing :global(.v.expired) { color: var(--danger); }
+  .jwt-timing :global(.v.valid) { color: var(--success); }
 
   /* JWT-002 claims table. Built via innerHTML in jwt-decoder.client.ts, so Astro's scoped-style
      attribute never reaches these elements (documented gotcha, CLAUDE.md) — :global() throughout. */
