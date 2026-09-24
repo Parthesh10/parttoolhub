@@ -114,8 +114,10 @@ const toolSchema = {
 </Base>
 
 <style>
-  .hero { margin-bottom: 1.25rem; max-width: 76ch; }
-  .lead { font-size: 1.1rem; color: var(--text-muted); margin: 0; }
+  /* The 76ch reading cap belongs on the lead only: on .hero it was measured at the body font size
+     and so capped the much larger h1 too, wrapping short tool names onto two lines. */
+  .hero { margin-bottom: 1.25rem; }
+  .lead { font-size: 1.1rem; color: var(--text-muted); margin: 0; max-width: 76ch; }
   .steps li { margin-bottom: 0.45rem; }
   .trust-line { font-size: 0.875rem; margin-top: 2rem; max-width: 76ch; }
 </style>

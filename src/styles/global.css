@@ -312,6 +312,14 @@ th { background: var(--surface-2); font-weight: 650; }
 /* UX-003: fullscreen/focus mode. Per-tool JS toggles .is-fullscreen on the .tool section itself
    and .no-scroll on <body> (prevents the page scrolling behind the overlay); Esc exits. */
 .tool-toolbar { display: flex; justify-content: flex-end; margin-bottom: 0.75rem; }
+/* Wide screens: the toolbar (only ever the Fullscreen button) sits just above the card's top-right
+   corner, in the empty strip beside the 76ch lead, instead of spending a whole row inside the card.
+   Part of pulling the tool up the page on laptop screens (UI audit 2026-09-24, B2). Below 1000px
+   the lead spans the full width, so the button keeps its own row. */
+@media (min-width: 1000px) {
+  .tool { position: relative; }
+  .tool:not(.is-fullscreen) > .tool-toolbar { position: absolute; right: 0; bottom: calc(100% + 0.6rem); margin: 0; }
+}
 .tool.is-fullscreen {
   position: fixed; inset: 0; z-index: 70; margin: 0; border-radius: 0;
   overflow-y: auto; max-height: 100vh; box-shadow: none;
