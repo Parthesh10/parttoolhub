@@ -346,7 +346,7 @@ export const TOOLS: Tool[] = [
     features: ['Headings, bold, italic, strikethrough, links, lists, tables, code and quotes', 'Copy as rich text: one paste into Google Docs, Word, Gmail, Outlook, Teams or Notion', 'Live preview of exactly what will be pasted', 'Copy or download the HTML', 'Stays on your device; nothing is uploaded to a server'],
     intent: 'markdown to google docs',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-18',
+    reviewedOn: '2026-09-24',
     spec: { name: 'GitHub Flavored Markdown', url: 'https://github.github.com/gfm/' },
   },
   {

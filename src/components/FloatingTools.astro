@@ -109,7 +109,11 @@ const index = TOOLS.map((t) => ({
   .floating-tools {
     position: fixed; right: 1.1rem; bottom: calc(1.1rem + env(safe-area-inset-bottom, 0px));
     display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; z-index: 60;
+    transition: transform 0.25s var(--ease-spring), opacity 0.2s;
   }
+  /* Phones only (set by floating-tools.client.ts): slid off the bottom-right corner while
+     scrolling down or typing, so they never sit on top of a tool's own buttons. */
+  .floating-tools.is-tucked { transform: translateX(calc(100% + 1.5rem)); opacity: 0; pointer-events: none; }
   /* Frosted-glass FAB, iOS control-center style. */
   .fab {
     display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;

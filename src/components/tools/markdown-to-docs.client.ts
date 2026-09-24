@@ -296,8 +296,11 @@ function showToast(msg: string) {
  * text box still gets readable text. Older browsers without ClipboardItem get the
  * same result by copying a selection of the rendered preview.
  */
-async function copyRich() {
-  if (!currentHtml) return showToast('Nothing to copy yet');
+async function copyRich(): Promise<boolean> {
+  if (!currentHtml) {
+    showToast('Nothing to copy yet');
+    return false;
+  }
   track('copy_result', { target: 'rich' });
   try {
     const item = new ClipboardItem({
@@ -307,6 +310,7 @@ async function copyRich() {
     await navigator.clipboard.write([item]);
     setStatus('ok', 'Copied as formatted text. In Google Docs (or Word, Gmail, Teams) press Ctrl+V / ⌘V to paste with the formatting.');
     showToast('Copied. Paste into Google Docs');
+    return true;
   } catch {
     const range = document.createRange();
     range.selectNodeContents(preview);
@@ -321,7 +325,29 @@ async function copyRich() {
     } else {
       setStatus('error', 'Your browser blocked clipboard access. Select the preview with the mouse and press Ctrl+C / ⌘C instead; the formatting comes with it.');
     }
+    return ok;
   }
+}
+
+/**
+ * "Copy & open Google Doc": docs.new cannot be pre-filled (it takes no content
+ * and another site's tab cannot be written to), so the next best thing is one
+ * click that copies the formatted result *then* opens the blank doc, leaving
+ * only Ctrl+V. The copy runs first because Chrome refuses a clipboard write once
+ * focus has moved to the new tab; the tab still opens within the click's
+ * user-activation window, so pop-up blockers let it through. With nothing to
+ * copy (or no JS) the element stays a plain link to a blank doc.
+ */
+const DOCS_NEW_URL = 'https://docs.new';
+async function copyAndOpenDocs(e: MouseEvent) {
+  track('tool_option', { option: 'link-docs', value: 'open' }, 'opt:link-docs');
+  if (!currentHtml) return;
+  e.preventDefault();
+  const copied = await copyRich();
+  const tab = window.open(DOCS_NEW_URL, '_blank');
+  if (tab) tab.opener = null;
+  else setStatus('error', 'Your browser blocked the new tab. Open docs.new yourself and press Ctrl+V / ⌘V there.');
+  if (tab && copied) setStatus('ok', 'Copied. A new Google Doc is opening in another tab; press Ctrl+V / ⌘V there to paste with the formatting.');
 }
 
 async function copyHtml() {
@@ -361,7 +387,7 @@ pasteBtn.addEventListener('click', pasteFromClipboard);
 copyBtn.addEventListener('click', () => void copyRich());
 copyHtmlBtn.addEventListener('click', () => void copyHtml());
 downloadBtn.addEventListener('click', downloadHtml);
-$('link-docs').addEventListener('click', () => track('tool_option', { option: 'link-docs', value: 'open' }, 'opt:link-docs'));
+$('link-docs').addEventListener('click', (e) => void copyAndOpenDocs(e));
 $('btn-clear').addEventListener('click', () => {
   track('reset_tool');
   input.value = '';

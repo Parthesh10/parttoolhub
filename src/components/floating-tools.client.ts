@@ -74,6 +74,27 @@ function starButton(entry: Entry): string {
   return `<button type="button" class="r-star" data-slug="${escapeHtml(slug)}" aria-pressed="${on}" aria-label="${on ? 'Remove from favorites' : 'Add to favorites'}" tabindex="-1">${on ? '★' : '☆'}</button>`;
 }
 
+// --- Phones: tuck the buttons away while reading or typing (UI audit 2026-09-24, A3). ---
+// On a narrow screen the column of floating buttons sits on top of the page itself and
+// covered tool buttons (Image to Base64's Copy). They slide out while scrolling down or
+// while a text field has focus, and come back on any scroll up. Desktop keeps them fixed:
+// there they sit in the empty margin beside the content column.
+const floating = document.querySelector<HTMLElement>('.floating-tools');
+const narrow = window.matchMedia('(max-width: 640px)');
+let lastY = window.scrollY;
+let typing = false;
+function setTucked(on: boolean) {
+  if (!floating) return;
+  // Never hide a button whose menu is open.
+  if (on && floating.querySelector('[aria-expanded="true"]')) on = false;
+  floating.classList.toggle('is-tucked', on && narrow.matches);
+}
+const isTextField = (el: EventTarget | null) =>
+  el instanceof HTMLElement && !el.closest('.floating-tools, .palette') &&
+  (el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !['checkbox', 'radio', 'button'].includes(el.type)) || el.isContentEditable);
+document.addEventListener('focusin', (e) => { if (isTextField(e.target)) { typing = true; setTucked(true); } });
+document.addEventListener('focusout', (e) => { if (isTextField(e.target)) { typing = false; setTucked(false); } });
+
 // --- Back to top: appears once the hero has scrolled past, not on a short page. ---
 let ticking = false;
 function onScroll() {
@@ -81,6 +102,11 @@ function onScroll() {
   ticking = true;
   requestAnimationFrame(() => {
     fabTop.hidden = window.scrollY < 480;
+    const dy = window.scrollY - lastY;
+    if (Math.abs(dy) > 8) {
+      setTucked(typing || (dy > 0 && window.scrollY > 120));
+      lastY = window.scrollY;
+    }
     ticking = false;
   });
 }

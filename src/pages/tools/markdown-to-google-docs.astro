@@ -31,7 +31,7 @@ if (!/<a href="https:\/\/example.com">ok<\/a>/.test(unsafe) || /javascript:/.tes
 const steps = [
   'Paste the Markdown into the left box. The preview on the right shows the formatted result as you type: headings, bold, lists, tables, code, links.',
   'Click <strong>Copy for Google Docs</strong> (or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the input box). The formatted text and a plain-text copy both go on the clipboard.',
-  'Open your document (<strong>Open a new Google Doc ↗</strong> creates one) and press <kbd>Ctrl</kbd>+<kbd>V</kbd> (<kbd>⌘</kbd>+<kbd>V</kbd> on a Mac). Word, Gmail, Outlook, Teams and Notion accept the same paste.',
+  'Open your document (<strong>Copy &amp; open Google Doc ↗</strong> copies and opens a new one in a single click) and press <kbd>Ctrl</kbd>+<kbd>V</kbd> (<kbd>⌘</kbd>+<kbd>V</kbd> on a Mac). Word, Gmail, Outlook, Teams and Notion accept the same paste.',
   'Need the code instead? <strong>Copy HTML</strong> or <strong>Download .html</strong> give you the fragment the preview is made of.',
 ];
 
@@ -95,7 +95,7 @@ const faq = [
     <h2>Options explained</h2>
     <ul>
       <li><strong>Copy for Google Docs</strong> puts the formatted result on the clipboard as HTML plus plain text. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the input box does the same. If your browser cannot write HTML to the clipboard directly (older Firefox), the tool selects the preview and copies that instead, which carries the same formatting.</li>
-      <li><strong>Open a new Google Doc ↗</strong> opens <code>docs.new</code> in a new tab, a blank document ready for the paste. It is a plain link; nothing is sent to it.</li>
+      <li><strong>Copy &amp; open Google Doc ↗</strong> does what <strong>Copy for Google Docs</strong> does, then opens <code>docs.new</code> (a new blank Google Doc) in another tab, so all that is left is <kbd>Ctrl</kbd>+<kbd>V</kbd>. Google does not let any site open a document with text already in it, so the paste is the one step it cannot do for you. Nothing is sent to Google; the content only travels through your clipboard. With the input empty it just opens a blank doc.</li>
       <li><strong>Copy HTML</strong> copies the HTML fragment as text, for a CMS field, an email template or a page.</li>
       <li><strong>Download .html</strong> saves the fragment wrapped in a minimal page (<code>&lt;meta charset="utf-8"&gt;</code> and a title) as <code>document.html</code>, which Word opens directly.</li>
       <li><strong>Load sample</strong> inserts the checklist shown above; <strong>Clear</strong> empties the input and the preview.</li>
