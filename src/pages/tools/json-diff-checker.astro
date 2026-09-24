@@ -28,7 +28,7 @@ const steps = [
   'Paste the <strong>original JSON</strong> on the left and the <strong>changed JSON</strong> on the right.',
   'Every added, removed and changed key appears in the list below, by key path.',
   'Reordering keys or re-indenting either side never shows as a change.',
-  'Open "Full pretty-printed JSON" to see both sides formatted for context, or copy the change list.',
+  'Narrow the list with the <strong>Added</strong>, <strong>Removed</strong> and <strong>Changed</strong> chips, switch to <strong>Side by side</strong> to see both documents formatted and aligned, or copy the change list.',
 ];
 
 const faq = [
@@ -79,7 +79,7 @@ const faq = [
     <ul>
       <li><strong>Original JSON / Changed JSON</strong>: any valid JSON value, not just objects (arrays and bare primitives work too).</li>
       <li><strong>Swap (⇅)</strong>: exchanges Original and Changed.</li>
-      <li><strong>Full pretty-printed JSON</strong>: both sides reformatted with 2-space indent, for context alongside the change list. Collapsed by default so a long document does not push the change list below the fold.</li>
+      <li><strong>Changes / Side by side</strong>: the change list by key path (filter it to one kind of change with the chips above it), or both documents reformatted with 2-space indent and aligned line by line, with changed lines marked and long unchanged stretches folded. Side by side is a text comparison of the formatted output, so unlike the change list it can show a moved key as a removal plus an addition. It needs a wide screen; phones show the change list.</li>
     </ul>
 
     <h2>Edge cases and common errors</h2>

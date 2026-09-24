@@ -124,25 +124,6 @@
     border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
     max-height: 60vh; overflow: auto; padding: 0.5rem 0; position: relative;
   }
-  /* Redesign round 1 rows (built via innerHTML, hence :global). Split: old number | old line |
-     new number | new line; unified: old number | new number | sign | line. Fixed-width number
-     columns keep every row's columns aligned without a shared table. */
-  :global(.ds-row) { display: grid; grid-template-columns: 3.2em minmax(0, 1fr) 3.2em minmax(0, 1fr); }
-  :global(.du-row) { display: grid; grid-template-columns: 3.2em 3.2em 1.4em minmax(0, 1fr); }
-  :global(.dn) { color: var(--text-muted); text-align: right; padding-right: 0.6em; user-select: none; font-size: 0.82em; line-height: 1.9; }
-  :global(.dc) { padding: 0 0.6rem; min-width: 0; }
-  :global(.ds-row .dn:nth-child(3)) { border-left: 1px solid var(--border); }
-  :global(.c-del) { background: color-mix(in srgb, var(--danger) 12%, transparent); }
-  :global(.c-ins) { background: color-mix(in srgb, var(--success) 14%, transparent); }
-  :global(.c-empty) { background: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--border) 45%, transparent) 6px 7px); }
-  :global(.du-sign) { color: var(--text-muted); user-select: none; }
-  :global(.ds-fold) {
-    display: block; width: 100%; text-align: left; font: inherit; font-size: 0.82rem; cursor: pointer;
-    color: var(--accent); background: var(--surface-2); border: 0; border-block: 1px dashed var(--border);
-    padding: 0.3rem 0.75rem 0.3rem 3.8em;
-  }
-  :global(.ds-fold:hover), :global(.ds-fold:focus-visible) { background: var(--accent-soft); outline: none; }
-  :global(.is-current-change) { box-shadow: inset 3px 0 0 var(--accent-2); }
   :global(.dl-line) { display: flex; padding: 0 0.75rem; }
   :global(.dl-gutter) { flex: 0 0 1.4em; color: var(--text-muted); user-select: none; }
   :global(.dl-text) { flex: 1; min-width: 0; }

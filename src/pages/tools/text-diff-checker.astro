@@ -34,7 +34,8 @@ const steps = [
   'Paste the <strong>original</strong> version on the left and the <strong>changed</strong> version on the right.',
   'Choose <strong>Line diff</strong> (default) or <strong>Word diff</strong> for the whole document.',
   'Pick a language to highlight code, or leave it on <strong>Auto-detect</strong>.',
-  'Added lines/words are green, removed are red; a single changed line also shows exactly which word changed.',
+  'Added lines/words are green, removed are red; a changed line also shows exactly which words changed.',
+  'Read it <strong>Side by side</strong> (old and new aligned, each with its own line numbers) or <strong>Unified</strong>, and step through the changes with the ↑ ↓ buttons.',
 ];
 
 const faq = [
@@ -89,12 +90,14 @@ const faq = [
       <li><strong>Line diff / Word diff</strong>: see the FAQ for when to use each.</li>
       <li><strong>Language</strong>: Auto-detect guesses from simple patterns (brackets and colons for JSON, angle brackets for HTML, <code>SELECT</code>/<code>FROM</code> for SQL, and so on); pick one directly if it guesses wrong, or Plain text to turn highlighting off entirely.</li>
       <li><strong>Swap (⇅)</strong>: exchanges Original and Changed.</li>
+      <li><strong>Side by side / Unified</strong>: side by side puts each original line next to the line that replaced it, with a hatched gap where a line exists on one side only; unified lists each change as its removed lines followed by its added lines. Your choice is remembered in this browser. Phones always get Unified, since two columns of code do not fit.</li>
+      <li><strong>↑ ↓ and Show all lines</strong>: the arrows jump between changes and mark the current one. Long unchanged stretches are folded to three lines of context either side of a change; click a fold to open it, or tick Show all lines.</li>
     </ul>
 
     <h2>Edge cases and common errors</h2>
     <ul>
       <li><strong>Identical inputs</strong> show "No differences found." rather than an empty, ambiguous result.</li>
-      <li><strong>A multi-line block replaced by a different number of lines</strong> shows as a plain removed block plus a plain added block, with no inline word highlighting: word-level highlighting only applies when exactly one line was replaced by exactly one other line, since matching words across a different number of lines has no single obviously-correct pairing.</li>
+      <li><strong>A block of lines replaced by a different block</strong> is paired line by line in order. A pair gets word-level highlighting only when at least half of its text is shared; two unrelated lines that merely sit side by side are marked as a whole removed line and a whole added line instead, since highlighting every word of them says nothing useful. Leftover lines on the longer side show as plain removals or additions.</li>
       <li><strong>Very large inputs are refused</strong> past {MAX_LINES.toLocaleString()} lines or {MAX_WORDS.toLocaleString()} words per side, with the specific limit named in the error, rather than freezing the page.</li>
       <li><strong>Syntax highlighting only applies to line diff</strong>, and is skipped on a line with an inline word-level change in favor of the word-diff colors on that line.</li>
     </ul>

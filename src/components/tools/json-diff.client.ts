@@ -1,4 +1,7 @@
 import { diffJson, SAMPLE_OLD, SAMPLE_NEW, type JsonChange } from '../../lib/json-diff';
+import { diffText } from '../../lib/text-diff';
+import { buildRows, foldRows, type DiffRow, type FoldRow } from '../../lib/diff-rows';
+import { highlightJsonHtml } from '../../lib/json-highlight';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -10,15 +13,22 @@ const status = $('status');
 const result = $('result');
 const stats = $('stats');
 const changesEl = $('changes');
-const prettyOld = $('pretty-old');
-const prettyNew = $('pretty-new');
-const prettyPanes = $('pretty-panes');
-const togglePrettyBtn = $<HTMLButtonElement>('btn-toggle-pretty');
+const gutterOld = $('gutter-old');
+const gutterNew = $('gutter-new');
+const filtersEl = $('filters');
+const sideView = $('side-view');
+const viewListBtn = $<HTMLButtonElement>('view-list');
+const viewSideBtn = $<HTMLButtonElement>('view-side');
 const toast = $('toast');
 const fullscreenBtn = $<HTMLButtonElement>('btn-fullscreen');
 const toolSection = $('tool');
 
 let lastChanges: JsonChange[] | null = null;
+let lastPretty: { old: string; new: string } | null = null;
+let filter: 'all' | JsonChange['type'] = 'all';
+let view: 'list' | 'side' = 'list';
+const expandedFolds = new Set<number>();
+const narrow = window.matchMedia('(max-width: 760px)');
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -30,6 +40,149 @@ function formatValue(v: unknown): string {
   if (s === undefined) return 'undefined';
   return s.length > 100 ? s.slice(0, 100) + '…' : s;
 }
+
+// --- UX-005 + B7: input line numbers (same block as every other gutter tool) -----
+function updateActiveLine(el: HTMLTextAreaElement, gutter: HTMLElement) {
+  const lineIndex = el.value.slice(0, el.selectionStart).split('\n').length; // 1-based
+  gutter.querySelector('.active')?.classList.remove('active');
+  gutter.children[lineIndex - 1]?.classList.add('active');
+}
+// --- B7: gutter rows follow soft-wrapped lines -----------------------------
+// Each number's row is made as tall as its line actually renders, so after a
+// long line soft-wraps, the numbers below it stay level with their own lines
+// instead of drifting one row per wrap. Heights come from an off-screen mirror
+// of the textarea (same content width, font and wrapping). No-wrap mode and
+// very large inputs keep plain one-row numbers. Duplicated per tool on purpose
+// (no shared JS across tools, CLAUDE.md), like the rest of the gutter code.
+const gutterWatched = new WeakSet<HTMLTextAreaElement>();
+let gutterMirror: HTMLDivElement | undefined;
+function sizeGutterRows(el: HTMLTextAreaElement, gutter: HTMLElement) {
+  if (!gutterWatched.has(el)) {
+    gutterWatched.add(el);
+    const again = () => sizeGutterRows(el, gutter);
+    new ResizeObserver(again).observe(el);
+    new MutationObserver(again).observe(el, { attributes: true, attributeFilter: ['class'] });
+  }
+  const rows = gutter.children as HTMLCollectionOf<HTMLElement>;
+  const cs = getComputedStyle(el);
+  const lines = el.value.split('\n');
+  if (cs.whiteSpace === 'pre' || el.clientWidth === 0 || lines.length > 5000 || el.value.length > 300_000) {
+    for (let i = 0; i < rows.length; i++) rows[i].style.height = '';
+    return;
+  }
+  if (!gutterMirror) {
+    gutterMirror = document.createElement('div');
+    gutterMirror.setAttribute('aria-hidden', 'true');
+    gutterMirror.style.cssText =
+      'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:pre-wrap;overflow-wrap:break-word;';
+    document.body.appendChild(gutterMirror);
+  }
+  const m = gutterMirror;
+  m.style.width = `${el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)}px`;
+  m.style.font = cs.font;
+  m.style.lineHeight = cs.lineHeight;
+  m.style.letterSpacing = cs.letterSpacing;
+  m.style.tabSize = cs.tabSize;
+  m.replaceChildren(
+    ...lines.map((line) => {
+      const d = document.createElement('div');
+      d.textContent = line || '\u200b';
+      return d;
+    }),
+  );
+  const measured = m.children as HTMLCollectionOf<HTMLElement>;
+  for (let i = 0; i < rows.length; i++) {
+    rows[i].style.height = measured[i] ? `${measured[i].getBoundingClientRect().height}px` : '';
+  }
+  m.replaceChildren();
+}
+function updateGutterLines(el: HTMLTextAreaElement, gutter: HTMLElement) {
+  const lines = el.value.split('\n').length;
+  if (gutter.children.length !== lines) {
+    let html = '';
+    for (let i = 1; i <= lines; i++) html += `<span>${i}</span>`;
+    gutter.innerHTML = html; // resets scrollTop to 0, so re-sync it below
+  }
+  sizeGutterRows(el, gutter);
+  gutter.scrollTop = el.scrollTop;
+  updateActiveLine(el, gutter);
+}
+for (const [field, gutter] of [[inputOld, gutterOld], [inputNew, gutterNew]] as const) {
+  field.addEventListener('scroll', () => { gutter.scrollTop = field.scrollTop; });
+  field.addEventListener('click', () => updateActiveLine(field, gutter));
+  field.addEventListener('keyup', () => updateActiveLine(field, gutter));
+}
+
+// --- Redesign round 1: filter chips, and a side-by-side view of both formatted documents ---
+function renderChanges() {
+  if (!lastChanges) return;
+  const shown = filter === 'all' ? lastChanges : lastChanges.filter((c) => c.type === filter);
+  changesEl.innerHTML = shown.map(changeRow).join('');
+}
+function setFilter(next: typeof filter) {
+  filter = next;
+  filtersEl.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.filter === next)));
+  renderChanges();
+}
+filtersEl.addEventListener('click', (e) => {
+  const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-filter]');
+  if (!btn) return;
+  setFilter(btn.dataset.filter as typeof filter);
+  track('tool_option', { option: 'filter', value: filter }, 'opt:filter');
+});
+
+/** Same row model as the Text Diff Checker, run over the two pretty-printed documents. */
+function renderSide() {
+  if (!lastPretty) return;
+  const r = diffText(lastPretty.old, lastPretty.new);
+  if (!r.ok) {
+    sideView.textContent = r.error;
+    return;
+  }
+  const cell = (row: DiffRow, side: 'old' | 'new') => {
+    const text = side === 'old' ? row.oldText : row.newText;
+    const cls = row.kind === 'equal' ? '' : text === undefined ? 'c-empty' : side === 'old' ? 'c-del' : 'c-ins';
+    return `<span class="dc ${cls}">${text === undefined ? '' : highlightJsonHtml(text)}</span>`;
+  };
+  const rowsHtml = (rows: DiffRow[]) =>
+    rows.map((row) => `<div class="ds-row"><span class="dn">${row.oldNo ?? ''}</span>${cell(row, 'old')}<span class="dn">${row.newNo ?? ''}</span>${cell(row, 'new')}</div>`).join('');
+  const parts: string[] = [];
+  let segment: DiffRow[] = [];
+  foldRows(buildRows(r.value.groups)).forEach((item, idx) => {
+    if (item.kind !== 'fold') return void segment.push(item);
+    const fold = item as FoldRow;
+    if (expandedFolds.has(idx)) return void segment.push(...fold.rows);
+    parts.push(rowsHtml(segment));
+    segment = [];
+    parts.push(`<button type="button" class="ds-fold" data-fold="${idx}">⋯ ${fold.rows.length.toLocaleString()} unchanged lines: show</button>`);
+  });
+  parts.push(rowsHtml(segment));
+  sideView.innerHTML = parts.join('');
+}
+sideView.addEventListener('click', (e) => {
+  const fold = (e.target as HTMLElement).closest<HTMLElement>('.ds-fold');
+  if (!fold) return;
+  expandedFolds.add(Number(fold.dataset.fold));
+  renderSide();
+});
+
+function applyView() {
+  const side = view === 'side' && !narrow.matches;
+  viewListBtn.setAttribute('aria-pressed', String(!side));
+  viewSideBtn.setAttribute('aria-pressed', String(side));
+  sideView.hidden = !side || !lastPretty;
+  changesEl.hidden = side;
+  filtersEl.hidden = side || !lastChanges?.length;
+  if (side) renderSide();
+}
+for (const [btn, v] of [[viewListBtn, 'list'], [viewSideBtn, 'side']] as const) {
+  btn.addEventListener('click', () => {
+    view = v;
+    applyView();
+    track('tool_option', { option: 'view', value: v }, 'opt:view');
+  });
+}
+narrow.addEventListener('change', applyView);
 
 // --- UX-003: fullscreen / focus mode ---------------------------------------
 function setFullscreen(on: boolean) {
@@ -76,14 +229,18 @@ function updateCharStat() {
 }
 
 function changeRow(c: JsonChange): string {
-  if (c.type === 'added') return `<div class="jd-row jd-added"><span class="jd-badge">+ added</span><span class="jd-path">${escapeHtml(c.path)}</span><span class="jd-val" title="${escapeHtml(JSON.stringify(c.value) ?? 'undefined')}">${escapeHtml(formatValue(c.value))}</span></div>`;
-  if (c.type === 'removed') return `<div class="jd-row jd-removed"><span class="jd-badge">- removed</span><span class="jd-path">${escapeHtml(c.path)}</span><span class="jd-val" title="${escapeHtml(JSON.stringify(c.value) ?? 'undefined')}">${escapeHtml(formatValue(c.value))}</span></div>`;
-  return `<div class="jd-row jd-changed"><span class="jd-badge">~ changed</span><span class="jd-path">${escapeHtml(c.path)}</span><span class="jd-val-old">${escapeHtml(formatValue(c.oldValue))}</span><span class="jd-arrow">→</span><span class="jd-val-new">${escapeHtml(formatValue(c.newValue))}</span></div>`;
+  if (c.type === 'added') return `<div class="jd-row jd-added"><span class="jd-badge">+ added</span><span class="jd-path">${escapeHtml(c.path)}</span><span class="jd-val" title="${escapeHtml(JSON.stringify(c.value) ?? 'undefined')}">${highlightJsonHtml(formatValue(c.value))}</span></div>`;
+  if (c.type === 'removed') return `<div class="jd-row jd-removed"><span class="jd-badge">- removed</span><span class="jd-path">${escapeHtml(c.path)}</span><span class="jd-val" title="${escapeHtml(JSON.stringify(c.value) ?? 'undefined')}">${highlightJsonHtml(formatValue(c.value))}</span></div>`;
+  return `<div class="jd-row jd-changed"><span class="jd-badge">~ changed</span><span class="jd-path">${escapeHtml(c.path)}</span><span class="jd-val-old">${highlightJsonHtml(formatValue(c.oldValue))}</span><span class="jd-arrow">→</span><span class="jd-val-new">${highlightJsonHtml(formatValue(c.newValue))}</span></div>`;
 }
 
 function render() {
   updateCharStat();
+  updateGutterLines(inputOld, gutterOld);
+  updateGutterLines(inputNew, gutterNew);
   lastChanges = null;
+  lastPretty = null;
+  expandedFolds.clear();
 
   if (!inputOld.value.trim() && !inputNew.value.trim()) {
     status.hidden = true;
@@ -112,16 +269,24 @@ function render() {
   status.hidden = true;
   result.hidden = false;
   lastChanges = r.value.changes;
-  prettyOld.textContent = r.value.oldPretty;
-  prettyNew.textContent = r.value.newPretty;
+  lastPretty = { old: r.value.oldPretty, new: r.value.newPretty };
 
   if (r.value.stats.identical) {
     stats.textContent = 'No differences: the two JSON documents are structurally identical.';
     changesEl.innerHTML = '';
+    applyView();
     return;
   }
-  stats.textContent = `${r.value.stats.added} added, ${r.value.stats.removed} removed, ${r.value.stats.changed} changed`;
-  changesEl.innerHTML = r.value.changes.map(changeRow).join('');
+  const { added, removed, changed } = r.value.stats;
+  stats.textContent = `${added} added, ${removed} removed, ${changed} changed`;
+  const counts: Record<string, number> = { all: added + removed + changed, added, removed, changed };
+  filtersEl.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach((b) => {
+    (b.querySelector('span') as HTMLElement).textContent = String(counts[b.dataset.filter!]);
+  });
+  // A filter that no longer matches anything falls back to showing everything.
+  if (filter !== 'all' && !counts[filter]) setFilter('all');
+  else renderChanges();
+  applyView();
 }
 
 let toastTimer: number | undefined;
@@ -195,14 +360,6 @@ $('btn-clear').addEventListener('click', () => {
   inputOld.focus();
 });
 $('btn-copy').addEventListener('click', () => void copyResult());
-togglePrettyBtn.addEventListener('click', () => {
-  const next = prettyPanes.hidden;
-  prettyPanes.hidden = !next;
-  togglePrettyBtn.setAttribute('aria-pressed', String(next));
-  togglePrettyBtn.setAttribute('aria-expanded', String(next));
-  togglePrettyBtn.textContent = next ? 'Hide full pretty-printed JSON' : 'Show full pretty-printed JSON (both sides)';
-  trackOption(togglePrettyBtn);
-});
 
 function onKeydown(e: KeyboardEvent) {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {

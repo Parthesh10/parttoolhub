@@ -13,7 +13,10 @@
         <label for="input-old">Original JSON</label>
         <span class="stat" id="stat-old" aria-live="polite"></span>
       </div>
-      <textarea id="input-old" rows="12" spellcheck="false" autocomplete="off" placeholder={'{\n  "name": "Ada"\n}'}></textarea>
+      <div class="code-wrap">
+        <div class="gutter" id="gutter-old" aria-hidden="true"><span>1</span></div>
+        <textarea id="input-old" rows="12" spellcheck="false" autocomplete="off" placeholder={'{\n  "name": "Ada"\n}'}></textarea>
+      </div>
       <div class="pane-actions">
         <button type="button" class="btn btn-sm" id="btn-paste-old">Paste</button>
       </div>
@@ -23,7 +26,10 @@
         <label for="input-new">Changed JSON</label>
         <span class="stat" id="stat-new" aria-live="polite"></span>
       </div>
-      <textarea id="input-new" rows="12" spellcheck="false" autocomplete="off" placeholder={'{\n  "name": "Ada Lovelace"\n}'}></textarea>
+      <div class="code-wrap">
+        <div class="gutter" id="gutter-new" aria-hidden="true"><span>1</span></div>
+        <textarea id="input-new" rows="12" spellcheck="false" autocomplete="off" placeholder={'{\n  "name": "Ada Lovelace"\n}'}></textarea>
+      </div>
       <div class="pane-actions">
         <button type="button" class="btn btn-sm" id="btn-paste-new">Paste</button>
       </div>
@@ -39,27 +45,25 @@
   <p class="status-banner" id="status" hidden></p>
 
   <div class="jd-result" id="result" hidden>
-    <p class="diff-stats" id="stats"></p>
+    <div class="jd-head">
+      <p class="diff-stats" id="stats"></p>
+      <div class="row jd-views" role="group" aria-label="Result view">
+        <button type="button" class="btn btn-sm" id="view-list" aria-pressed="true">Changes</button>
+        <button type="button" class="btn btn-sm" id="view-side" aria-pressed="false">Side by side</button>
+      </div>
+    </div>
+    <div class="jd-filters" id="filters" role="group" aria-label="Show only one kind of change" hidden>
+      <button type="button" class="chip" data-filter="all" aria-pressed="true">All <span></span></button>
+      <button type="button" class="chip jd-f-added" data-filter="added" aria-pressed="false">Added <span></span></button>
+      <button type="button" class="chip jd-f-removed" data-filter="removed" aria-pressed="false">Removed <span></span></button>
+      <button type="button" class="chip jd-f-changed" data-filter="changed" aria-pressed="false">Changed <span></span></button>
+    </div>
     <div class="jd-changes" id="changes"></div>
+    <div class="diff-view jd-side" id="side-view" hidden></div>
     <div class="pane-actions">
       <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy result</button>
     </div>
 
-    <div class="jd-pretty-details">
-      <button type="button" class="btn btn-sm" id="btn-toggle-pretty" aria-pressed="false" aria-expanded="false" aria-controls="pretty-panes">
-        Show full pretty-printed JSON (both sides)
-      </button>
-      <div class="panes jd-pretty-panes" id="pretty-panes" hidden>
-        <div class="pane">
-          <div class="pane-head"><label>Original, formatted</label></div>
-          <pre class="jd-pretty" id="pretty-old"></pre>
-        </div>
-        <div class="pane">
-          <div class="pane-head"><label>Changed, formatted</label></div>
-          <pre class="jd-pretty" id="pretty-new"></pre>
-        </div>
-      </div>
-    </div>
   </div>
 
   <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
@@ -73,7 +77,24 @@
   @media (max-width: 640px) { .jd-swap { transform: rotate(90deg); } }
 
   .jd-result { margin-top: 1.25rem; }
-  .diff-stats { font-size: 0.9rem; color: var(--text-muted); margin: 0 0 0.6rem; }
+  .jd-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin: 0 0 0.6rem; }
+  .diff-stats { font-size: 0.9rem; color: var(--text-muted); margin: 0; }
+  .jd-views { display: flex; gap: 0.4rem; }
+  /* Two formatted documents side by side need width; phones keep the change list. */
+  @media (max-width: 760px) { .jd-views { display: none; } }
+  .jd-filters { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.7rem; }
+  .jd-filters[hidden] { display: none; }
+  .jd-filters .chip { font-family: var(--font); }
+  .jd-filters .chip span { opacity: 0.75; font-variant-numeric: tabular-nums; }
+  .jd-f-added:not([aria-pressed="true"]) { color: var(--success); }
+  .jd-f-removed:not([aria-pressed="true"]) { color: var(--danger); }
+  .jd-f-changed:not([aria-pressed="true"]) { color: var(--accent); }
+  .jd-side {
+    font-family: var(--mono); font-size: 0.85rem; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+    max-height: 70vh; overflow: auto; padding: 0.5rem 0; position: relative;
+  }
+  .jd-side[hidden] { display: none; }
 
   .jd-changes { display: flex; flex-direction: column; gap: 0.4rem; }
   :global(.jd-row) {
@@ -89,15 +110,9 @@
   :global(.jd-changed .jd-badge) { color: var(--accent); }
   :global(.jd-path) { flex: 0 0 auto; font-weight: 600; word-break: break-all; }
   :global(.jd-val) { color: var(--text-muted); word-break: break-all; }
-  :global(.jd-val-old) { color: var(--danger); text-decoration: line-through; word-break: break-all; }
-  :global(.jd-val-new) { color: var(--success); word-break: break-all; }
+  /* Values carry the JSON syntax colours (.sy-*); the old side of a change is struck through. */
+  :global(.jd-val-old) { text-decoration: line-through; opacity: 0.75; word-break: break-all; }
+  :global(.jd-val-new) { word-break: break-all; }
   :global(.jd-arrow) { color: var(--text-muted); }
 
-  .jd-pretty-details { margin-top: 1.25rem; }
-  .jd-pretty-panes { margin-top: 0.75rem; }
-  .jd-pretty {
-    font-family: var(--mono); font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
-    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); padding: 0.75rem;
-    max-height: 40vh; overflow: auto; margin: 0;
-  }
 </style>

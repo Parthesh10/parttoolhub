@@ -88,7 +88,7 @@ export const TOOLS: Tool[] = [
     features: ['Beautify with 2 or 4 spaces or tabs', 'Minify', 'Error line and column', 'Sort keys alphabetically'],
     intent: 'json formatter',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-18',
+    reviewedOn: '2026-09-24',
     spec: { name: 'RFC 8259 (JSON)', url: 'https://www.rfc-editor.org/rfc/rfc8259' },
   },
   {
@@ -450,10 +450,10 @@ export const TOOLS: Tool[] = [
     description: 'Compare two blocks of text and see every line and word that changed. Line or word diff mode, basic syntax highlighting for code, nothing uploaded.',
     short: 'Paste two versions of text or code and see every line and word that changed, entirely in your browser.',
     category: 'compare',
-    features: ['Line-level diff with inline word highlighting', 'Whole-document word diff for reflowed prose', 'Basic syntax highlighting for 7 languages', 'Nothing you paste ever leaves your browser'],
+    features: ['Line-level diff with inline word highlighting', 'Whole-document word diff for reflowed prose', 'Basic syntax highlighting for 7 languages', 'Side-by-side or unified view with line numbers'],
     intent: 'text diff checker',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-21',
+    reviewedOn: '2026-09-24',
   },
   {
     slug: 'json-diff-checker',
@@ -462,10 +462,10 @@ export const TOOLS: Tool[] = [
     description: 'Compare two JSON documents by key, not by text position. Reordered keys and re-indented whitespace never show as a false change. Nothing uploaded.',
     short: 'Compare two JSON documents by key path, so reordering or re-indenting never shows as a false change.',
     category: 'compare',
-    features: ['Structural diff by key path, not text position', 'Array comparison detects insertions, not just index shifts', 'Reordered keys and whitespace never count as a change', 'Full pretty-printed output for both sides'],
+    features: ['Structural diff by key path, not text position', 'Array comparison detects insertions, not just index shifts', 'Reordered keys and whitespace never count as a change', 'Side-by-side view of both formatted documents'],
     intent: 'json diff checker',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-21',
+    reviewedOn: '2026-09-24',
   },
 ];
 
