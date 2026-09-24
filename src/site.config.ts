@@ -22,6 +22,12 @@ export const SITE = {
    * claim with inspectable code, and feeds the Person schema's sameAs.
    */
   github: 'https://github.com/Parthesh10/parttoolhub',
+  /**
+   * Public contact address, shown on /contact. A Namecheap email forward to the
+   * maintainer's personal inbox, so that address never appears on the site.
+   * AdSense reviewers look for a direct contact method; leave empty to hide.
+   */
+  contactEmail: 'contact@parttoolhub.com',
   /** Maintainer's LinkedIn profile. Optional; feeds /about and Person.sameAs. Leave empty to hide. */
   linkedin: 'https://www.linkedin.com/in/parthesh-gupta/',
   /** Default social preview image, relative to /public. */

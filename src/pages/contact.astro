@@ -10,7 +10,8 @@ import { SITE } from '../site.config';
     <h1>Contact</h1>
     <p>
       {SITE.author} builds and maintains every tool here (more on the <a href="/about">about page</a>).
-      {SITE.linkedin && <>The quickest way to reach me directly is <a href={SITE.linkedin} rel="noopener">LinkedIn</a>.</>}
+      {SITE.contactEmail && <>{' '}For anything at all, email me at <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>.</>}
+      {SITE.linkedin && <>{' '}You can also reach me on <a href={SITE.linkedin} rel="noopener">LinkedIn</a>.</>}
       {SITE.github && (
         <>
           {' '}For bugs and feature requests specifically, open an <a href={`${SITE.github}/issues`} rel="noopener">issue on GitHub</a>.
