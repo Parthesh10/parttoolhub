@@ -10,8 +10,6 @@ const note = $('note');
 const swatch = $('swatch');
 const toast = $('toast');
 const pasteBtn = $<HTMLButtonElement>('btn-paste');
-const fullscreenBtn = $<HTMLButtonElement>('btn-fullscreen');
-const toolSection = $('tool');
 
 const BLACK: Rgba = { r: 0, g: 0, b: 0, a: 1 };
 const WHITE: Rgba = { r: 255, g: 255, b: 255, a: 1 };
@@ -19,19 +17,6 @@ const WHITE: Rgba = { r: 255, g: 255, b: 255, a: 1 };
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
-
-// --- UX-003: fullscreen / focus mode ---------------------------------------
-function setFullscreen(on: boolean) {
-  toolSection.classList.toggle('is-fullscreen', on);
-  document.body.classList.toggle('no-scroll', on);
-  fullscreenBtn.setAttribute('aria-pressed', String(on));
-  fullscreenBtn.textContent = on ? '✕ Exit fullscreen' : '⛶ Fullscreen';
-  track('tool_option', { option: 'fullscreen', value: String(on) });
-}
-fullscreenBtn.addEventListener('click', () => setFullscreen(!toolSection.classList.contains('is-fullscreen')));
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && toolSection.classList.contains('is-fullscreen')) setFullscreen(false);
-});
 
 // --- UX-002: paste from clipboard -------------------------------------------
 // No drag-and-drop here — this input is a single color value, not a file's

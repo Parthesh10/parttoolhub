@@ -24,6 +24,55 @@ function updateActiveLine(el: HTMLTextAreaElement, gutter: HTMLElement) {
   gutter.querySelector('.active')?.classList.remove('active');
   gutter.children[lineIndex - 1]?.classList.add('active');
 }
+// --- B7: gutter rows follow soft-wrapped lines -----------------------------
+// Each number's row is made as tall as its line actually renders, so after a
+// long line soft-wraps, the numbers below it stay level with their own lines
+// instead of drifting one row per wrap. Heights come from an off-screen mirror
+// of the textarea (same content width, font and wrapping). No-wrap mode and
+// very large inputs keep plain one-row numbers. Duplicated per tool on purpose
+// (no shared JS across tools, CLAUDE.md), like the rest of the gutter code.
+const gutterWatched = new WeakSet<HTMLTextAreaElement>();
+let gutterMirror: HTMLDivElement | undefined;
+function sizeGutterRows(el: HTMLTextAreaElement, gutter: HTMLElement) {
+  if (!gutterWatched.has(el)) {
+    gutterWatched.add(el);
+    const again = () => sizeGutterRows(el, gutter);
+    new ResizeObserver(again).observe(el);
+    new MutationObserver(again).observe(el, { attributes: true, attributeFilter: ['class'] });
+  }
+  const rows = gutter.children as HTMLCollectionOf<HTMLElement>;
+  const cs = getComputedStyle(el);
+  const lines = el.value.split('\n');
+  if (cs.whiteSpace === 'pre' || el.clientWidth === 0 || lines.length > 5000 || el.value.length > 300_000) {
+    for (let i = 0; i < rows.length; i++) rows[i].style.height = '';
+    return;
+  }
+  if (!gutterMirror) {
+    gutterMirror = document.createElement('div');
+    gutterMirror.setAttribute('aria-hidden', 'true');
+    gutterMirror.style.cssText =
+      'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:pre-wrap;overflow-wrap:break-word;';
+    document.body.appendChild(gutterMirror);
+  }
+  const m = gutterMirror;
+  m.style.width = `${el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)}px`;
+  m.style.font = cs.font;
+  m.style.lineHeight = cs.lineHeight;
+  m.style.letterSpacing = cs.letterSpacing;
+  m.style.tabSize = cs.tabSize;
+  m.replaceChildren(
+    ...lines.map((line) => {
+      const d = document.createElement('div');
+      d.textContent = line || '\u200b';
+      return d;
+    }),
+  );
+  const measured = m.children as HTMLCollectionOf<HTMLElement>;
+  for (let i = 0; i < rows.length; i++) {
+    rows[i].style.height = measured[i] ? `${measured[i].getBoundingClientRect().height}px` : '';
+  }
+  m.replaceChildren();
+}
 function updateGutterLines(el: HTMLTextAreaElement, gutter: HTMLElement) {
   const lines = el.value.split('\n').length;
   if (gutter.children.length !== lines) {
@@ -31,6 +80,7 @@ function updateGutterLines(el: HTMLTextAreaElement, gutter: HTMLElement) {
     for (let i = 1; i <= lines; i++) html += `<span>${i}</span>`;
     gutter.innerHTML = html; // resets scrollTop to 0, so re-sync it below
   }
+  sizeGutterRows(el, gutter);
   gutter.scrollTop = el.scrollTop;
   updateActiveLine(el, gutter);
 }

@@ -13,8 +13,6 @@ const scaleWidthInput = $<HTMLInputElement>('input-scale-width');
 const scaleHeightInput = $<HTMLInputElement>('input-scale-height');
 const resGrid = $('res-grid');
 const toast = $('toast');
-const fullscreenBtn = $<HTMLButtonElement>('btn-fullscreen');
-const toolSection = $('tool');
 
 let current: RatioInfo | null = null;
 
@@ -26,19 +24,6 @@ function escapeHtml(s: string): string {
 function formatNumber(n: number): string {
   return Number(n.toFixed(2)).toString();
 }
-
-// --- UX-003: fullscreen / focus mode ---------------------------------------
-function setFullscreen(on: boolean) {
-  toolSection.classList.toggle('is-fullscreen', on);
-  document.body.classList.toggle('no-scroll', on);
-  fullscreenBtn.setAttribute('aria-pressed', String(on));
-  fullscreenBtn.textContent = on ? '✕ Exit fullscreen' : '⛶ Fullscreen';
-  track('tool_option', { option: 'fullscreen', value: String(on) });
-}
-fullscreenBtn.addEventListener('click', () => setFullscreen(!toolSection.classList.contains('is-fullscreen')));
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && toolSection.classList.contains('is-fullscreen')) setFullscreen(false);
-});
 
 // --- Analytics (docs/ANALYTICS.md) -----------------------------------------
 // Duplicated per tool on purpose: no shared JS across tools (seo-rules §4).
