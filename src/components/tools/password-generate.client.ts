@@ -1,16 +1,20 @@
-import { generatePasswords, STRENGTH_LABEL, type PasswordOptions } from '../../lib/password-generate';
+import { generatePasswords, crackTimeText, STRENGTH_LABEL, GUESSES_PER_SECOND, type PasswordOptions, type Password } from '../../lib/password-generate';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
-// Named "list", not "output": the static analytics PII guard bans a bare `output`
-// identifier inside any track() call, since on every other tool that name holds
-// converted visitor text. Here it only ever holds freshly generated passwords, but
-// the guard can't tell the two apart by name alone — see uuid-generate.client.ts.
-const list = $<HTMLTextAreaElement>('output');
-const listStat = $('output-stat');
+// The generated batch lives in `batch`, never in a variable named "output": the static
+// analytics PII guard bans a bare `output` identifier inside any track() call, since on every
+// other tool that name holds converted visitor text (see uuid-generate.client.ts).
+let batch: Password[] = [];
+const valueEl = $('pw-value');
+const listEl = $('pw-list');
+const meter = $('pw-meter');
+const meterLabel = $('output-stat');
 const status = $('status');
 const toast = $('toast');
+const copyBtn = $<HTMLButtonElement>('btn-copy');
 const length = $<HTMLInputElement>('opt-length');
+const lengthRange = $<HTMLInputElement>('opt-length-range');
 const uppercase = $<HTMLInputElement>('opt-uppercase');
 const lowercase = $<HTMLInputElement>('opt-lowercase');
 const numbers = $<HTMLInputElement>('opt-numbers');
@@ -19,10 +23,6 @@ const ambiguous = $<HTMLInputElement>('opt-ambiguous');
 const count = $<HTMLSelectElement>('opt-count');
 const fullscreenBtn = $<HTMLButtonElement>('btn-fullscreen');
 const toolSection = $('tool');
-
-function plural(n: number, word: string) {
-  return `${n.toLocaleString()} ${word}${n === 1 ? '' : 's'}`;
-}
 
 // --- UX-003: fullscreen / focus mode ---------------------------------------
 // No paste here — this tool only ever generates fresh passwords, it never
@@ -76,7 +76,7 @@ const sizeBucket = (n: number) => (n < 100 ? 'xs' : n < 1_000 ? 's' : n < 10_000
  * first, automatic generation on page load only.
  */
 function trackRun(action: string, ok: boolean, errorType = 'unknown') {
-  track('tool_use', { action, success: ok, input_source: inputSource, input_size: sizeBucket(list.value.length) });
+  track('tool_use', { action, success: ok, input_source: inputSource, input_size: sizeBucket(batchText().length) });
   if (ok) track('tool_result', { action });
   else track('tool_error', { action, error_type: errorType });
 }
@@ -91,21 +91,52 @@ function trackOption(el: HTMLInputElement | HTMLSelectElement | HTMLButtonElemen
   track('tool_option', { option: el.id || el.dataset.preset || 'unknown', value: v }, `opt:${el.id || el.dataset.preset}`);
 }
 
+// --- Redesign round 1: rendering -------------------------------------------
+const batchText = () => batch.map((p) => p.value).join('\n');
+const escapeHtml = (c: string) => (c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : c);
+/** One span per digit / symbol so they read apart from letters (0 vs O, 1 vs l). */
+function colouredHtml(pw: string): string {
+  let html = '';
+  for (const c of pw) {
+    if (c >= '0' && c <= '9') html += `<span class="pw-d">${c}</span>`;
+    else if (/[A-Za-z]/.test(c)) html += c;
+    else html += `<span class="pw-s">${escapeHtml(c)}</span>`;
+  }
+  return html;
+}
+function render() {
+  const many = batch.length > 1;
+  valueEl.hidden = many;
+  listEl.hidden = !many;
+  copyBtn.textContent = many ? 'Copy all' : 'Copy';
+  if (many) {
+    listEl.innerHTML = batch
+      .map((p, i) => `<div class="pw-row"><code>${colouredHtml(p.value)}</code><button type="button" class="btn btn-sm" data-copy-index="${i}">Copy</button></div>`)
+      .join('');
+  } else {
+    valueEl.innerHTML = batch[0] ? colouredHtml(batch[0].value) : '';
+  }
+  const first = batch[0];
+  meter.dataset.strength = first ? first.strength : 'none';
+  meterLabel.innerHTML = first
+    ? `<strong>${STRENGTH_LABEL[first.strength]}</strong> · ${first.entropyBits} bits · ${crackTimeText(first.entropyBits)} to guess at ${(GUESSES_PER_SECOND / 1e9).toLocaleString()} billion guesses a second${many ? ` · all ${batch.length} are equally strong` : ''}`
+    : '';
+}
+
 function generate(announce = true) {
   const r = generatePasswords(Number(count.value), currentOptions());
   if (!r.ok) {
     trackRun('generate', false, /character type/.test(r.error) ? 'no_charset' : /ambiguous/.test(r.error) ? 'empty_pool' : 'length');
-    list.value = '';
-    listStat.textContent = '';
+    batch = [];
+    render();
     status.hidden = false;
     status.className = 'status-banner is-error';
     status.textContent = r.error;
     return;
   }
   status.hidden = true;
-  list.value = r.value.map((p) => p.value).join('\n');
-  const { entropyBits, strength } = r.value[0];
-  listStat.textContent = `${plural(r.value.length, 'password')} · ${entropyBits} bits each · ${STRENGTH_LABEL[strength]}`;
+  batch = r.value;
+  render();
   if (announce) trackRun('generate', true);
 }
 
@@ -117,23 +148,29 @@ function showToast(msg: string) {
   toastTimer = window.setTimeout(() => (toast.hidden = true), 1800);
 }
 
-async function copyList() {
-  if (!list.value) return showToast('Nothing to copy yet');
-  track('copy_result', { target: 'output' });
+async function copyText(text: string, target: string) {
+  if (!text) return showToast('Nothing to copy yet');
+  track('copy_result', { target });
   try {
-    await navigator.clipboard.writeText(list.value);
+    await navigator.clipboard.writeText(text);
     showToast('Copied to clipboard');
   } catch {
-    list.select();
+    // Clipboard API blocked: copy through a temporary, off-screen textarea instead.
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+    document.body.appendChild(ta);
+    ta.select();
     document.execCommand('copy');
+    ta.remove();
     showToast('Copied');
   }
 }
 
 function downloadList() {
-  if (!list.value) return showToast('Nothing to download yet');
+  if (!batch.length) return showToast('Nothing to download yet');
   track('download_result', { target: 'output' });
-  const blob = new Blob([list.value + '\n'], { type: 'text/plain;charset=utf-8' });
+  const blob = new Blob([batchText() + '\n'], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -143,7 +180,11 @@ function downloadList() {
 }
 
 $('btn-generate').addEventListener('click', () => generate());
-$('btn-copy').addEventListener('click', () => void copyList());
+copyBtn.addEventListener('click', () => void copyText(batchText(), 'output'));
+listEl.addEventListener('click', (e) => {
+  const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-copy-index]');
+  if (btn) void copyText(batch[Number(btn.dataset.copyIndex)]?.value ?? '', 'row');
+});
 $('btn-download').addEventListener('click', downloadList);
 for (const c of [uppercase, lowercase, numbers, symbols, ambiguous, count]) {
   c.addEventListener('change', () => {
@@ -155,12 +196,22 @@ for (const c of [uppercase, lowercase, numbers, symbols, ambiguous, count]) {
 // debounced handler (like every text-input tool on the site) instead of the
 // change-only wiring above — a keystroke should never wait on the generator, and
 // "change" alone would only regenerate on blur, leaving stale passwords on screen
-// while the field still has focus.
+// while the field still has focus. The slider and the field mirror each other; the
+// field can go past the slider's 64 (up to 128), which pins the slider at its end.
 let renderTimer: number | undefined;
-length.addEventListener('input', () => {
+function scheduleGenerate() {
   window.clearTimeout(renderTimer);
-  renderTimer = window.setTimeout(() => generate(), 200);
+  renderTimer = window.setTimeout(() => generate(), 120);
+}
+length.addEventListener('input', () => {
+  lengthRange.value = String(Math.min(64, Math.max(4, Number(length.value) || 4)));
+  scheduleGenerate();
+});
+lengthRange.addEventListener('input', () => {
+  length.value = lengthRange.value;
+  scheduleGenerate();
 });
 length.addEventListener('change', () => trackOption(length));
+lengthRange.addEventListener('change', () => trackOption(lengthRange, 'slider'));
 
 generate(false); // initial paint on load — see the comment on trackRun() above

@@ -125,3 +125,13 @@ test('100 passwords of 128 characters generate well under a second', () => {
   assert.ok(r.ok);
   assert.ok(performance.now() - t0 < 1500, `took ${(performance.now() - t0).toFixed(0)} ms`);
 });
+
+test('crackTimeText: average brute-force time in plain words at 10 billion guesses a second', async () => {
+  const { crackTimeText } = await import('../src/lib/password-generate.ts');
+  assert.equal(crackTimeText(20), 'under a second'); // 2^19 guesses
+  assert.equal(crackTimeText(40), 'about 55 seconds'); // 2^39 / 1e10 = 54.97 s
+  assert.equal(crackTimeText(56), 'about 42 days'); // 2^55 / 1e10 = 3.6e6 s
+  assert.equal(crackTimeText(70), 'about 2 thousand years'); // 1,871 years
+  assert.equal(crackTimeText(80), 'about 2 million years');
+  assert.equal(crackTimeText(104), 'longer than the age of the universe');
+});

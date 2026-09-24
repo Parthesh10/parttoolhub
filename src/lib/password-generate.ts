@@ -158,3 +158,34 @@ export function generatePasswords(count: number, opts: Partial<PasswordOptions> 
   }
   return { ok: true, value: out };
 }
+
+/** Guess rate behind crackTimeText(): a fast offline attack on a leaked, unsalted fast hash. */
+export const GUESSES_PER_SECOND = 1e10;
+
+/**
+ * Plain-words average time to guess a password of `bits` entropy by brute force at
+ * GUESSES_PER_SECOND, for the strength meter. Average, not worst case: half the space
+ * (2^(bits-1) guesses). Deliberately coarse; it answers "how worried should I be",
+ * not "exactly when". Meaningless against a reused or leaked password, like entropy itself.
+ */
+export function crackTimeText(bits: number): string {
+  const seconds = 2 ** (bits - 1) / GUESSES_PER_SECOND;
+  const units: [number, string][] = [
+    [60, 'second'],
+    [60, 'minute'],
+    [24, 'hour'],
+    [365.25, 'day'],
+  ];
+  if (seconds < 1) return 'under a second';
+  let v = seconds;
+  for (const [size, name] of units) {
+    if (v < size) return `about ${Math.round(v)} ${name}${Math.round(v) === 1 ? '' : 's'}`;
+    v /= size;
+  }
+  const years = v;
+  if (years < 1000) return `about ${Math.round(years)} year${Math.round(years) === 1 ? '' : 's'}`;
+  if (years < 1e6) return `about ${Math.round(years / 1000)} thousand years`;
+  if (years < 1e9) return `about ${Math.round(years / 1e6)} million years`;
+  if (years < 1.4e10) return `about ${Math.round(years / 1e9)} billion years`;
+  return 'longer than the age of the universe';
+}

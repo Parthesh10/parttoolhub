@@ -257,7 +257,7 @@ export const TOOLS: Tool[] = [
     features: ['Cryptographically secure randomness (Web Crypto, not Math.random)', 'Uppercase, lowercase, numbers and symbols, individually toggled', 'Guarantees at least one of each selected type when length allows', 'Optional exclusion of ambiguous characters (0, O, 1, l, I)', 'Real entropy in bits and a strength label, not a cosmetic meter'],
     intent: 'password generator',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-18',
+    reviewedOn: '2026-09-24',
   },
   {
     slug: 'lorem-ipsum-generator',
