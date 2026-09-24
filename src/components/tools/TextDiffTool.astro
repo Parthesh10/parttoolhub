@@ -16,6 +16,14 @@
       </div>
     </fieldset>
 
+    <fieldset id="view-fieldset">
+      <legend>Layout</legend>
+      <div class="row" role="group" aria-label="Side by side or unified">
+        <button type="button" class="btn btn-sm" id="view-split" aria-pressed="true">Side by side</button>
+        <button type="button" class="btn btn-sm" id="view-unified" aria-pressed="false">Unified</button>
+      </div>
+    </fieldset>
+
     <fieldset>
       <legend>Syntax highlighting</legend>
       <div class="row">
@@ -43,7 +51,10 @@
         <label for="input-a">Original</label>
         <span class="stat" id="stat-a" aria-live="polite"></span>
       </div>
-      <textarea id="input-a" rows="12" spellcheck="false" autocomplete="off" placeholder="Paste the original text or code…"></textarea>
+      <div class="code-wrap">
+        <div class="gutter" id="gutter-a" aria-hidden="true"><span>1</span></div>
+        <textarea id="input-a" rows="12" spellcheck="false" autocomplete="off" placeholder="Paste the original text or code…"></textarea>
+      </div>
       <div class="pane-actions">
         <button type="button" class="btn btn-sm" id="btn-paste-a">Paste</button>
       </div>
@@ -53,7 +64,10 @@
         <label for="input-b">Changed</label>
         <span class="stat" id="stat-b" aria-live="polite"></span>
       </div>
-      <textarea id="input-b" rows="12" spellcheck="false" autocomplete="off" placeholder="Paste the changed text or code…"></textarea>
+      <div class="code-wrap">
+        <div class="gutter" id="gutter-b" aria-hidden="true"><span>1</span></div>
+        <textarea id="input-b" rows="12" spellcheck="false" autocomplete="off" placeholder="Paste the changed text or code…"></textarea>
+      </div>
       <div class="pane-actions">
         <button type="button" class="btn btn-sm" id="btn-paste-b">Paste</button>
       </div>
@@ -69,7 +83,15 @@
   <p class="status-banner" id="status" hidden></p>
 
   <div class="diff-result" id="result" hidden>
-    <p class="diff-stats" id="stats"></p>
+    <div class="diff-head">
+      <p class="diff-stats" id="stats"></p>
+      <div class="diff-nav" id="diff-nav" hidden>
+        <button type="button" class="btn btn-sm" id="btn-prev" aria-label="Previous change">↑</button>
+        <span class="stat" id="nav-pos" aria-live="polite"></span>
+        <button type="button" class="btn btn-sm" id="btn-next" aria-label="Next change">↓</button>
+        <label class="diff-all"><input type="checkbox" id="opt-show-all" /> Show all lines</label>
+      </div>
+    </div>
     <div class="diff-view" id="diff-view"></div>
     <div class="pane-actions">
       <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy result</button>
@@ -87,12 +109,40 @@
   @media (max-width: 640px) { .td-swap { transform: rotate(90deg); } }
 
   .diff-result { margin-top: 1.25rem; }
-  .diff-stats { font-size: 0.9rem; color: var(--text-muted); margin: 0 0 0.6rem; }
+  .diff-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin: 0 0 0.6rem; }
+  .diff-stats { font-size: 0.9rem; color: var(--text-muted); margin: 0; }
+  .diff-nav { display: flex; align-items: center; gap: 0.4rem; }
+  .diff-nav[hidden] { display: none; }
+  .diff-nav .stat { min-width: 5.5em; text-align: center; }
+  .diff-all { display: inline-flex; align-items: center; gap: 0.35rem; margin-left: 0.6rem; font-size: 0.85rem; cursor: pointer; }
+  .diff-all input { accent-color: var(--accent); }
+  @media (pointer: coarse) { .diff-all { min-height: 44px; } }
+  /* Side by side needs width; on a phone the unified view is the only layout. */
+  @media (max-width: 760px) { #view-fieldset { display: none; } }
   .diff-view {
     font-family: var(--mono); font-size: 0.88rem; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
     border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
-    max-height: 60vh; overflow: auto; padding: 0.5rem 0;
+    max-height: 60vh; overflow: auto; padding: 0.5rem 0; position: relative;
   }
+  /* Redesign round 1 rows (built via innerHTML, hence :global). Split: old number | old line |
+     new number | new line; unified: old number | new number | sign | line. Fixed-width number
+     columns keep every row's columns aligned without a shared table. */
+  :global(.ds-row) { display: grid; grid-template-columns: 3.2em minmax(0, 1fr) 3.2em minmax(0, 1fr); }
+  :global(.du-row) { display: grid; grid-template-columns: 3.2em 3.2em 1.4em minmax(0, 1fr); }
+  :global(.dn) { color: var(--text-muted); text-align: right; padding-right: 0.6em; user-select: none; font-size: 0.82em; line-height: 1.9; }
+  :global(.dc) { padding: 0 0.6rem; min-width: 0; }
+  :global(.ds-row .dn:nth-child(3)) { border-left: 1px solid var(--border); }
+  :global(.c-del) { background: color-mix(in srgb, var(--danger) 12%, transparent); }
+  :global(.c-ins) { background: color-mix(in srgb, var(--success) 14%, transparent); }
+  :global(.c-empty) { background: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--border) 45%, transparent) 6px 7px); }
+  :global(.du-sign) { color: var(--text-muted); user-select: none; }
+  :global(.ds-fold) {
+    display: block; width: 100%; text-align: left; font: inherit; font-size: 0.82rem; cursor: pointer;
+    color: var(--accent); background: var(--surface-2); border: 0; border-block: 1px dashed var(--border);
+    padding: 0.3rem 0.75rem 0.3rem 3.8em;
+  }
+  :global(.ds-fold:hover), :global(.ds-fold:focus-visible) { background: var(--accent-soft); outline: none; }
+  :global(.is-current-change) { box-shadow: inset 3px 0 0 var(--accent-2); }
   :global(.dl-line) { display: flex; padding: 0 0.75rem; }
   :global(.dl-gutter) { flex: 0 0 1.4em; color: var(--text-muted); user-select: none; }
   :global(.dl-text) { flex: 1; min-width: 0; }
