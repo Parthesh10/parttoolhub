@@ -241,10 +241,10 @@ export const TOOLS: Tool[] = [
     description: 'Generate random UUIDs (version 4) or time-sortable UUIDs (version 7) in bulk, with hyphen, uppercase and brace formatting options.',
     short: 'Generate one or many UUIDs: version 4 for random, version 7 for time-sortable IDs.',
     category: 'generators',
-    features: ['Version 4 (random) and version 7 (time-sortable)', 'Generate 1–1000 at once', 'Uppercase, no-hyphens and braces formatting', 'Uses the browser’s cryptographically secure random source'],
+    features: ['Version 4 (random) and version 7 (time-sortable)', 'Generate 1–100 at once, each with its own Copy button', 'Uppercase, no-hyphens and braces formatting', 'Uses the browser’s cryptographically secure random source'],
     intent: 'uuid generator',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-18',
+    reviewedOn: '2026-09-24',
     spec: { name: 'RFC 9562 (UUID)', url: 'https://www.rfc-editor.org/rfc/rfc9562' },
   },
   {

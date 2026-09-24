@@ -1,58 +1,62 @@
 ---
-/** UUID v4/v7 generator. Behaviour in ./uuid-generate.client.ts */
+/**
+ * UUID v4/v7 generator. Behaviour in ./uuid-generate.client.ts
+ *
+ * Redesign round 1 (REDESIGN-PROPOSALS.md §2): one row per UUID with its own Copy (a textarea
+ * made you select one line by hand), a v4/v7 segmented control that says what each is for, the
+ * timestamp a v7 batch encodes, a count stepper with presets, and format options as chips.
+ */
 ---
 
 <section class="tool card" id="tool" data-tool="uuid-generator">
   <div class="tool-toolbar">
     <button type="button" class="btn btn-sm" id="btn-fullscreen" aria-pressed="false">⛶ Fullscreen</button>
   </div>
-  <div class="options">
-    <fieldset>
-      <legend>Version</legend>
-      <div class="row" role="group" aria-label="UUID version">
-        <button type="button" class="btn btn-sm" id="ver-4" aria-pressed="true">Version 4 (random)</button>
-        <button type="button" class="btn btn-sm" id="ver-7" aria-pressed="false">Version 7 (time-sortable)</button>
-      </div>
-    </fieldset>
 
-    <fieldset>
-      <legend>Quantity</legend>
-      <div class="row">
-        <label class="field">
-          <span>How many</span>
-          <select id="opt-count">
-            <option value="1">1</option>
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="25">25</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-          </select>
-        </label>
+  <div class="uu-controls">
+    <div class="uu-group">
+      <span class="uu-label" id="ver-label">Version</span>
+      <div class="uu-seg" role="group" aria-labelledby="ver-label">
+        <button type="button" class="btn btn-sm" id="ver-4" aria-pressed="true">v4 random</button>
+        <button type="button" class="btn btn-sm" id="ver-7" aria-pressed="false">v7 time-sortable</button>
       </div>
-    </fieldset>
+      <p class="uu-hint muted" id="ver-hint">Fully random. The default choice for most IDs.</p>
+    </div>
 
-    <fieldset>
-      <legend>Format</legend>
-      <div class="checks">
-        <label><input type="checkbox" id="opt-uppercase" /> UPPERCASE</label>
-        <label><input type="checkbox" id="opt-hyphens" checked /> Hyphens</label>
-        <label><input type="checkbox" id="opt-braces" /> Wrap in {'{'} braces {'}'}</label>
+    <div class="uu-group">
+      <label class="uu-label" for="opt-count">How many</label>
+      <div class="uu-count">
+        <button type="button" class="btn btn-sm" id="count-dec" aria-label="One fewer">−</button>
+        <input type="number" id="opt-count" value="1" min="1" max="100" step="1" inputmode="numeric" />
+        <button type="button" class="btn btn-sm" id="count-inc" aria-label="One more">+</button>
+        <span class="uu-presets" role="group" aria-label="Quick amounts">
+          <button type="button" class="chip" data-count="1">1</button>
+          <button type="button" class="chip" data-count="10">10</button>
+          <button type="button" class="chip" data-count="100">100</button>
+        </span>
       </div>
-    </fieldset>
+    </div>
+
+    <div class="uu-group">
+      <span class="uu-label" id="fmt-label">Format</span>
+      <div class="uu-chips" role="group" aria-labelledby="fmt-label">
+        <label class="toggle-chip"><input type="checkbox" id="opt-uppercase" /> UPPERCASE</label>
+        <label class="toggle-chip"><input type="checkbox" id="opt-hyphens" checked /> Hyphens</label>
+        <label class="toggle-chip"><input type="checkbox" id="opt-braces" /> {'{ }'} braces</label>
+      </div>
+    </div>
   </div>
 
-  <div class="single">
-    <div class="pane-head">
-      <label for="output">Generated UUIDs</label>
+  <div class="uu-result">
+    <div class="uu-head">
       <span class="stat" id="output-stat" aria-live="polite"></span>
+      <div class="uu-actions">
+        <button type="button" class="btn btn-sm" id="btn-generate">↻ New</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy all</button>
+        <button type="button" class="btn btn-sm" id="btn-download">Download .txt</button>
+      </div>
     </div>
-    <textarea id="output" rows="10" readonly spellcheck="false"></textarea>
-    <div class="pane-actions">
-      <button type="button" class="btn btn-primary btn-sm" id="btn-generate">Generate</button>
-      <button type="button" class="btn btn-sm" id="btn-copy">Copy to clipboard</button>
-      <button type="button" class="btn btn-sm" id="btn-download">Download .txt</button>
-    </div>
+    <div class="uu-list" id="uu-list" aria-label="Generated UUIDs"></div>
   </div>
 
   <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
@@ -61,8 +65,41 @@
 <script src="./uuid-generate.client.ts"></script>
 
 <style>
-  #ver-4[aria-pressed="true"], #ver-7[aria-pressed="true"] {
-    background: var(--accent-btn); border-color: var(--accent-btn); color: #fff;
+  .uu-controls {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem 1.5rem;
+    padding: 0.9rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm);
   }
-  #output { font-family: var(--mono); min-height: 220px; }
+  .uu-group { min-width: 0; }
+  .uu-label { display: block; font-weight: 650; font-size: 0.9rem; margin-bottom: 0.4rem; }
+  .uu-seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .uu-seg .btn { border: 0; border-radius: 0; }
+  .uu-seg .btn + .btn { border-left: 1px solid var(--border); }
+  .uu-hint { font-size: 0.8rem; margin: 0.4rem 0 0; }
+  .uu-count { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+  .uu-count input {
+    width: 4.2rem; text-align: center; font: inherit; font-family: var(--mono); color: var(--text);
+    padding: 0.35rem 0.4rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+  }
+  .uu-count input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .uu-presets { display: inline-flex; gap: 0.3rem; margin-left: 0.4rem; }
+  .uu-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+  .uu-result { margin-top: 1.1rem; }
+  .uu-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; }
+  .uu-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .uu-list {
+    display: flex; flex-direction: column; gap: 0.3rem; max-height: 60vh; overflow: auto;
+    padding: 0.6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2);
+  }
+  /* Rows are built by the client script (innerHTML), hence :global. */
+  .uu-list :global(.uu-row) { display: flex; align-items: center; gap: 0.6rem; }
+  .uu-list :global(.uu-row code) {
+    flex: 1; min-width: 0; font-size: 0.95rem; background: var(--surface); padding: 0.35rem 0.6rem; overflow-wrap: anywhere;
+  }
+  .uu-list :global(.uu-n) { flex: 0 0 2.2em; text-align: right; color: var(--text-muted); font-size: 0.78rem; font-variant-numeric: tabular-nums; user-select: none; }
+  /* A single UUID reads as the result itself, not as row 1 of a list. */
+  .uu-list.is-single :global(.uu-row code) { font-size: clamp(1rem, 2.2vw, 1.35rem); font-weight: 600; padding: 0.6rem 0.8rem; }
+  .uu-list.is-single :global(.uu-n) { display: none; }
+
+  @media (pointer: coarse) { .uu-count input { min-height: 44px; } }
 </style>

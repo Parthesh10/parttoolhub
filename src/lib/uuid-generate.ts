@@ -79,3 +79,14 @@ export function generateUuids(version: UuidVersion, count: number, opts: Partial
 }
 
 export const NIL_UUID = '00000000-0000-0000-0000-000000000000';
+
+/**
+ * The Unix millisecond timestamp inside a formatted v7 UUID (any case, with or without hyphens
+ * or braces), or null when the string is not a v7 UUID. The UUID Generator shows it next to the
+ * batch, since that timestamp is the whole reason to pick v7 over v4.
+ */
+export function v7TimestampFromString(s: string): number | null {
+  const hex = s.replace(/[{}-]/g, '').toLowerCase();
+  if (!/^[0-9a-f]{32}$/.test(hex) || hex[12] !== '7') return null;
+  return parseInt(hex.slice(0, 12), 16);
+}

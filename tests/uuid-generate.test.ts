@@ -52,3 +52,13 @@ test('generateUuids: count is clamped to a sane range rather than erroring', () 
   assert.equal(generateUuids(4, -5).length, 1);
   assert.equal(generateUuids(4, 1_000_000).length, 1000);
 });
+
+test('v7TimestampFromString reads the embedded time back in every format, and rejects v4', async () => {
+  const { generateUuids, v7TimestampFromString } = await import('../src/lib/uuid-generate.ts');
+  const now = Date.UTC(2026, 8, 25, 14, 2, 11, 123);
+  for (const opts of [{}, { uppercase: true }, { hyphens: false }, { braces: true, uppercase: true }]) {
+    assert.equal(v7TimestampFromString(generateUuids(7, 1, opts, now)[0]), now);
+  }
+  assert.equal(v7TimestampFromString(generateUuids(4, 1)[0]), null);
+  assert.equal(v7TimestampFromString('not a uuid'), null);
+});

@@ -19,10 +19,10 @@ const bracesExample = formatUuid(generateV4(), { braces: true });
 const noHyphenExample = formatUuid(generateV4(), { hyphens: false });
 
 const steps = [
-  'Choose <strong>Version 4</strong> for a plain random ID, or <strong>Version 7</strong> if the ID also needs to sort roughly by when it was created.',
-  'Pick how many to generate at once, from 1 to 100.',
+  'Choose <strong>v4 random</strong> for a plain random ID, or <strong>v7 time-sortable</strong> if the ID also needs to sort roughly by when it was created.',
+  'Set <strong>How many</strong> with the − and + buttons, the 1 / 10 / 100 shortcuts, or by typing any number from 1 to 100.',
   'Turn on <strong>UPPERCASE</strong>, <strong>Hyphens</strong> or braces to match the format your database or language expects.',
-  '<strong>Generate</strong> a fresh batch any time; every click makes new ones. <strong>Copy to clipboard</strong> or <strong>Download .txt</strong> to take them with you.',
+  'Press <strong>Copy</strong> next to any ID, or <strong>Copy all</strong> / <strong>Download .txt</strong> for the whole batch. <strong>↻ New</strong> makes a fresh batch any time.',
 ];
 
 const faq = [
@@ -66,14 +66,14 @@ const faq = [
 
     <h2>Options explained</h2>
     <ul>
-      <li><strong>Version 4 / Version 7:</strong> see the FAQ.</li>
-      <li><strong>How many</strong> generates 1 to 100 at once, one per line, so you can paste a
-        whole batch of test IDs in one go.</li>
+      <li><strong>v4 random / v7 time-sortable:</strong> see the FAQ. With v7 selected, the line above the list shows the creation time the batch encodes, read back out of the IDs themselves.</li>
+      <li><strong>How many</strong> generates 1 to 100 at once, one row each with its own Copy button, so you can take one ID or paste a
+        whole batch of test IDs in one go. A typed number above 100 is treated as 100.</li>
       <li><strong>UPPERCASE</strong> renders hex digits in capitals: <code>{uppercaseExample}</code>.
-        <strong>Hyphens</strong> toggles the standard 8-4-4-4-12 grouping; turning it off gives <code>{noHyphenExample}</code>. <strong>Wrap in braces</strong> adds <code>{'{'}</code> and <code>{'}'}</code>
+        <strong>Hyphens</strong> toggles the standard 8-4-4-4-12 grouping; turning it off gives <code>{noHyphenExample}</code>. <strong>{'{ }'} braces</strong> adds <code>{'{'}</code> and <code>{'}'}</code>
         around each ID: <code>{bracesExample}</code>, the format Microsoft's GUID APIs (and some
         Windows registry tools) expect.</li>
-      <li><strong>Generate</strong> makes a new batch with the current settings; the first batch on
+      <li><strong>↻ New</strong> makes a new batch with the current settings; the first batch on
         the page is generated automatically so there is one ready immediately.</li>
     </ul>
 
@@ -81,13 +81,14 @@ const faq = [
     <ul>
       <li><strong>There is no invalid input.</strong> This tool only generates, so there is nothing
         to reject. The only limit is quantity, capped at 100 per click to keep the page responsive;
-        click <strong>Generate</strong> again for more.</li>
-      <li><strong>Every batch is independent.</strong> Clicking <strong>Generate</strong> again
+        press <strong>↻ New</strong> for another batch.</li>
+      <li><strong>Every batch is independent.</strong> Pressing <strong>↻ New</strong>
         replaces the list rather than appending to it, so copy or download a batch before generating a
         new one if you need to keep it.</li>
       <li><strong>Version 7's timestamp is only millisecond-precision</strong> and only as accurate as
         your device's clock; two UUIDs generated in the same millisecond are ordered only by their
-        random bits, not guaranteed to reflect which call actually ran first.</li>
+        random bits, not guaranteed to reflect which call actually ran first. A batch is made in one go,
+        so every ID in it carries the same millisecond.</li>
       <li><strong>The nil UUID:</strong> see the FAQ.</li>
       <li><strong>Nothing is sent anywhere.</strong> Every ID is generated locally in your browser;
         this page could be disconnected from the network entirely and still work.</li>
