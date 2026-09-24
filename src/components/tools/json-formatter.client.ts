@@ -2,6 +2,7 @@ import { formatJson, minifyJson, parseJson, autoFixJson, SAMPLES, type Indent, t
 import { renderJsonTree } from '../../lib/json-tree';
 import { jsonToTsInterface } from '../../lib/json-to-ts';
 import { sendToTool } from '../../lib/transfer';
+import { attachJsonHighlight } from './json-highlight-layer';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -30,6 +31,9 @@ const viewTreeBtn = $<HTMLButtonElement>('view-tree');
 const viewTsBtn = $<HTMLButtonElement>('view-ts');
 const sampleSelect = $<HTMLSelectElement>('sample-select');
 const autofixBtn = $<HTMLButtonElement>('btn-autofix');
+
+// B1: coloured keys/strings/numbers/booleans/null in the Text view (the TS view stays plain).
+const outputHl = attachJsonHighlight(output);
 
 let mode: 'format' | 'minify' = 'format';
 let viewMode: 'text' | 'tree' | 'ts' = 'text';
@@ -276,6 +280,7 @@ function render() {
 
   if (!raw.trim()) {
     output.value = '';
+    outputHl.update();
     updateGutterLines(output, outputGutter);
     outputTree.innerHTML = '';
     outputStat.textContent = '';
@@ -297,6 +302,7 @@ function render() {
     const parsed = parseJson(raw);
     lastValidJson = result.output;
     output.value = viewMode === 'ts' && parsed.ok ? jsonToTsInterface(parsed.value) : result.output;
+    outputHl.update(viewMode !== 'ts');
     updateGutterLines(output, outputGutter);
     outputStat.textContent = `Valid ${result.kind} · ${plural(result.output.split('\n').length, 'line')} · ${plural(result.output.length, 'character')} · ${formatBytes(result.output)}`;
     status.hidden = true;
@@ -308,6 +314,7 @@ function render() {
     autofixBtn.hidden = true;
   } else {
     output.value = '';
+    outputHl.update();
     updateGutterLines(output, outputGutter);
     outputTree.innerHTML = '';
     outputStat.textContent = 'Invalid JSON';

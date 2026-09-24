@@ -147,10 +147,11 @@
   #status.is-clickable { cursor: pointer; }
   #status.is-clickable:hover { filter: brightness(1.1); }
   #status.is-clickable:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  :global(.jt-key) { color: var(--accent-2); }
+  :global(.jt-key) { color: var(--syn-key); }
   :global(.jt-colon) { color: var(--text-muted); }
   :global(.jt-punct) { color: var(--text-muted); }
-  :global(.jt-string) { color: var(--success); }
-  :global(.jt-number), :global(.jt-boolean) { color: var(--accent); }
-  :global(.jt-null) { color: var(--text-muted); font-style: italic; }
+  :global(.jt-string) { color: var(--syn-string); }
+  :global(.jt-number) { color: var(--syn-number); }
+  :global(.jt-boolean) { color: var(--syn-boolean); }
+  :global(.jt-null) { color: var(--syn-null); font-style: italic; }
 </style>

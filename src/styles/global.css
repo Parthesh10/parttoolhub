@@ -36,6 +36,15 @@
   --accent-2-soft: #fbeadb;
   --success: #15803d;
   --danger: #b91c1c;
+  /* JSON syntax colours (json-highlight.ts, JSON tree view). Each one measured >= 4.5:1 on both
+     --surface and --surface-2 in its theme; booleans get their own hue rather than sharing the
+     number blue, so true/false stand out from counts and IDs. */
+  --syn-key: #9c5209;
+  --syn-string: #12733a;
+  --syn-number: #3450e6;
+  --syn-boolean: #7c3aed;
+  --syn-null: #5c6274;
+  --syn-punct: #5c6274;
   /* Per-category tints (see src/lib/category-tint.ts) — a small, fixed palette,
      not a rainbow: cobalt / teal / violet / brass, each muted enough to sit next
      to the others without competing, and each ≥4.5:1 on --bg since they're used
@@ -90,6 +99,12 @@
     --tint-generators: var(--accent-2);
     --success: #4ade80;
     --danger: #f87171;
+    --syn-key: #f0a53d;
+    --syn-string: #4ade80;
+    --syn-number: #7c93ff;
+    --syn-boolean: #c4a5ff;
+    --syn-null: #9ba3b7;
+    --syn-punct: #9ba3b7;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 12px 28px -8px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
     --grid-dot: rgba(124, 147, 255, 0.14);
@@ -118,6 +133,12 @@
   --tint-generators: var(--accent-2);
   --success: #4ade80;
   --danger: #f87171;
+  --syn-key: #f0a53d;
+  --syn-string: #4ade80;
+  --syn-number: #7c93ff;
+  --syn-boolean: #c4a5ff;
+  --syn-null: #9ba3b7;
+  --syn-punct: #9ba3b7;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 12px 28px -8px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
   --grid-dot: rgba(124, 147, 255, 0.14);
@@ -395,6 +416,33 @@ body.no-scroll { overflow: hidden; }
 .gutter span { display: block; }
 .gutter span.active { color: var(--text); font-weight: 700; }
 .pane-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem; }
+
+/* Syntax-coloured read-only output (B1). A <textarea> can only show one colour, so a <pre> holding
+   the same text as coloured spans sits underneath it and the textarea's own text is made
+   transparent: selection, copy, the gutter, wrap and resize all keep working on the real textarea.
+   Both layers must share font, padding, border width, wrapping and scrollbar gutter exactly or the
+   colours drift off their characters; per-tool JS keeps the scroll offsets in sync. */
+.hl-layer {
+  position: absolute; inset: 0; margin: 0; pointer-events: none; overflow: hidden;
+  font-family: var(--mono); font-size: 0.9rem; line-height: 1.5;
+  padding: 0.75rem; border: 1px solid transparent; border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--text);
+  white-space: pre-wrap; overflow-wrap: break-word; scrollbar-gutter: stable;
+}
+.code-wrap .hl-layer { padding-left: 3.4rem; }
+.hl-layer.no-wrap { white-space: pre; overflow-wrap: normal; }
+.code-wrap.has-hl > textarea {
+  position: relative; z-index: 1; background: transparent; color: transparent;
+  caret-color: var(--text); scrollbar-gutter: stable;
+}
+.code-wrap.has-hl > textarea::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
+.code-wrap.has-hl > .gutter { z-index: 2; }
+.sy-key { color: var(--syn-key); }
+.sy-string { color: var(--syn-string); }
+.sy-number { color: var(--syn-number); }
+.sy-boolean { color: var(--syn-boolean); }
+.sy-null { color: var(--syn-null); }
+.sy-punct { color: var(--syn-punct); }
 
 .options { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.85rem; margin-top: 1.25rem; }
 .options fieldset { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.6rem 0.85rem 0.85rem; margin: 0; min-width: 0; }
