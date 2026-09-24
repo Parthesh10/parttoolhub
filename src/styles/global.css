@@ -316,6 +316,16 @@ th { background: var(--surface-2); font-weight: 650; }
    corner, in the empty strip beside the 76ch lead, instead of spending a whole row inside the card.
    Part of pulling the tool up the page on laptop screens (UI audit 2026-09-24, B2). Below 1000px
    the lead spans the full width, so the button keeps its own row. */
+/* Big monitors (UI audit B3): a two-pane tool breaks out of the 1120px page column and grows to
+   at most 1400px, centred, so each pane gets room for real code. Prose, FAQ and single-input
+   tools keep the reading width. Negative inline margins rather than a wider container, so
+   nothing else on the page moves. */
+@media (min-width: 1300px) {
+  .tool:not(.is-fullscreen):has(> .panes) {
+    --tool-w: min(100vw - 6rem, 1400px);
+    width: var(--tool-w); margin-inline: calc((100% - var(--tool-w)) / 2);
+  }
+}
 @media (min-width: 1000px) {
   .tool { position: relative; }
   .tool:not(.is-fullscreen) > .tool-toolbar { position: absolute; right: 0; bottom: calc(100% + 0.6rem); margin: 0; }
