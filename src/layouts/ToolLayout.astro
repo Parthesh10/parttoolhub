@@ -17,6 +17,7 @@ import Breadcrumbs from '../components/Breadcrumbs.astro';
 import AdSlot from '../components/AdSlot.astro';
 import Faq from '../components/Faq.astro';
 import RelatedTools from '../components/RelatedTools.astro';
+import NextSteps from '../components/NextSteps.astro';
 import { SITE } from '../site.config';
 import { canonicalUrl } from '../lib/urls';
 import { formatDate } from '../lib/dates';
@@ -86,6 +87,8 @@ const toolSchema = {
   </header>
 
   <slot />
+
+  <NextSteps tool={tool} />
 
   <article class="prose">
     <section aria-labelledby="how-to-use">

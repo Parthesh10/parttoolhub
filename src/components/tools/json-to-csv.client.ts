@@ -353,7 +353,7 @@ input.addEventListener('keydown', (e) => {
   }
 });
 
-// UX-009: arriving from JSON Formatter's "Use in JSON to CSV" button — the validated/formatted
+// UX-009: arriving from a next step (JSON Formatter, Python Dict to JSON; src/data/next-steps.ts) — the
 // JSON is handed over in sessionStorage and this page opens with it already loaded.
 const incoming = receiveTransfer();
 if (incoming) {

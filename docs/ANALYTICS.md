@@ -43,7 +43,7 @@ event name in code; the test enforces the list.
 | `copy_result` | Copy button pressed with a non-empty result | `target` (`output`, `header`, `payload`; on the image tools `data_uri`, `base64`, `html`, `css`; on Markdown to Google Docs `rich` for the formatted clipboard write and `html` for the source; on the Password and UUID generators `row` for one item copied from a batch list; on the Color Converter `hex`, `rgb`, `hsl`, `tint`; on the Unix Timestamp Converter `seconds`, `milliseconds`, `iso`, `utc`, `local` for a result row and `now_s` / `now_ms` for the live clock) | Secondary conversion — output was useful enough to take |
 | `download_result` | Download button pressed with a non-empty result | `target` (`output`; on Base64 to Image `image`, or `file` for non-image bytes saved anyway; on Markdown to Google Docs `html`) | Secondary conversion |
 | `reset_tool` | Clear button pressed | — | Re-use within one visit |
-| `navigation_click` | Any internal link click, captured by delegation in `Base.astro`; plus the two cross-tool hand-off buttons | `link_placement` (`header`, `footer`, `breadcrumb`, `related`, `home-directory`, `hub-cards`, `content`, `handoff`, `not-found`), `link_to` (path only, no query or hash) | Which internal pathways move people between tools |
+| `navigation_click` | Any internal link click, captured by delegation in `Base.astro`; plus the cross-tool hand-off buttons | `link_placement` (`header`, `footer`, `breadcrumb`, `related`, `home-directory`, `hub-cards`, `content`, `handoff`, `next-step`, `not-found`; `next-step` = the strip under a tool's result that opens another tool with that result filled in), `link_to` (path only, no query or hash) | Which internal pathways move people between tools |
 | `share_click` | Share FAB (`floating-tools.client.ts`, tool pages only) — Copy link or Share to Reddit chosen from the popover | `channel` (`copy_link`, `reddit`) | Secondary conversion — a visitor found the tool worth sending elsewhere |
 | `palette_change` | A colour scheme is picked from the header's palette menu (`Header.astro`) | `palette` (`tangerine`, `indigo`, `mint`, `cobalt`) | Which colour schemes visitors prefer over the Tangerine default |
 
@@ -78,8 +78,8 @@ those off in the property, or every click will count twice.
 - **Primary:** `tool_result` — a successful run on real input. Count per `tool_slug` to rank tools by
   value delivered, and compare with `tool_view` for a conversion rate per tool.
 - **Secondary:** `copy_result`, `download_result` (the result was worth taking), `share_click` (the
-  page was worth sending elsewhere), and `navigation_click` with `link_placement = handoff` or
-  `related` (the visitor moved to a next tool).
+  page was worth sending elsewhere), and `navigation_click` with `link_placement = next-step`,
+  `handoff` or `related` (the visitor moved to a next tool; `next-step` carries the result along).
 
 The journey GA4 can then answer: *traffic source → landing page → `tool_view` → `tool_use` →
 `tool_result` or `tool_error` → `copy_result` → `navigation_click` → exit.*

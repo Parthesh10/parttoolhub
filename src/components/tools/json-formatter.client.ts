@@ -1,7 +1,6 @@
 import { formatJson, minifyJson, parseJson, autoFixJson, SAMPLES, type Indent, type SampleKey } from '../../lib/json-format';
 import { renderJsonTree } from '../../lib/json-tree';
 import { jsonToTsInterface } from '../../lib/json-to-ts';
-import { sendToTool } from '../../lib/transfer';
 import { attachJsonHighlight } from './json-highlight-layer';
 import { jsonStats, describeStats } from '../../lib/json-stats';
 
@@ -25,8 +24,6 @@ const inputGutter = $('input-gutter');
 const outputGutter = $('output-gutter');
 const outputCodeWrap = $('output-code-wrap');
 const outputTree = $('output-tree');
-const handoffActions = $('handoff-actions');
-const handoffCsvBtn = $<HTMLButtonElement>('btn-handoff-csv');
 const viewTextBtn = $<HTMLButtonElement>('view-text');
 const viewTreeBtn = $<HTMLButtonElement>('view-tree');
 const viewTsBtn = $<HTMLButtonElement>('view-ts');
@@ -45,9 +42,6 @@ const inputHl = attachJsonHighlight(input, { live: true });
 
 let mode: 'format' | 'minify' = 'format';
 let viewMode: 'text' | 'tree' | 'ts' = 'text';
-// UX-009's handoff must always send the actual JSON, never whatever the TS view currently has
-// output.value showing — tracked separately since `result` is local to render().
-let lastValidJson = '';
 
 // --- JSON-002 tree view / JSON-004 TS interface view -------------------------
 function setViewMode(next: 'text' | 'tree' | 'ts') {
@@ -348,7 +342,6 @@ function render() {
     outputStat.textContent = '';
     status.hidden = true;
     setErrorLocation();
-    handoffActions.hidden = true;
     autofixBtn.hidden = true;
     return;
   }
@@ -362,7 +355,6 @@ function render() {
     // re-parsing here (rather than threading the value out of formatJson/minifyJson) keeps
     // json-format.ts's public return shape unchanged for its other callers.
     const parsed = parseJson(raw);
-    lastValidJson = result.output;
     output.value = viewMode === 'ts' && parsed.ok ? jsonToTsInterface(parsed.value) : result.output;
     outputHl.update(viewMode !== 'ts');
     updateGutterLines(output, outputGutter);
@@ -372,9 +364,6 @@ function render() {
     outputTree.innerHTML = parsed.ok ? renderJsonTree(parsed.value) : '';
     if (treeSearch.value.trim()) filterTree();
     setSummary(parsed.ok ? describeStats(jsonStats(parsed.value)) : []);
-    // UX-009: only offer the handoff when JSON to CSV could actually do something with it —
-    // it requires a top-level array (an object or scalar errors immediately on arrival).
-    handoffActions.hidden = result.kind !== 'array';
     autofixBtn.hidden = true;
   } else {
     output.value = '';
@@ -388,7 +377,6 @@ function render() {
     const loc = result.line ? ` (line ${result.line}${result.column ? `, column ${result.column}` : ''})` : '';
     status.textContent = `${result.error}${loc}`;
     setErrorLocation(result.line, result.column);
-    handoffActions.hidden = true;
     autofixBtn.hidden = false;
   }
 }
@@ -575,10 +563,8 @@ indent.addEventListener('input', render);
 sortKeys.addEventListener('input', render);
 for (const c of [indent, sortKeys]) c.addEventListener('change', () => trackOption(c));
 pasteBtn.addEventListener('click', pasteFromClipboard);
-handoffCsvBtn.addEventListener('click', () => {
-  track('navigation_click', { link_placement: 'handoff', link_to: '/tools/json-to-csv-converter' });
-  sendToTool(lastValidJson, '/tools/json-to-csv-converter');
-});
+// The old "Use in JSON to CSV" hand-off is now one of the page's next steps (NextSteps.astro,
+// src/data/next-steps.ts), which also offers JSON to Python and JSON Diff.
 $('btn-copy').addEventListener('click', copyOutput);
 $('btn-download').addEventListener('click', downloadOutput);
 $('btn-clear').addEventListener('click', () => {

@@ -1,6 +1,7 @@
 import { RECENT_TOOLS_KEY, MAX_RECENT_TOOLS, pushRecent, parseRecent } from '../lib/recent-tools';
 import { FAVORITE_TOOLS_KEY, toggleFavorite, parseFavorites } from '../lib/favorite-tools';
 import { matchesSynonym } from '../lib/tool-synonyms';
+import { sendToTool, receiveTransfer } from '../lib/transfer';
 
 interface Entry {
   name: string;
@@ -511,4 +512,95 @@ if (settingsTool) {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') persist();
   });
+}
+
+// --- UI round 5a: next steps -------------------------------------------------------------------
+// The strip under a tool's card (NextSteps.astro) appears once the tool has a result, showing only
+// the links whose `when` the result meets, and a click hands the result to that tool. Results are
+// written by each tool's own script with no event to listen for, so the source is re-read twice a
+// second while the page is visible (a string compare when nothing changed).
+const TRANSFER_FROM_KEY = 'pth:transfer-from';
+const nextSteps = document.querySelector<HTMLElement>('[data-next-steps]');
+if (nextSteps) {
+  const source = document.querySelector<HTMLElement>(nextSteps.dataset.source ?? '');
+  const read = () =>
+    source instanceof HTMLTextAreaElement || source instanceof HTMLInputElement ? source.value : (source?.textContent ?? '');
+  const items = [...nextSteps.querySelectorAll<HTMLLIElement>('li')];
+  let seen: string | null = null;
+  const refresh = () => {
+    const text = read().trim();
+    if (text === seen) return;
+    seen = text;
+    let json: unknown;
+    if (text && items.some((li) => li.dataset.when)) {
+      try {
+        json = JSON.parse(text);
+      } catch {
+        json = undefined;
+      }
+    }
+    const isJson = json !== null && typeof json === 'object';
+    let shown = 0;
+    for (const li of items) {
+      const when = li.dataset.when;
+      const ok = !!text && (!when || (when === 'json' ? isJson : Array.isArray(json)));
+      li.hidden = !ok;
+      if (ok) shown++;
+    }
+    const wasHidden = nextSteps.hidden;
+    nextSteps.hidden = shown === 0;
+    if (wasHidden && shown) {
+      nextSteps.classList.remove('ns-in');
+      requestAnimationFrame(() => nextSteps.classList.add('ns-in'));
+    }
+  };
+  refresh();
+  window.setInterval(() => {
+    if (document.visibilityState === 'visible') refresh();
+  }, 500);
+  nextSteps.addEventListener('click', (e) => {
+    const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a.ns-link');
+    // A new-tab or modified click stays a plain link (the other tab gets no result).
+    if (!a || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    const text = read();
+    if (!text.trim()) return;
+    e.preventDefault();
+    try {
+      sessionStorage.setItem(TRANSFER_FROM_KEY, nextSteps.dataset.from ?? '');
+    } catch {
+      // Storage blocked: the other tool opens empty, as a plain link would.
+    }
+    sendToTool(text, a.getAttribute('href') ?? '/');
+  });
+}
+
+// Arriving through a next step. This script runs after the tool's own, so a tool with its own
+// receiver (JSON to CSV, Base64, ...) has already taken the text; otherwise it goes into the
+// tool's first editable box, announced like typing so the tool renders as usual. Either way a
+// short note says where the text came from.
+{
+  let from: string | null = null;
+  try {
+    from = sessionStorage.getItem(TRANSFER_FROM_KEY);
+    sessionStorage.removeItem(TRANSFER_FROM_KEY);
+  } catch {
+    from = null;
+  }
+  const tool = document.querySelector<HTMLElement>('.tool[data-tool]');
+  const pending = tool ? receiveTransfer() : null;
+  if (tool && pending !== null) {
+    const field = tool.querySelector<HTMLTextAreaElement>('textarea:not([readonly])');
+    if (field) {
+      field.value = pending;
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+  const note = tool?.querySelector<HTMLElement>('.tool-toast');
+  if (from && note) {
+    note.textContent = `Your result from ${from} is filled in`;
+    note.hidden = false;
+    window.setTimeout(() => {
+      if (note.textContent?.startsWith('Your result from')) note.hidden = true;
+    }, 3200);
+  }
 }

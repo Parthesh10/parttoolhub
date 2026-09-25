@@ -363,6 +363,13 @@ site-wide — a new tool page needs nothing extra to pick this up:
   `fullscreen`, anything in `.tool-toolbar`, and every textarea/text input outside `.options` (user
   data). So a new tool gets this for free; give option controls stable ids, and never put a
   data-entry text field inside `.options`. A "Reset to defaults" note appears when settings applied.
+- **Next steps (UI round 5a, 2026-09-26).** Under the tool card, `NextSteps.astro` links to related
+  tools that open with this tool's result filled in. The plan per tool is data, `src/data/next-steps.ts`
+  (source element id, target slugs, labels, optional `when: 'json' | 'json-array'`), checked by
+  `tests/next-steps.test.ts`. `floating-tools.client.ts` shows the strip once there is a result and
+  hands it over through `src/lib/transfer.ts`; on the receiving page a tool's own `receiveTransfer()`
+  wins (it runs first), else the text goes into the first editable textarea with an `input` event. Only
+  add a chain where the target genuinely takes the result as its input.
 - `--tint-<category-slug>` (five hues: accent / teal / violet / accent-2 / rose) via `src/lib/category-tint.ts`
   give each category hub and its cards a consistent identity (top card border, eyebrow color, the
   tool icon chip). Cards are one component, `ToolCard.astro` (home + hubs): icon from
