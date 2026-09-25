@@ -86,11 +86,13 @@ test('empty input on either side is refused with a side-specific message, not a 
   assert.match(newEmpty.error, /changed/);
 });
 
-test('the shared sample pair demonstrates key reorder (no diff), an array addition, a nested addition and a new top-level key', () => {
+test('the shared sample pair shows every kind of change (Load sample fills all three filter chips) and a key reorder that is not one', () => {
   const r = diffJson(SAMPLE_OLD, SAMPLE_NEW);
   assert.ok(r.ok);
   const paths = r.value.changes.map((c) => c.path).sort();
-  assert.deepEqual(paths, ['$.active', '$.address.country', '$.tags[1]']);
+  assert.deepEqual(paths, ['$.active', '$.address.country', '$.address.postcode', '$.tags[1]', '$.verified']);
+  const { added, removed, changed } = r.value.stats;
+  assert.deepEqual({ added, removed, changed }, { added: 3, removed: 1, changed: 1 });
 });
 
 test('pretty-printed output is available on both sides for full-context display', () => {

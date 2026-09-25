@@ -1,5 +1,5 @@
 ---
-/** Structural JSON diff by key path. Behaviour in ./json-diff.client.ts */
+/** Structural JSON diff by key path; both inputs are JSON-coloured as you type. Behaviour in ./json-diff.client.ts */
 ---
 
 <section class="tool card" id="tool" data-tool="json-diff-checker">
@@ -11,35 +11,35 @@
     <div class="pane">
       <div class="pane-head">
         <label for="input-old">Original JSON</label>
-        <span class="stat" id="stat-old" aria-live="polite"></span>
+        <span class="pane-tools">
+          <span class="stat" id="stat-old" aria-live="polite"></span>
+          <button type="button" class="btn btn-sm pane-paste" id="btn-paste-old" aria-label="Paste into Original JSON"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6v3H9zM8 5.5H6.5A1.5 1.5 0 0 0 5 7v12.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V7a1.5 1.5 0 0 0-1.5-1.5H16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg> Paste</button>
+        </span>
       </div>
       <div class="code-wrap">
         <div class="gutter" id="gutter-old" aria-hidden="true"><span>1</span></div>
         <textarea id="input-old" rows="12" spellcheck="false" autocomplete="off" placeholder={'{\n  "name": "Ada"\n}'}></textarea>
       </div>
-      <div class="pane-actions">
-        <button type="button" class="btn btn-sm" id="btn-paste-old">Paste</button>
-      </div>
     </div>
     <div class="pane">
       <div class="pane-head">
         <label for="input-new">Changed JSON</label>
-        <span class="stat" id="stat-new" aria-live="polite"></span>
+        <span class="pane-tools">
+          <span class="stat" id="stat-new" aria-live="polite"></span>
+          <button type="button" class="btn btn-sm pane-paste" id="btn-paste-new" aria-label="Paste into Changed JSON"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6v3H9zM8 5.5H6.5A1.5 1.5 0 0 0 5 7v12.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V7a1.5 1.5 0 0 0-1.5-1.5H16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg> Paste</button>
+        </span>
       </div>
       <div class="code-wrap">
         <div class="gutter" id="gutter-new" aria-hidden="true"><span>1</span></div>
         <textarea id="input-new" rows="12" spellcheck="false" autocomplete="off" placeholder={'{\n  "name": "Ada Lovelace"\n}'}></textarea>
       </div>
-      <div class="pane-actions">
-        <button type="button" class="btn btn-sm" id="btn-paste-new">Paste</button>
-      </div>
     </div>
   </div>
 
-  <div class="pane-actions jd-actions">
-    <button type="button" class="btn btn-sm jd-swap" id="btn-swap" aria-label="Swap original and changed">⇅</button>
+  <div class="pane-actions diff-bar jd-actions" role="group" aria-label="Both inputs">
+    <button type="button" class="btn btn-sm" id="btn-swap"><svg class="swap-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h15m-4-4 4 4-4 4M20 16H5m4-4-4 4 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Swap sides</button>
     <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
-    <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+    <button type="button" class="btn btn-sm" id="btn-clear">Clear both</button>
   </div>
 
   <p class="status-banner" id="status" hidden></p>
@@ -72,9 +72,6 @@
 <script src="./json-diff.client.ts"></script>
 
 <style>
-  .jd-actions { margin-top: 0.85rem; }
-  .jd-swap { font-size: 1.1rem; line-height: 1; }
-  @media (max-width: 640px) { .jd-swap { transform: rotate(90deg); } }
 
   .jd-result { margin-top: 1.25rem; }
   .jd-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin: 0 0 0.6rem; }

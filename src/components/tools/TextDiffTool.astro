@@ -49,35 +49,35 @@
     <div class="pane">
       <div class="pane-head">
         <label for="input-a">Original</label>
-        <span class="stat" id="stat-a" aria-live="polite"></span>
+        <span class="pane-tools">
+          <span class="stat" id="stat-a" aria-live="polite"></span>
+          <button type="button" class="btn btn-sm pane-paste" id="btn-paste-a" aria-label="Paste into Original"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6v3H9zM8 5.5H6.5A1.5 1.5 0 0 0 5 7v12.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V7a1.5 1.5 0 0 0-1.5-1.5H16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg> Paste</button>
+        </span>
       </div>
       <div class="code-wrap">
         <div class="gutter" id="gutter-a" aria-hidden="true"><span>1</span></div>
         <textarea id="input-a" rows="12" spellcheck="false" autocomplete="off" placeholder="Paste the original text or code…"></textarea>
       </div>
-      <div class="pane-actions">
-        <button type="button" class="btn btn-sm" id="btn-paste-a">Paste</button>
-      </div>
     </div>
     <div class="pane">
       <div class="pane-head">
         <label for="input-b">Changed</label>
-        <span class="stat" id="stat-b" aria-live="polite"></span>
+        <span class="pane-tools">
+          <span class="stat" id="stat-b" aria-live="polite"></span>
+          <button type="button" class="btn btn-sm pane-paste" id="btn-paste-b" aria-label="Paste into Changed"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6v3H9zM8 5.5H6.5A1.5 1.5 0 0 0 5 7v12.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V7a1.5 1.5 0 0 0-1.5-1.5H16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg> Paste</button>
+        </span>
       </div>
       <div class="code-wrap">
         <div class="gutter" id="gutter-b" aria-hidden="true"><span>1</span></div>
         <textarea id="input-b" rows="12" spellcheck="false" autocomplete="off" placeholder="Paste the changed text or code…"></textarea>
       </div>
-      <div class="pane-actions">
-        <button type="button" class="btn btn-sm" id="btn-paste-b">Paste</button>
-      </div>
     </div>
   </div>
 
-  <div class="pane-actions td-actions">
-    <button type="button" class="btn btn-sm td-swap" id="btn-swap" aria-label="Swap original and changed">⇅</button>
+  <div class="pane-actions diff-bar td-actions" role="group" aria-label="Both inputs">
+    <button type="button" class="btn btn-sm" id="btn-swap"><svg class="swap-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h15m-4-4 4 4-4 4M20 16H5m4-4-4 4 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Swap sides</button>
     <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
-    <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+    <button type="button" class="btn btn-sm" id="btn-clear">Clear both</button>
   </div>
 
   <p class="status-banner" id="status" hidden></p>
@@ -104,9 +104,6 @@
 <script src="./text-diff.client.ts"></script>
 
 <style>
-  .td-actions { margin-top: 0.85rem; }
-  .td-swap { font-size: 1.1rem; line-height: 1; }
-  @media (max-width: 640px) { .td-swap { transform: rotate(90deg); } }
 
   .diff-result { margin-top: 1.25rem; }
   .diff-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin: 0 0 0.6rem; }

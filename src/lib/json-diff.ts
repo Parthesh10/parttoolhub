@@ -134,5 +134,5 @@ export function diffJson(oldText: string, newText: string): JsonDiffResult {
   };
 }
 
-export const SAMPLE_OLD = '{\n  "name": "Ada Lovelace",\n  "born": 1815,\n  "tags": ["mathematician"],\n  "address": {\n    "city": "London"\n  }\n}';
-export const SAMPLE_NEW = '{\n  "born": 1815,\n  "name": "Ada Lovelace",\n  "tags": ["mathematician", "writer"],\n  "address": {\n    "city": "London",\n    "country": "UK"\n  },\n  "active": true\n}';
+export const SAMPLE_OLD = '{\n  "name": "Ada Lovelace",\n  "born": 1815,\n  "tags": ["mathematician"],\n  "address": {\n    "city": "London",\n    "postcode": "W1"\n  },\n  "verified": false\n}';
+export const SAMPLE_NEW = '{\n  "born": 1815,\n  "name": "Ada Lovelace",\n  "tags": ["mathematician", "writer"],\n  "address": {\n    "city": "London",\n    "country": "UK"\n  },\n  "verified": true,\n  "active": true\n}';

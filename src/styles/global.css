@@ -617,6 +617,19 @@ body.no-scroll { overflow: hidden; }
 /* The line a parser error points at (JSON Formatter). Gutter spans are built with innerHTML. */
 .gutter span.err { color: var(--danger); font-weight: 700; }
 .pane-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem; }
+/* Two-input tools (the diff checkers): a side's own control (Paste) sits in that side's header next
+   to its character count, and the controls that act on both sides share one bar under the panes,
+   instead of a loose button row under each box plus a third row (UI round 4). The swap arrows point
+   left-right while the panes are side by side and up-down once they stack (<=760px, .panes). */
+.pane-head:has(.pane-tools) { align-items: center; }
+/* Tools whose options sit above the inputs (Base64, URL Encode, Markdown to Plain Text, Text Diff):
+   the input labels had 0px between them and the options box. */
+.options + .panes { margin-top: 1.1rem; }
+.pane-tools { display: inline-flex; align-items: center; gap: 0.6rem; margin-left: auto; }
+.pane-paste { display: inline-flex; align-items: center; gap: 0.35rem; padding-block: 0.2rem; }
+.diff-bar { margin-top: 0.85rem; }
+.diff-bar .btn { display: inline-flex; align-items: center; gap: 0.4rem; }
+@media (max-width: 760px) { .swap-icon { transform: rotate(90deg); } }
 
 /* Syntax-coloured read-only output (B1). A <textarea> can only show one colour, so a <pre> holding
    the same text as coloured spans sits underneath it and the textarea's own text is made
@@ -632,6 +645,10 @@ body.no-scroll { overflow: hidden; }
 }
 .code-wrap .hl-layer { padding-left: 3.4rem; }
 .hl-layer.no-wrap { white-space: pre; overflow-wrap: normal; }
+/* The same layer under an editable input (JSON Diff): it takes the input's own background, which
+   lightens on focus like every other input box. */
+.code-wrap.hl-input .hl-layer { background: var(--surface-2); }
+.code-wrap.hl-input:focus-within .hl-layer { background: var(--surface); }
 .code-wrap.has-hl > textarea {
   position: relative; z-index: 1; background: transparent; color: transparent;
   caret-color: var(--text); scrollbar-gutter: stable;

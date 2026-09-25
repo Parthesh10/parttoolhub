@@ -113,6 +113,70 @@ for (const [field, gutter] of [[inputOld, gutterOld], [inputNew, gutterNew]] as 
   field.addEventListener('keyup', () => updateActiveLine(field, gutter));
 }
 
+// --- UI round 4: JSON colours on both inputs ---------------------------------
+// The JSON Formatter's output layer (see .hl-layer in global.css): a coloured <pre> under the
+// textarea, whose own text goes transparent. On an editable box the layer must repaint in the same
+// task as the keystroke, never on the debounced diff below, or a typed character is invisible
+// until the next paint. Recolouring the whole document per keystroke measured 23 ms at 10k
+// characters and 311 ms at 99k, so the layer holds one <div> per line and a keystroke recolours
+// only the lines that changed (JSON tokens never span a line, so per-line colouring is identical).
+// Past MAX_LIVE_HIGHLIGHT characters the box stays plain. Adapted from json-highlight-layer.ts,
+// not imported (no shared JS across tools).
+const MAX_LIVE_HIGHLIGHT = 100_000;
+function attachInputHighlight(field: HTMLTextAreaElement) {
+  const wrap = field.parentElement as HTMLElement;
+  const layer = document.createElement('pre');
+  layer.className = 'hl-layer';
+  layer.setAttribute('aria-hidden', 'true');
+  // First child, so the line-number gutter (a later sibling) still paints above it.
+  wrap.insertBefore(layer, wrap.firstChild);
+  wrap.classList.add('hl-input');
+  const tpl = document.createElement('template');
+  let painted: string | null = null;
+  let lines: string[] = [];
+  const sync = () => {
+    layer.scrollTop = field.scrollTop;
+    layer.scrollLeft = field.scrollLeft;
+  };
+  // An empty line still takes one line of height, like the textarea's own empty line.
+  const lineHtml = (line: string) => `<div>${line ? highlightJsonHtml(line) : '<br>'}</div>`;
+  const paint = () => {
+    const text = field.value;
+    if (text !== painted) {
+      painted = text;
+      const on = text.length > 0 && text.length <= MAX_LIVE_HIGHLIGHT;
+      wrap.classList.toggle('has-hl', on);
+      const next = on ? text.split('\n') : [];
+      // Lines shared at the start and at the end are kept; only the span between is replaced.
+      let start = 0;
+      while (start < lines.length && start < next.length && lines[start] === next[start]) start++;
+      let endOld = lines.length;
+      let endNew = next.length;
+      while (endOld > start && endNew > start && lines[endOld - 1] === next[endNew - 1]) {
+        endOld--;
+        endNew--;
+      }
+      if (endOld > start) {
+        const range = document.createRange();
+        range.setStartBefore(layer.children[start]);
+        range.setEndAfter(layer.children[endOld - 1]);
+        range.deleteContents();
+      }
+      if (endNew > start) {
+        tpl.innerHTML = next.slice(start, endNew).map(lineHtml).join('');
+        layer.insertBefore(tpl.content, layer.children[start] ?? null);
+      }
+      lines = next;
+    }
+    sync();
+  };
+  field.addEventListener('scroll', sync);
+  field.addEventListener('input', paint);
+  return paint;
+}
+const paintOld = attachInputHighlight(inputOld);
+const paintNew = attachInputHighlight(inputNew);
+
 // --- Redesign round 1: filter chips, and a side-by-side view of both formatted documents ---
 function renderChanges() {
   if (!lastChanges) return;
@@ -235,9 +299,13 @@ function changeRow(c: JsonChange): string {
 }
 
 function render() {
+  // Paste, Swap, sample and Clear set the value in code, which fires no input event.
+  paintOld();
+  paintNew();
   updateCharStat();
   updateGutterLines(inputOld, gutterOld);
   updateGutterLines(inputNew, gutterNew);
+  for (const g of [gutterOld, gutterNew]) g.querySelector('.err')?.classList.remove('err');
   lastChanges = null;
   lastPretty = null;
   expandedFolds.clear();
@@ -262,6 +330,8 @@ function render() {
     status.hidden = false;
     status.className = 'status-banner is-error';
     status.textContent = `${r.side === 'old' ? 'Original' : 'Changed'} JSON: ${r.error}${r.line ? ` (line ${r.line}, column ${r.column})` : ''}`;
+    // The failing line is also marked in that side's gutter, as in the JSON Formatter.
+    if (r.line) (r.side === 'old' ? gutterOld : gutterNew).children[r.line - 1]?.classList.add('err');
     result.hidden = true;
     return;
   }

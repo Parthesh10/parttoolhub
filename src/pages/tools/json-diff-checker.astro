@@ -78,7 +78,8 @@ const faq = [
     <h2>Options explained</h2>
     <ul>
       <li><strong>Original JSON / Changed JSON</strong>: any valid JSON value, not just objects (arrays and bare primitives work too).</li>
-      <li><strong>Swap (⇅)</strong>: exchanges Original and Changed.</li>
+      <li><strong>Original JSON / Changed JSON boxes</strong>: coloured as JSON while you type (keys, strings, numbers, <code>true</code>/<code>false</code> and <code>null</code> each in their own colour), and when one side does not parse, its line numbers mark the failing line in red. Each box has its own <strong>Paste</strong> button next to its character count; boxes over 100,000 characters stay plain so typing stays instant.</li>
+      <li><strong>Swap sides</strong>: exchanges Original and Changed. <strong>Clear both</strong> empties both boxes.</li>
       <li><strong>Changes / Side by side</strong>: the change list by key path (filter it to one kind of change with the chips above it), or both documents reformatted with 2-space indent and aligned line by line, with changed lines marked and long unchanged stretches folded. Side by side is a text comparison of the formatted output, so unlike the change list it can show a moved key as a removal plus an addition. It needs a wide screen; phones show the change list.</li>
     </ul>
 
