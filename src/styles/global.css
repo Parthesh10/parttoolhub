@@ -619,6 +619,9 @@ body.no-scroll { overflow: hidden; }
    tracks a manual vertical resize for free with no extra JS. */
 .code-wrap { position: relative; }
 .code-wrap textarea { padding-left: 3.4rem; }
+/* A code-wrap without line numbers (JWT Decoder, Base64 to Image: there only for the empty-input
+   buttons) keeps the normal padding. */
+.code-wrap:not(:has(> .gutter)) > textarea { padding-left: 0.75rem; }
 .gutter {
   position: absolute; top: 0; left: 0; bottom: 0; width: 3rem;
   padding: 0.75rem 0.4rem 0.75rem 0; text-align: right;

@@ -12,13 +12,15 @@
         <label for="input">Base64 or data URI</label>
         <span class="stat" id="input-stat" aria-live="polite">0 characters</span>
       </div>
-      <textarea
-        id="input"
-        rows="12"
-        spellcheck="false"
-        autocomplete="off"
-        placeholder="iVBORw0KGgoAAAANSUhEUgAA…  or  data:image/png;base64,iVBORw0…"
-      ></textarea>
+      <div class="code-wrap">
+        <textarea
+          id="input"
+          rows="12"
+          spellcheck="false"
+          autocomplete="off"
+          placeholder="iVBORw0KGgoAAAANSUhEUgAA…  or  data:image/png;base64,iVBORw0…"
+        ></textarea>
+      </div>
       <div class="pane-actions">
         <button type="button" class="btn btn-sm" id="btn-paste">Paste</button>
         <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>

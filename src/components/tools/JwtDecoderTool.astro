@@ -11,13 +11,15 @@
       <label for="input">Paste a JWT</label>
       <span class="stat" id="input-stat" aria-live="polite"></span>
     </div>
-    <textarea
-      id="input"
-      rows="6"
-      spellcheck="false"
-      autocomplete="off"
-      placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SIGNATURE"
-    ></textarea>
+    <div class="code-wrap">
+      <textarea
+        id="input"
+        rows="6"
+        spellcheck="false"
+        autocomplete="off"
+        placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SIGNATURE"
+      ></textarea>
+    </div>
     <div class="pane-actions">
       <button type="button" class="btn btn-sm" id="btn-paste">Paste</button>
       <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
