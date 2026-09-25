@@ -41,7 +41,7 @@ const faq = [
   },
   {
     q: 'Does it convert a whole file, or one identifier at a time?',
-    a: 'One identifier or phrase at a time. Pasting multiple lines does not convert them line by line: every line break is treated as just another word boundary, the same as a space, and the whole paste becomes one result per style.',
+    a: 'A list, one identifier or phrase per line: each line is converted on its own and the results stay one per line, so a column of database field names comes back as a column of camelCase names. Blank lines and lines with no letters or digits are skipped. It does not rewrite identifiers inside source code, though: paste the names themselves, not a whole file of code.',
   },
 ];
 ---
