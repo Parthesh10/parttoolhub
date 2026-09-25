@@ -164,6 +164,9 @@ const index = TOOLS.map((t) => ({
     border: 1px solid var(--border); border-radius: 4px; padding: 0.05rem 0.35rem;
   }
   @media (max-width: 640px) { .fab-kbd { display: none; } .fab-search { width: 3rem; padding: 0; } }
+  /* Desktop has the always-visible search in the (sticky) header, so the floating one would be a
+     second button for the same thing. Phones keep it: the header has no room for a search field. */
+  @media (min-width: 761px) { .fab-search { display: none; } }
 
   .palette-backdrop {
     position: fixed; inset: 0; z-index: 80;

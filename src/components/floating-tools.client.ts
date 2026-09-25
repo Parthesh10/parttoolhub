@@ -197,7 +197,11 @@ function highlight(next: number) {
   selected = next;
 }
 
-function openPalette() {
+// Whichever control opened the palette gets focus back when it closes (the header search on
+// desktop, the floating button on phones, the page itself for Ctrl+K).
+let paletteOpener: HTMLElement | null = null;
+function openPalette(e?: Event) {
+  paletteOpener = (e?.currentTarget as HTMLElement | null) ?? (document.activeElement as HTMLElement | null);
   backdrop.hidden = false;
   paletteInput.value = '';
   renderResults();
@@ -208,7 +212,7 @@ function openPalette() {
 function closePalette() {
   backdrop.hidden = true;
   document.removeEventListener('keydown', onPaletteKeydown);
-  fabSearch.focus();
+  (paletteOpener && paletteOpener.isConnected && paletteOpener.offsetParent !== null ? paletteOpener : fabSearch).focus();
 }
 
 function onPaletteKeydown(e: KeyboardEvent) {
@@ -229,6 +233,12 @@ function onPaletteKeydown(e: KeyboardEvent) {
 }
 
 fabSearch.addEventListener('click', openPalette);
+// Any other opener on the page (the header search box) just carries data-open-palette.
+document.querySelectorAll<HTMLElement>('[data-open-palette]').forEach((el) => el.addEventListener('click', openPalette));
+// Shortcut hints say Cmd K on Apple keyboards, Ctrl K elsewhere.
+if (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) {
+  document.querySelectorAll<HTMLElement>('[data-kbd]').forEach((el) => (el.textContent = '⌘K'));
+}
 backdrop.addEventListener('click', (e) => {
   if (e.target === backdrop) closePalette();
 });
