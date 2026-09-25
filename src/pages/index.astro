@@ -6,6 +6,10 @@ import { TOOLS, toolsInCategory, toolPath } from '../data/tools';
 import { categoryTintVar } from '../lib/category-tint';
 import CategoryIcon from '../components/CategoryIcon.astro';
 import HeroDemo from '../components/HeroDemo.astro';
+import ToolCard from '../components/ToolCard.astro';
+
+// For the "Your tools" row, which the client script fills from localStorage.
+const toolIndex = Object.fromEntries(TOOLS.map((t) => [t.slug, { name: t.name, href: toolPath(t), tint: categoryTintVar(t.category) }]));
 ---
 
 <Base
@@ -32,11 +36,40 @@ import HeroDemo from '../components/HeroDemo.astro';
     </div>
   </section>
 
+  <!-- Returning visitors: favourites (starred on any card or in the command palette) and recently
+       used tools, read from this browser's storage. Empty and hidden on a first visit. -->
+  <section class="your-tools" id="your-tools" aria-labelledby="your-tools-h" data-nav="home-directory" hidden>
+    <div class="yt-head">
+      <h2 id="your-tools-h">Your tools</h2>
+      <span class="muted">Starred and recently used, kept in this browser only</span>
+    </div>
+    <div class="yt-list" id="yt-list"></div>
+  </section>
+
+  <div class="home-filter" role="search">
+    <label class="hf-search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
+        <path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+      <input type="search" id="hf-input" placeholder={`Filter ${TOOLS.length} tools…`} aria-label="Filter tools by name or description" autocomplete="off" />
+    </label>
+    <div class="hf-chips" role="group" aria-label="Show one category">
+      <button type="button" class="chip" data-cat="all" aria-pressed="true">All <span>{TOOLS.length}</span></button>
+      {CATEGORIES.map((c) => (
+        <button type="button" class="chip" data-cat={c.slug} aria-pressed="false" style={`--tint: ${categoryTintVar(c.slug)}`}>
+          {c.name.replace(' & Formatters', '').replace(' & Decoders', '').replace(' Tools', '')} <span>{toolsInCategory(c.slug).length}</span>
+        </button>
+      ))}
+    </div>
+  </div>
+  <p class="hf-empty muted" id="hf-empty" hidden>No tool matches that. Try fewer words, or press Ctrl K to search every tool.</p>
+
   <section id="tools" aria-label="All tools" data-nav="home-directory">
     {CATEGORIES.map((cat) => {
       const tools = toolsInCategory(cat.slug);
       return (
-        <div class="category" style={`--tint: ${categoryTintVar(cat.slug)}`}>
+        <div class="category" data-category={cat.slug} style={`--tint: ${categoryTintVar(cat.slug)}`}>
           <div class="category-head">
             <h2>
               <span class="icon-chip" aria-hidden="true"><CategoryIcon slug={cat.slug} size={19} /></span>
@@ -45,13 +78,7 @@ import HeroDemo from '../components/HeroDemo.astro';
             <p class="muted">{cat.blurb}</p>
           </div>
           <div class="grid">
-            {tools.map((t) => (
-              <a class="card tool-card" href={toolPath(t)}>
-                <h3>{t.name}</h3>
-                <p>{t.short}</p>
-                <span class="cta">Open tool →</span>
-              </a>
-            ))}
+            {tools.map((t) => <ToolCard tool={t} />)}
           </div>
         </div>
       );
@@ -77,6 +104,85 @@ import HeroDemo from '../components/HeroDemo.astro';
     </p>
   </section>
 </Base>
+
+<script type="application/json" id="home-tool-index" set:html={JSON.stringify(toolIndex)} />
+
+<script>
+  import { FAVORITE_TOOLS_KEY, parseFavorites } from '../lib/favorite-tools';
+  import { RECENT_TOOLS_KEY, parseRecent } from '../lib/recent-tools';
+
+  type Entry = { name: string; href: string; tint: string };
+  const INDEX: Record<string, Entry> = JSON.parse(document.getElementById('home-tool-index')?.textContent ?? '{}');
+  const section = document.getElementById('your-tools') as HTMLElement;
+  const list = document.getElementById('yt-list') as HTMLElement;
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const STAR = '<svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8Z" fill="currentColor"/></svg>';
+
+  // --- "Your tools": favourites first, then recently used, at most 10 ------------------------
+  function renderYourTools() {
+    let favs: string[] = [];
+    let recent: string[] = [];
+    try {
+      favs = parseFavorites(localStorage.getItem(FAVORITE_TOOLS_KEY));
+      recent = parseRecent(localStorage.getItem(RECENT_TOOLS_KEY));
+    } catch {
+      // Storage blocked: the row simply stays hidden.
+    }
+    const items = [
+      ...favs.filter((s) => INDEX[s]).map((s) => ({ slug: s, fav: true })),
+      ...recent.filter((s) => INDEX[s] && !favs.includes(s)).map((s) => ({ slug: s, fav: false })),
+    ].slice(0, 10);
+    section.hidden = items.length === 0;
+    list.innerHTML = items
+      .map(({ slug, fav }) => {
+        const t = INDEX[slug];
+        // Reuse the card's own icon so the row and the directory look the same.
+        const icon = document.querySelector(`.tool-card[data-slug="${slug}"] .tc-icon`)?.innerHTML ?? '';
+        return `<a class="yt-item" href="${esc(t.href)}" style="--tint: ${esc(t.tint)}"><span class="yt-icon">${icon}</span><span class="yt-name">${esc(t.name)}</span>${fav ? `<span class="yt-star" title="Starred">${STAR}</span>` : ''}</a>`;
+      })
+      .join('');
+  }
+  renderYourTools();
+  document.addEventListener('pth:favorites-changed', renderYourTools);
+
+  // --- Filter: category chips and type-to-filter ----------------------------------------------
+  const input = document.getElementById('hf-input') as HTMLInputElement;
+  const chips = [...document.querySelectorAll<HTMLButtonElement>('.hf-chips [data-cat]')];
+  const categories = [...document.querySelectorAll<HTMLElement>('#tools .category')];
+  const empty = document.getElementById('hf-empty') as HTMLElement;
+  let cat = 'all';
+  function applyFilter() {
+    const words = input.value.toLowerCase().split(/\s+/).filter(Boolean);
+    let shown = 0;
+    for (const c of categories) {
+      let inCat = 0;
+      for (const card of c.querySelectorAll<HTMLElement>('.tool-card')) {
+        const text = card.dataset.text ?? '';
+        const ok = (cat === 'all' || c.dataset.category === cat) && words.every((w) => text.includes(w));
+        card.hidden = !ok;
+        if (ok) inCat++;
+      }
+      c.hidden = inCat === 0;
+      shown += inCat;
+    }
+    empty.hidden = shown > 0;
+  }
+  let filterTimer: number | undefined;
+  input.addEventListener('input', () => {
+    window.clearTimeout(filterTimer);
+    filterTimer = window.setTimeout(applyFilter, 80);
+  });
+  // Tracked once per page view, when the visitor stops typing into the box (never the text itself).
+  input.addEventListener('change', () => window.pth?.track('tool_option', { option: 'home_filter', value: '(text)' }));
+  for (const chip of chips) {
+    chip.addEventListener('click', () => {
+      cat = chip.dataset.cat ?? 'all';
+      for (const c of chips) c.setAttribute('aria-pressed', String(c === chip));
+      window.pth?.track('tool_option', { option: 'home_category', value: cat });
+      applyFilter();
+    });
+  }
+</script>
 
 <style>
   .hero {
@@ -115,21 +221,45 @@ import HeroDemo from '../components/HeroDemo.astro';
   .category-head h2 a { color: var(--text); }
   .category-head h2 a:hover { color: var(--tint); text-decoration: none; }
   .category-head p { margin: 0 0 0 2.6rem; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
-  @media (max-width: 640px) { .grid { gap: 1.25rem; } }
-  .tool-card {
-    display: flex; flex-direction: column; padding: 1.1rem 1.3rem; color: var(--text);
-    border-top: 3px solid var(--tint);
-    transition: border-color 0.15s, transform 0.15s var(--ease-spring), box-shadow 0.15s;
-  }
-  .tool-card:hover {
-    text-decoration: none; transform: translateY(-3px);
-    box-shadow: var(--shadow-lg);
-    box-shadow: var(--shadow-lg), 0 0 0 1px color-mix(in srgb, var(--tint) 45%, transparent);
-  }
-  .tool-card:active { transform: scale(0.98); }
-  .tool-card h3 { margin: 0 0 0.35rem; font-size: 1.05rem; }
-  .tool-card p { color: var(--text-muted); font-size: 0.9rem; flex: 1; }
-  .cta { color: var(--tint); font-weight: 600; font-size: 0.85rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.9rem; }
+  .category[hidden] { display: none; }
+  .grid :global(.tool-card[hidden]) { display: none; }
   .why { margin-top: 1rem; }
+
+  /* "Your tools" row */
+  .your-tools { margin-bottom: 2rem; }
+  .your-tools[hidden] { display: none; }
+  .yt-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.8rem; margin-bottom: 0.7rem; }
+  .yt-head h2 { margin: 0; font-size: 1.3rem; }
+  .yt-head .muted { font-size: 0.85rem; }
+  .yt-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .yt-list :global(.yt-item) {
+    display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.8rem 0.35rem 0.4rem;
+    border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text);
+    font-size: 0.9rem; font-weight: 600; transition: border-color 0.15s, transform 0.15s var(--ease-spring);
+  }
+  .yt-list :global(.yt-item:hover) { border-color: var(--tint); text-decoration: none; transform: translateY(-2px); }
+  .yt-list :global(.yt-item:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .yt-list :global(.yt-icon) {
+    display: grid; place-items: center; width: 1.8rem; height: 1.8rem; border-radius: 50%;
+    background: color-mix(in srgb, var(--tint) 16%, transparent); color: var(--tint);
+  }
+  .yt-list :global(.yt-icon svg) { width: 15px; height: 15px; }
+  .yt-list :global(.yt-star) { color: var(--accent); display: inline-flex; }
+  @media (pointer: coarse) { .yt-list :global(.yt-item) { min-height: 44px; } }
+
+  /* Filter bar */
+  .home-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1rem; margin-bottom: 1.75rem; }
+  .hf-search {
+    display: flex; align-items: center; gap: 0.5rem; flex: 1 1 260px; max-width: 380px; padding: 0 0.8rem;
+    border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-muted);
+  }
+  .hf-search:focus-within { border-color: var(--accent); outline: 2px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+  .hf-search input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; color: var(--text); padding: 0.55rem 0; outline: none; }
+  .hf-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .hf-chips .chip { font-family: var(--font); }
+  .hf-chips .chip span { opacity: 0.7; font-variant-numeric: tabular-nums; margin-left: 0.15rem; }
+  .hf-chips .chip[data-cat]:not([data-cat="all"]):not([aria-pressed="true"]):hover { border-color: var(--tint); color: var(--tint); }
+  .hf-empty { margin: -0.75rem 0 2rem; }
+  @media (pointer: coarse) { .hf-search input { min-height: 44px; } }
 </style>

@@ -355,8 +355,11 @@ site-wide — a new tool page needs nothing extra to pick this up:
   in `global.css`, an entry in the picker in `Header.astro`, the pre-paint allow-list in `Base.astro`,
   and the list in that test. The `palette_change` event (docs/ANALYTICS.md) shows which ones people pick.
 - `--tint-<category-slug>` (five hues: accent / teal / violet / accent-2 / rose) via `src/lib/category-tint.ts`
-  give each category hub and its cards on the home page a consistent identity (top card border,
-  eyebrow color, "Open tool →" color). Adding a category means adding its tint token *and* an icon
+  give each category hub and its cards a consistent identity (top card border, eyebrow color, the
+  tool icon chip). Cards are one component, `ToolCard.astro` (home + hubs): icon from
+  `ToolIcon.astro` (add a glyph there for a new tool; unknown slugs get a wrench), whole card
+  clickable through a stretched link, and a favourite star (same localStorage list as the command
+  palette) that feeds the home page's "Your tools" row. Adding a category means adding its tint token *and* an icon
   case in `CategoryIcon.astro` together (the Compare category shipped without either and showed an
   empty square). The tints are in the palette contrast test, so a new one is checked automatically.
 - `.eyebrow` (small mono uppercase label with a colored dot) and `.bg-grid` (a CSS-only dot-grid

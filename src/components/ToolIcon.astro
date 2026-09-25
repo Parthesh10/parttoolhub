@@ -1,0 +1,84 @@
+---
+/**
+ * One inline-SVG line icon per tool (UI round 3), same drawing rules as CategoryIcon.astro:
+ * 24x24, stroke=currentColor, stroke-width 2, round caps/joins, simple primitives so it stays
+ * crisp at 18-24px. Tools that do the same kind of job share a glyph (both CSV converters show a
+ * table); the card's name and category colour tell them apart. An unknown slug falls back to a
+ * plain wrench, so a new tool never renders an empty chip; give it its own glyph here.
+ */
+export interface Props {
+  slug: string;
+  size?: number;
+}
+const { slug, size = 20 } = Astro.props;
+
+const S = 'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"';
+const GLYPH: Record<string, string> = {
+  braces: `<path ${S} d="M9 4c-2 0-3 1-3 3v2c0 1.3-.8 3-2 3 1.2 0 2 1.7 2 3v2c0 2 1 3 3 3M15 4c2 0 3 1 3 3v2c0 1.3.8 3 2 3-1.2 0-2 1.7-2 3v2c0 2-1 3-3 3"/>`,
+  python: `<path ${S} d="M16 4H10a3 3 0 0 0-3 3v2h6M8 20h6a3 3 0 0 0 3-3v-2h-6"/><path ${S} d="M7 9H6a3 3 0 0 0 0 6h1M17 15h1a3 3 0 0 0 0-6h-1"/>`,
+  toList: `<path ${S} d="M4 7h5M4 12h5M4 17h5M13 12h7M17 9l3 3-3 3"/>`,
+  toColumn: `<path ${S} d="M4 12h7M8 9l3 3-3 3M15 7h5M15 12h5M15 17h5"/>`,
+  clock: `<circle ${S} cx="12" cy="12" r="8.5"/><path ${S} d="M12 7.5V12l3 2"/>`,
+  calendar: `<rect ${S} x="3.5" y="5" width="17" height="15.5" rx="2"/><path ${S} d="M3.5 10h17M8 3v4M16 3v4"/>`,
+  disk: `<ellipse ${S} cx="12" cy="6" rx="8" ry="3"/><path ${S} d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>`,
+  table: `<rect ${S} x="3.5" y="4.5" width="17" height="15" rx="2"/><path ${S} d="M3.5 9.5h17M3.5 14.5h17M9.5 4.5v15"/>`,
+  drop: `<path ${S} d="M12 3.5s6 6.3 6 10.8a6 6 0 0 1-12 0c0-4.5 6-10.8 6-10.8Z"/>`,
+  hash: `<path ${S} d="M5 9h14M5 15h14M10 4 8 20M16 4l-2 16"/>`,
+  frame: `<rect ${S} x="3" y="6" width="18" height="12" rx="2"/><path ${S} d="M7 12.5V9.5h3M17 11.5v3h-3"/>`,
+  code: `<path ${S} d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>`,
+  idCard: `<rect ${S} x="3" y="5" width="18" height="14" rx="2"/><circle ${S} cx="9" cy="11" r="2"/><path ${S} d="M14 10h4M14 14h4M6 16.5c.6-1.3 1.7-2 3-2s2.4.7 3 2"/>`,
+  lock: `<rect ${S} x="5" y="11" width="14" height="9.5" rx="2"/><path ${S} d="M8 11V8a4 4 0 0 1 8 0v3M12 15v2"/>`,
+  paragraph: `<path ${S} d="M4 6h16M4 10h16M4 14h16M4 18h10"/>`,
+  letterCase: `<path ${S} d="M3.5 18 7.5 6l4 12M5 14h5"/><circle ${S} cx="17" cy="15" r="3"/><path ${S} d="M20 12v6"/>`,
+  title: `<path ${S} d="M5 6h14M12 6v13M9 19h6"/>`,
+  sparkle: `<path ${S} d="M11 3.5l1.7 4.8 4.8 1.7-4.8 1.7L11 16.5l-1.7-4.8L4.5 10l4.8-1.7Z"/><path ${S} d="M18.5 15.5v5M16 18h5"/>`,
+  layers: `<rect ${S} x="8" y="3.5" width="12.5" height="12.5" rx="2"/><path ${S} d="M16 20.5H5.5a2 2 0 0 1-2-2V8"/>`,
+  markdown: `<rect ${S} x="2.5" y="6" width="19" height="12" rx="2"/><path ${S} d="M6 15V9l2.5 3L11 9v6M16 9v6M14 13l2 2 2-2"/>`,
+  doc: `<path ${S} d="M6 3h8l4 4v14H6Z"/><path ${S} d="M14 3v4h4M9 12h6M9 16h6"/>`,
+  wordDoc: `<path ${S} d="M6 3h8l4 4v14H6Z"/><path ${S} d="M14 3v4h4M8.5 11l1.5 6 2-4.5 2 4.5 1.5-6"/>`,
+  key: `<circle ${S} cx="8" cy="15" r="4"/><path ${S} d="M11 12l8-8M16 7l2 2M14 9l2 2"/>`,
+  binary: `<rect ${S} x="4.5" y="7" width="5" height="10" rx="2.5"/><path ${S} d="M14 8.5l2.5-1.5v10M14 17h5"/>`,
+  image: `<rect ${S} x="3" y="5" width="18" height="14" rx="2"/><circle ${S} cx="9" cy="10" r="1.6"/><path ${S} d="M21 15.5l-5-5-8.5 8.5"/>`,
+  link: `<path ${S} d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>`,
+  diff: `<path ${S} d="M8 5v6M5 8h6M13 16h6M5 19 19 5"/>`,
+  diffDocs: `<rect ${S} x="3" y="4" width="8" height="16" rx="1.5"/><rect ${S} x="13" y="4" width="8" height="16" rx="1.5"/><path ${S} d="M5.5 9h3M15.5 9h3M5.5 13h3M15.5 13h3"/>`,
+  wrench: `<path ${S} d="M14.5 6.5a4 4 0 0 0 5 5L12 19a2.1 2.1 0 0 1-3-3Z"/>`,
+};
+const BY_SLUG: Record<string, keyof typeof GLYPH> = {
+  'column-to-comma-separated-list': 'toList',
+  'comma-separated-list-to-column': 'toColumn',
+  'json-formatter': 'braces',
+  'python-dict-to-json': 'python',
+  'json-to-python-dict': 'python',
+  'unix-timestamp-converter': 'clock',
+  'date-difference-calculator': 'calendar',
+  'data-size-converter': 'disk',
+  'csv-to-json-converter': 'table',
+  'json-to-csv-converter': 'table',
+  'color-converter': 'drop',
+  'number-base-converter': 'hash',
+  'aspect-ratio-calculator': 'frame',
+  'html-to-markdown': 'code',
+  'uuid-generator': 'idCard',
+  'password-generator': 'lock',
+  'lorem-ipsum-generator': 'paragraph',
+  'code-case-converter': 'letterCase',
+  'title-case-converter': 'title',
+  'ai-text-cleaner': 'sparkle',
+  'remove-duplicate-lines': 'layers',
+  'markdown-to-plain-text': 'markdown',
+  'markdown-to-google-docs': 'doc',
+  'markdown-to-word': 'wordDoc',
+  'google-docs-to-markdown': 'doc',
+  'jwt-decoder': 'key',
+  'base64-encode-decode': 'binary',
+  'base64-to-image': 'image',
+  'image-to-base64': 'image',
+  'url-encode-decode': 'link',
+  'text-diff-checker': 'diff',
+  'json-diff-checker': 'diffDocs',
+};
+const glyph = GLYPH[BY_SLUG[slug] ?? 'wrench'];
+---
+
+<svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" set:html={glyph} />

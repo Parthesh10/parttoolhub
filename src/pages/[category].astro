@@ -14,6 +14,7 @@ import { canonicalUrl } from '../lib/urls';
 import { WEBSITE_ID } from '../lib/schema';
 import { categoryTintVar } from '../lib/category-tint';
 import CategoryIcon from '../components/CategoryIcon.astro';
+import ToolCard from '../components/ToolCard.astro';
 
 export function getStaticPaths() {
   return CATEGORIES.map((c) => ({ params: { category: c.slug } }));
@@ -62,13 +63,7 @@ const schema = [
 
   <h2 class="grid-heading">Tools in this category</h2>
   <div class="grid" data-nav="hub-cards" style={`--tint: ${tint}`}>
-    {tools.map((t) => (
-      <a class="card tool-card" href={toolPath(t)}>
-        <h3>{t.name}</h3>
-        <p>{t.short}</p>
-        <span class="cta">Open tool →</span>
-      </a>
-    ))}
+    {tools.map((t) => <ToolCard tool={t} />)}
   </div>
 </Base>
 
@@ -84,21 +79,7 @@ const schema = [
     color: var(--tint);
   }
   .lead { font-size: 1.1rem; color: var(--text-muted); }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
-  .tool-card {
-    display: flex; flex-direction: column; padding: 1.25rem 1.4rem; color: var(--text);
-    border-top: 3px solid var(--tint);
-    transition: border-color 0.15s, transform 0.15s var(--ease-spring), box-shadow 0.15s;
-  }
-  .tool-card:hover {
-    text-decoration: none; transform: translateY(-3px);
-    box-shadow: var(--shadow-lg);
-    box-shadow: var(--shadow-lg), 0 0 0 1px color-mix(in srgb, var(--tint) 45%, transparent);
-  }
-  .tool-card:active { transform: scale(0.98); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.9rem; }
   .intro { margin-bottom: 1.75rem; }
   .grid-heading { font-size: 1.2rem; margin: 0 0 0.85rem; }
-  .tool-card h3 { margin: 0 0 0.4rem; font-size: 1.1rem; }
-  .tool-card p { color: var(--text-muted); font-size: 0.95rem; flex: 1; }
-  .cta { color: var(--tint); font-weight: 600; font-size: 0.9rem; }
 </style>
