@@ -39,7 +39,11 @@ const year = new Date().getFullYear();
 
 <style>
   .site-footer { border-top: 1px solid var(--border); background: var(--surface); margin-top: 2rem; font-size: 0.925rem; }
-  .grid { display: grid; grid-template-columns: 1.6fr repeat(auto-fit, minmax(140px, 1fr)); gap: 2rem; padding-block: 2.25rem 1rem; }
+  /* 1.6fr next to repeat(auto-fit, ...) was invalid CSS (auto-fit only combines with fixed-size
+     tracks), so browsers dropped the whole rule and the footer collapsed into one left-hand column.
+     Now: the about blurb spans two rows on the left, the five categories and Site fill a 3x2 grid. */
+  .grid { display: grid; grid-template-columns: minmax(200px, 1.3fr) repeat(3, minmax(0, 1fr)); gap: 2rem 2.5rem; padding-block: 2.25rem 1rem; }
+  .about { grid-row: span 2; }
   .about p { max-width: 32ch; }
   .brand-mark { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--text); }
   /* Same small-caps technical-label treatment as .eyebrow, without the leading dot —
@@ -63,5 +67,5 @@ const year = new Date().getFullYear();
   }
   .link-btn:hover { color: var(--accent); }
   .copy { padding-block: 1rem 1.5rem; font-size: 0.85rem; }
-  @media (max-width: 720px) { .grid { grid-template-columns: 1fr 1fr; gap: 1.25rem; } .about { grid-column: 1 / -1; } }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr 1fr; gap: 1.25rem; } .about { grid-column: 1 / -1; grid-row: auto; } }
 </style>

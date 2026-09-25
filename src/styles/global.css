@@ -53,6 +53,7 @@
   --tint-text-tools: #0a6055;
   --tint-encoders: #7c3aed;
   --tint-generators: var(--accent-2);
+  --tint-compare: #be185d;
   --radius: 10px;
   --radius-sm: 6px;
   --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.1);
@@ -97,6 +98,7 @@
     --tint-text-tools: #2dd4bf;
     --tint-encoders: #b794f6;
     --tint-generators: var(--accent-2);
+    --tint-compare: #f472b6;
     --success: #4ade80;
     --danger: #f87171;
     --syn-key: #f0a53d;
@@ -131,6 +133,7 @@
   --tint-text-tools: #2dd4bf;
   --tint-encoders: #b794f6;
   --tint-generators: var(--accent-2);
+  --tint-compare: #f472b6;
   --success: #4ade80;
   --danger: #f87171;
   --syn-key: #f0a53d;
