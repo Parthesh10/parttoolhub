@@ -192,7 +192,7 @@ export const TOOLS: Tool[] = [
     features: ['HEX, RGB(A) and HSL(A), all shown at once', 'Live color swatch', 'WCAG 2.x contrast ratio vs. black/white text', 'Accepts 3/4/6/8-digit hex and percentage or slash syntax'],
     intent: 'hex rgb hsl color converter',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-18',
+    reviewedOn: '2026-09-25',
     spec: { name: 'CSS Color Module Level 4', url: 'https://www.w3.org/TR/css-color-4/' },
   },
   {

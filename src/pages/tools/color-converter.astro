@@ -24,10 +24,10 @@ const badHexErr = err(() => parseColor('#zzz'));
 const shortRgbErr = err(() => parseColor('rgb(1,2)'));
 
 const steps = [
-  'Paste a color as a hex code, <code>rgb()</code>/<code>rgba()</code>, or <code>hsl()</code>/<code>hsla()</code>. The format is auto-detected.',
-  'Read the HEX, RGB and HSL rows, all computed from the same parsed color, plus a live swatch.',
-  'Check <strong>Contrast on black text</strong> and <strong>Contrast on white text</strong> if this color will sit behind text: each is labelled AA, AAA, or a fail.',
-  'Click any of HEX / RGB / HSL to copy it; <strong>Load sample</strong> inserts a worked example.',
+  'Paste a color as a hex code, <code>rgb()</code>/<code>rgba()</code>, or <code>hsl()</code>/<code>hsla()</code>, or pick one with the swatch next to the box. The format is auto-detected.',
+  'The preview shows the color with black and with white sample text on it; each carries its contrast ratio, labelled AA, AAA or a fail, and the better of the two is marked <strong>best</strong>.',
+  'Read the HEX, RGB and HSL values under the preview, all computed from the same parsed color, and the <strong>Darker and lighter</strong> strip: the same hue in 10-point lightness steps.',
+  'Click any value or any swatch in the strip to copy it; <strong>Load sample</strong> inserts a worked example.',
 ];
 
 const faq = [
@@ -96,6 +96,11 @@ const faq = [
       <li><strong>Alpha only shows where it matters.</strong> A fully opaque color's hex is 6 digits and its RGB/HSL have
         no fourth value; add any alpha below 1 (via <code>rgba()</code>, <code>hsla()</code>, or an 8-digit hex) and all
         three outputs grow an alpha component to match.</li>
+      <li><strong>Contrast of a translucent color is shown as if it were solid</strong>, and the badges say
+        "(as solid)". A contrast ratio needs one opaque color, and a translucent color only becomes one once it
+        is laid over something: <code>rgba(255, 0, 0, 0.3)</code> over white is a pale pink, over black a dark maroon.
+        Check the final blended color instead if the background is known. The color picker also has no alpha, so
+        picking a color always gives an opaque one.</li>
     </ul>
 
     <h2>Do the same thing in code</h2>

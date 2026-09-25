@@ -159,3 +159,22 @@ export function contrastRatio(a: Rgba, b: Rgba): number {
 }
 
 export const SAMPLE_COLOR = '#3366ff';
+
+/**
+ * Darker and lighter versions of a colour for the Color Converter's tint strip: the same hue and
+ * saturation at lightness `l - n*step … l + n*step` (clamped to 0-100, duplicates from clamping
+ * dropped), ordered dark to light, with the input colour itself marked. Alpha is kept.
+ */
+export function tintScale(color: Rgba, step = 10, n = 4): { l: number; color: Rgba; isBase: boolean }[] {
+  const { h, s, l } = rgbToHsl(color);
+  const seen = new Set<number>();
+  const out: { l: number; color: Rgba; isBase: boolean }[] = [];
+  for (let i = -n; i <= n; i++) {
+    const li = Math.min(100, Math.max(0, l + i * step));
+    if (seen.has(li)) continue;
+    seen.add(li);
+    const base = i === 0;
+    out.push({ l: li, color: base ? color : { ...hslToRgb(h, s, li), a: color.a }, isBase: base });
+  }
+  return out;
+}

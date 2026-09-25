@@ -1,4 +1,4 @@
-import { parseColor, rgbToHex, formatRgb, formatHsl, contrastRatio, SAMPLE_COLOR, type Rgba } from '../../lib/color-convert';
+import { parseColor, rgbToHex, formatRgb, formatHsl, contrastRatio, tintScale, SAMPLE_COLOR, type Rgba } from '../../lib/color-convert';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -6,8 +6,12 @@ const input = $<HTMLTextAreaElement>('input');
 const inputStat = $('input-stat');
 const status = $('status');
 const grid = $('grid');
-const note = $('note');
-const swatch = $('swatch');
+const result = $('result');
+const preview = $('preview');
+const tints = $('tints');
+const picker = $<HTMLInputElement>('picker');
+const badgeBlack = $('badge-black');
+const badgeWhite = $('badge-white');
 const toast = $('toast');
 const pasteBtn = $<HTMLButtonElement>('btn-paste');
 
@@ -76,50 +80,54 @@ function wcagLabel(ratio: number): { text: string; cls: 'pass' | 'fail' } {
 
 function render() {
   const raw = input.value;
-  inputStat.textContent = raw.trim() ? '' : 'Paste a color';
-  swatch.hidden = true;
+  inputStat.textContent = raw.trim() ? '' : 'Paste a color, or pick one';
 
   if (!raw.trim()) {
     status.hidden = true;
-    grid.hidden = true;
-    note.hidden = true;
+    result.hidden = true;
     return;
   }
 
-  const result = parseColor(raw);
-  trackRun('convert', result.ok, result.ok ? undefined : 'syntax');
+  const parsed = parseColor(raw);
+  trackRun('convert', parsed.ok, parsed.ok ? undefined : 'syntax');
 
-  if (!result.ok) {
+  if (!parsed.ok) {
     status.hidden = false;
     status.className = 'status-banner is-error';
-    status.textContent = result.error;
-    grid.hidden = true;
-    note.hidden = true;
+    status.textContent = parsed.error;
+    result.hidden = true;
     return;
   }
 
   status.hidden = true;
-  grid.hidden = false;
-  note.hidden = false;
-  const color = result.value;
-  swatch.hidden = false;
-  // The checkerboard behind semi-transparent colors comes from the CSS
-  // class's background-image; background-color paints beneath it, so only
-  // setting the color here is enough to show alpha correctly.
-  swatch.style.backgroundColor = formatRgb(color);
+  result.hidden = false;
+  const color = parsed.value;
+  // The preview's ::before layer paints the colour over a checkerboard, so alpha shows as alpha.
+  preview.style.setProperty('--cv-color', formatRgb(color));
+  // The picker only understands opaque #rrggbb; alpha is dropped there but kept everywhere else.
+  picker.value = rgbToHex({ ...color, a: 1 }).slice(0, 7).toLowerCase();
 
   const onBlack = contrastRatio(color, BLACK);
   const onWhite = contrastRatio(color, WHITE);
-  const recommended = onWhite >= onBlack ? 'White' : 'Black';
+  const best = onWhite >= onBlack ? 'white' : 'black';
+  // Contrast needs an opaque colour. For a translucent one the ratio is computed as if it were solid
+  // (the real result depends on whatever sits behind it), and the badge says so.
+  const asSolid = color.a < 1 ? ' (as solid)' : '';
+  badgeBlack.textContent = `${wcagLabel(onBlack).text}${asSolid}${best === 'black' ? ' · best' : ''}`;
+  badgeWhite.textContent = `${wcagLabel(onWhite).text}${asSolid}${best === 'white' ? ' · best' : ''}`;
+
+  tints.innerHTML = tintScale(color)
+    .map((t) => {
+      const hex = rgbToHex(t.color);
+      return `<button type="button" class="cv-tint${t.isBase ? ' is-base' : ''}" data-copy="tint" data-value="${escapeHtml(hex)}" aria-label="Copy ${escapeHtml(hex)}, lightness ${t.l}%"><span class="sw" style="background:${formatRgb(t.color)}"></span>${escapeHtml(hex)}</button>`;
+    })
+    .join('');
 
   type Row = { label: string; value: string; copyKey?: string; cls?: string };
   const rows: Row[] = [
     { label: 'HEX', value: rgbToHex(color), copyKey: 'hex' },
     { label: 'RGB', value: formatRgb(color), copyKey: 'rgb' },
     { label: 'HSL', value: formatHsl(color), copyKey: 'hsl' },
-    { label: 'Contrast on black text', value: wcagLabel(onBlack).text, cls: wcagLabel(onBlack).cls },
-    { label: 'Contrast on white text', value: wcagLabel(onWhite).text, cls: wcagLabel(onWhite).cls },
-    { label: 'Best text color', value: recommended },
   ];
 
   grid.innerHTML = rows
@@ -155,10 +163,17 @@ async function copyRow(btn: HTMLButtonElement) {
     showToast('Could not copy; select the text manually');
   }
 }
-grid.addEventListener('click', (e) => {
-  const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.cc-row[data-copy]');
+result.addEventListener('click', (e) => {
+  const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-copy]');
   if (btn) copyRow(btn);
 });
+// The native picker writes a #rrggbb into the input and converts it like a typed colour.
+picker.addEventListener('input', () => {
+  inputSource = 'typed';
+  input.value = picker.value;
+  scheduleRender();
+});
+picker.addEventListener('change', () => trackOption(picker, 'picker'));
 
 // Typing is debounced so a keystroke never waits on the engine — the site's
 // INP budget is < 200 ms and large pastes can take longer than that to process

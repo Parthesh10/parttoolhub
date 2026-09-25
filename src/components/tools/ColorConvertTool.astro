@@ -1,5 +1,12 @@
 ---
-/** HEX/RGB/HSL color converter. Behaviour in ./color-convert.client.ts */
+/**
+ * HEX/RGB/HSL color converter. Behaviour in ./color-convert.client.ts
+ *
+ * Redesign round 2 (REDESIGN-PROPOSALS.md §5): the result is a preview of the colour with black
+ * and white sample text on it, each carrying its own contrast badge, so "can I put text on this"
+ * is answered by looking. A native colour picker sits beside the input, and a tint strip offers
+ * darker/lighter versions to copy. HEX/RGB/HSL stay as copyable tiles underneath.
+ */
 ---
 
 <section class="tool card" id="tool" data-tool="color-converter">
@@ -9,7 +16,7 @@
       <span class="stat" id="input-stat" aria-live="polite"></span>
     </div>
     <div class="color-input-row">
-      <span class="swatch" id="swatch" hidden aria-hidden="true"></span>
+      <input type="color" id="picker" value="#3366ff" aria-label="Pick a colour" />
       <textarea id="input" rows="1" spellcheck="false" autocomplete="off" placeholder="#3366ff"></textarea>
     </div>
     <div class="pane-actions">
@@ -21,9 +28,22 @@
 
   <p class="status-banner" id="status" hidden></p>
 
-  <div class="cc-grid" id="grid" hidden></div>
+  <div class="cv-result" id="result" hidden>
+    <div class="cv-preview" id="preview">
+      <div class="cv-sample" id="sample-black"><span class="cv-aa">Aa</span> Black text <span class="cv-badge" id="badge-black"></span></div>
+      <div class="cv-sample" id="sample-white"><span class="cv-aa">Aa</span> White text <span class="cv-badge" id="badge-white"></span></div>
+    </div>
 
-  <p class="muted cc-note" id="note" hidden>Click any result to copy it.</p>
+    <div class="cc-grid" id="grid"></div>
+
+    <div class="cv-tints-head">
+      <span class="cv-label">Darker and lighter</span>
+      <span class="muted">same hue, 10-point lightness steps</span>
+    </div>
+    <div class="cv-tints" id="tints" role="group" aria-label="Darker and lighter versions, click to copy"></div>
+
+    <p class="muted cc-note" id="note">Click any value or swatch to copy it.</p>
+  </div>
 
   <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
 </section>
@@ -34,17 +54,52 @@
   .single textarea { min-height: 44px; resize: none; }
   .color-input-row { display: flex; align-items: stretch; gap: 0.6rem; }
   .color-input-row textarea { flex: 1; }
-  .swatch {
-    display: block; width: 44px; height: 44px; border-radius: var(--radius-sm);
-    border: 1px solid var(--border); flex: none; background-image:
+  /* Native picker, sized to sit beside the one-line input as its swatch. */
+  #picker {
+    flex: none; width: 48px; height: 44px; padding: 3px; cursor: pointer;
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+  }
+  #picker:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .cv-result { margin-top: 1.1rem; }
+  /* The colour itself, over a checkerboard so a translucent colour reads as translucent. The
+     background-color is set inline by the client script; the checkerboard is a layer beneath it. */
+  .cv-preview {
+    position: relative; border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden;
+    background-image:
       linear-gradient(45deg, #8884 25%, transparent 25%), linear-gradient(-45deg, #8884 25%, transparent 25%),
       linear-gradient(45deg, transparent 75%, #8884 75%), linear-gradient(-45deg, transparent 75%, #8884 75%);
-    background-size: 12px 12px; background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+    background-size: 16px 16px; background-position: 0 0, 0 8px, 8px -8px, -8px 0;
   }
-  .cc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.7rem; margin-top: 1rem; }
-  .cc-grid :global(.cc-row.no-copy) { cursor: default; }
-  .cc-grid :global(.cc-row.no-copy:hover), .cc-grid :global(.cc-row.no-copy:focus-visible) { border-color: var(--border); }
-  .cc-grid :global(.v.pass) { color: var(--success); }
-  .cc-grid :global(.v.fail) { color: var(--danger); }
+  .cv-preview::before { content: ""; position: absolute; inset: 0; background: var(--cv-color, transparent); }
+  .cv-sample {
+    position: relative; display: flex; align-items: center; flex-wrap: wrap; gap: 0.6rem;
+    padding: 1.1rem 1.25rem; font-size: 1.15rem; font-weight: 600;
+  }
+  #sample-black { color: #000; }
+  #sample-white { color: #fff; }
+  .cv-aa { font-family: var(--font-display); font-size: 1.9rem; line-height: 1; }
+  .cv-badge {
+    margin-left: auto; font-family: var(--font); font-size: 0.8rem; font-weight: 700; padding: 0.25rem 0.6rem;
+    border-radius: 999px; background: currentColor;
+  }
+  /* The badge text is the opposite colour of the sample, so it stays readable on any swatch. */
+  #sample-black .cv-badge { background: #000; color: #fff; }
+  #sample-white .cv-badge { background: #fff; color: #000; }
+
+  .cv-tints-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; margin: 1.1rem 0 0.45rem; font-size: 0.85rem; }
+  .cv-label { font-weight: 650; font-size: 0.9rem; }
+  .cv-tints { display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 0.35rem; }
+  .cv-tints :global(.cv-tint) {
+    display: flex; flex-direction: column; align-items: stretch; gap: 0.25rem; padding: 0; cursor: pointer;
+    font: inherit; font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted);
+    background: none; border: 0; border-radius: var(--radius-sm);
+  }
+  .cv-tints :global(.cv-tint .sw) { height: 40px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+  .cv-tints :global(.cv-tint.is-base .sw) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .cv-tints :global(.cv-tint.is-base) { color: var(--text); font-weight: 700; }
+  .cv-tints :global(.cv-tint:hover .sw), .cv-tints :global(.cv-tint:focus-visible .sw) { border-color: var(--accent); }
+  .cv-tints :global(.cv-tint:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .cc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.6rem; margin-top: 0.9rem; }
   .cc-note { font-size: 0.85rem; margin-top: 0.75rem; }
 </style>

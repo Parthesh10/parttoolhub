@@ -78,3 +78,18 @@ test('relativeLuminance: white is 1, black is 0', () => {
   assert.equal(relativeLuminance({ r: 255, g: 255, b: 255, a: 1 }), 1);
   assert.equal(relativeLuminance({ r: 0, g: 0, b: 0, a: 1 }), 0);
 });
+
+test('tintScale: same hue, lightness in 10-point steps, dark to light, base marked', async () => {
+  const { tintScale, parseColor, rgbToHsl } = await import('../src/lib/color-convert.ts');
+  const base = parseColor('hsl(225, 100%, 60%)');
+  assert.ok(base.ok);
+  const t = tintScale(base.value);
+  assert.deepEqual(t.map((x) => x.l), [20, 30, 40, 50, 60, 70, 80, 90, 100]);
+  assert.equal(t.filter((x) => x.isBase).length, 1);
+  assert.equal(t.find((x) => x.isBase)!.l, 60);
+  for (const x of t.filter((x) => x.l > 0 && x.l < 100)) assert.equal(rgbToHsl(x.color).h, 225);
+  // Clamping at the ends never duplicates a swatch.
+  const white = parseColor('#ffffff');
+  assert.ok(white.ok);
+  assert.deepEqual(tintScale(white.value).map((x) => x.l), [60, 70, 80, 90, 100]);
+});
