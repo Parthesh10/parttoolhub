@@ -342,14 +342,23 @@ site-wide — a new tool page needs nothing extra to pick this up:
   darker pair for **solid fills with white text on top** (`.btn-primary`, `.chip[aria-pressed]`, a
   tool's own pressed-mode buttons, the skip-link) — using `--accent` there fails 4.5:1 in dark mode
   (measured 2.8:1). Any new "pressed / selected" button state must use `--accent-btn`, not `--accent`.
-- `--accent-2` (brass/copper) is a sparse second accent — a label dot, a hover glow — never a large
-  fill; also passes 4.5:1 as text (it doubles as `--tint-generators`, used as link/eyebrow text).
-- `--tint-<category-slug>` (four fixed hues: cobalt/teal/violet/brass) via `src/lib/category-tint.ts`
+- `--accent-2` is a sparse second accent — a label dot, a hover glow — never a large fill; also
+  passes 4.5:1 as text (it doubles as `--tint-generators`, used as link/eyebrow text).
+- **Palettes (2026-09-25).** The default is Ink & Tangerine (`--accent` orange, `--accent-2` sky
+  blue). Visitors can switch to Indigo, Mint or Cobalt (the pre-2026-09-25 look) from the header's
+  palette picker; the choice is `localStorage 'palette'`, set as `data-palette` on `<html>` by the
+  pre-paint script in `Base.astro` (no attribute = Tangerine). Each palette overrides exactly the
+  palette tokens `--bg … --grid-dot`; syntax, category, success/danger colours are shared. So never
+  hard-code a colour that should follow the palette: use the tokens. `tests/palette-contrast.test.ts`
+  resolves every palette in both themes from the real `global.css` and fails on any text pairing
+  under 4.5:1, and on drift between the duplicated dark blocks. Adding a palette means three blocks
+  in `global.css`, an entry in the picker in `Header.astro`, the pre-paint allow-list in `Base.astro`,
+  and the list in that test. The `palette_change` event (docs/ANALYTICS.md) shows which ones people pick.
+- `--tint-<category-slug>` (five hues: accent / teal / violet / accent-2 / rose) via `src/lib/category-tint.ts`
   give each category hub and its cards on the home page a consistent identity (top card border,
-  eyebrow color, "Open tool →" color). Adding a category means adding its tint token *and* a case in
-  that file together. All four tints are verified ≥4.5:1 as text on `--bg` in both themes — check any
-  new tint the same way before adding it (`node -e` with the relative-luminance formula, or a browser
-  contrast checker) rather than picking a color by eye.
+  eyebrow color, "Open tool →" color). Adding a category means adding its tint token *and* an icon
+  case in `CategoryIcon.astro` together (the Compare category shipped without either and showed an
+  empty square). The tints are in the palette contrast test, so a new one is checked automatically.
 - `.eyebrow` (small mono uppercase label with a colored dot) and `.bg-grid` (a CSS-only dot-grid
   texture, no image request, used behind hero sections only — not on dense pages like the footer)
   are the two reusable "hero" primitives; see `index.astro` and `[category].astro` for the pattern.

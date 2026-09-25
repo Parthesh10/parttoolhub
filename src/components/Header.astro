@@ -29,7 +29,7 @@ const current = Astro.url.pathname;
     <div class="nav-group">
       <nav aria-label="Main">
         <ul>
-          <li><a href="/" aria-current={current === '/' ? 'page' : undefined}>Home</a></li>
+          <li class="nav-home"><a href="/" aria-current={current === '/' ? 'page' : undefined}>Home</a></li>
           <li class="has-dropdown">
             <a href="/#tools" class="dropdown-trigger" aria-haspopup="true">
               Tools <span class="caret" aria-hidden="true">▾</span>
@@ -42,6 +42,31 @@ const current = Astro.url.pathname;
           </li>
         </ul>
       </nav>
+      <div class="palette-wrap">
+        <button type="button" id="palette-btn" class="theme-toggle" aria-haspopup="menu" aria-expanded="false" aria-controls="palette-menu" aria-label="Colour scheme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+            <circle cx="7.5" cy="11.5" r="1.3" fill="currentColor" />
+            <circle cx="10" cy="7.5" r="1.3" fill="currentColor" />
+            <circle cx="15" cy="7.5" r="1.3" fill="currentColor" />
+          </svg>
+          <span class="palette-dot" aria-hidden="true"></span>
+        </button>
+        <div class="palette-menu" id="palette-menu" role="menu" aria-label="Colour scheme" hidden>
+          {[
+            ['tangerine', 'Tangerine', 'Default', '#ff9a52', '#6cc4ff'],
+            ['indigo', 'Indigo', 'Deep violet', '#a996ff', '#ffab70'],
+            ['mint', 'Mint', 'Calm graphite', '#4fd8a8', '#ff8fa3'],
+            ['cobalt', 'Cobalt', 'The original', '#7c93ff', '#f0a53d'],
+          ].map(([id, name, note, a, b]) => (
+            <button type="button" role="menuitemradio" aria-checked="false" data-palette={id} class="palette-item">
+              <span class="sw" aria-hidden="true"><i style={`background:${a}`}></i><i style={`background:${b}`}></i></span>
+              <span class="pi-text"><span class="pi-name">{name}</span><span class="pi-note">{note}</span></span>
+              <span class="pi-check" aria-hidden="true">✓</span>
+            </button>
+          ))}
+        </div>
+      </div>
       <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle color theme">
         <svg class="icon icon-light" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2" />
@@ -69,11 +94,13 @@ const current = Astro.url.pathname;
     system: 'Theme: System default. Click to switch to Light.',
   };
 
-  const LIGHT_COLOR = '#ffffff';
-  const DARK_COLOR = '#151a22';
-
   const btn = document.getElementById('theme-toggle') as HTMLButtonElement;
   const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+  /** Browser-chrome colour follows whatever --surface the current theme + palette resolve to. */
+  function syncThemeColor() {
+    const surface = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim();
+    if (surface) themeColorMeta?.setAttribute('content', surface);
+  }
 
   function currentMode(): Mode {
     const stored = localStorage.getItem(KEY);
@@ -89,10 +116,7 @@ const current = Astro.url.pathname;
     btn.dataset.mode = mode;
     btn.setAttribute('aria-label', LABEL[mode]);
 
-    // Keep the browser-chrome color meta in sync with the resolved theme —
-    // "system" needs the live OS preference, not just the stored mode.
-    const isDark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    themeColorMeta?.setAttribute('content', isDark ? DARK_COLOR : LIGHT_COLOR);
+    syncThemeColor();
   }
 
   apply(currentMode());
@@ -101,6 +125,74 @@ const current = Astro.url.pathname;
     const next = NEXT[currentMode()];
     localStorage.setItem(KEY, next);
     apply(next);
+  });
+
+  // --- Colour palette picker (UI round 3) ----------------------------------------------------
+  // Same pattern as the theme: localStorage 'palette', applied as data-palette on <html> (the
+  // pre-paint script in Base.astro restores it before first paint). Tangerine is the default and
+  // is represented by no attribute. global.css holds the palettes; tests/palette-contrast.test.ts
+  // checks them.
+  type Palette = 'tangerine' | 'indigo' | 'mint' | 'cobalt';
+  const PALETTES: Palette[] = ['tangerine', 'indigo', 'mint', 'cobalt'];
+  const paletteBtn = document.getElementById('palette-btn') as HTMLButtonElement;
+  const paletteMenu = document.getElementById('palette-menu') as HTMLElement;
+  const items = [...paletteMenu.querySelectorAll<HTMLButtonElement>('[data-palette]')];
+
+  function currentPalette(): Palette {
+    try {
+      const p = localStorage.getItem('palette');
+      return (PALETTES as string[]).includes(p ?? '') ? (p as Palette) : 'tangerine';
+    } catch {
+      return 'tangerine';
+    }
+  }
+  function applyPalette(p: Palette) {
+    if (p === 'tangerine') document.documentElement.removeAttribute('data-palette');
+    else document.documentElement.setAttribute('data-palette', p);
+    for (const it of items) it.setAttribute('aria-checked', String(it.dataset.palette === p));
+    syncThemeColor();
+  }
+  function setMenu(open: boolean) {
+    paletteMenu.hidden = !open;
+    paletteBtn.setAttribute('aria-expanded', String(open));
+    if (!open) return;
+    // Anchored to the button's right edge; when the header wraps on a phone the button sits
+    // further left, so nudge the menu back inside the viewport (8px margin) if it spills.
+    paletteMenu.style.right = '';
+    const r = paletteMenu.getBoundingClientRect();
+    if (r.left < 8) paletteMenu.style.right = `${r.left - 8}px`;
+    else if (r.right > window.innerWidth - 8) paletteMenu.style.right = `${r.right - (window.innerWidth - 8)}px`;
+    (items.find((it) => it.getAttribute('aria-checked') === 'true') ?? items[0]).focus();
+  }
+  applyPalette(currentPalette());
+
+  paletteBtn.addEventListener('click', () => setMenu(paletteMenu.hidden));
+  for (const it of items) {
+    it.addEventListener('click', () => {
+      const p = it.dataset.palette as Palette;
+      try {
+        localStorage.setItem('palette', p);
+      } catch {
+        // Storage blocked: the choice still applies to this page view.
+      }
+      applyPalette(p);
+      window.pth?.track('palette_change', { palette: p });
+      setMenu(false);
+      paletteBtn.focus();
+    });
+  }
+  paletteMenu.addEventListener('keydown', (e) => {
+    const i = items.indexOf(document.activeElement as HTMLButtonElement);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus();
+    } else if (e.key === 'Escape') {
+      setMenu(false);
+      paletteBtn.focus();
+    }
+  });
+  document.addEventListener('click', (e) => {
+    if (!paletteMenu.hidden && !(e.target as HTMLElement).closest('.palette-wrap')) setMenu(false);
   });
 </script>
 
@@ -154,6 +246,38 @@ const current = Astro.url.pathname;
   .theme-toggle:hover { background: var(--surface-2); color: var(--text); }
   .theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .theme-toggle .icon { display: none; }
+
+  /* Colour palette picker. The dot under the icon shows the active accent. */
+  .palette-wrap { position: relative; }
+  #palette-btn { position: relative; }
+  .palette-dot {
+    position: absolute; right: 5px; bottom: 5px; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 0 2px var(--surface);
+  }
+  .palette-menu {
+    position: absolute; top: calc(100% + 6px); right: 0; z-index: 60; min-width: 220px; padding: 0.35rem;
+    display: grid; gap: 2px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  }
+  .palette-menu[hidden] { display: none; }
+  .palette-item {
+    display: flex; align-items: center; gap: 0.7rem; width: 100%; padding: 0.5rem 0.6rem; text-align: left;
+    font: inherit; color: var(--text); background: none; border: 0; border-radius: var(--radius-sm); cursor: pointer;
+  }
+  .palette-item:hover, .palette-item:focus-visible { background: var(--surface-2); outline: none; }
+  .palette-item:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+  .sw { display: inline-flex; flex: none; }
+  .sw i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--surface); display: block; }
+  .sw i + i { margin-left: -7px; }
+  .pi-text { display: grid; line-height: 1.25; flex: 1; }
+  .pi-name { font-weight: 600; font-size: 0.9rem; }
+  .pi-note { font-size: 0.75rem; color: var(--text-muted); }
+  .pi-check { color: var(--accent); font-weight: 700; visibility: hidden; }
+  .palette-item[aria-checked="true"] .pi-check { visibility: visible; }
+  @media (pointer: coarse) { .palette-item { min-height: 44px; } }
+  /* Phones: the logo already links home, so the Home item goes to keep the header on one row
+     now that it holds the palette picker as well as the theme toggle. */
+  @media (max-width: 480px) { .nav-home { display: none; } }
   .theme-toggle[data-mode="light"] .icon-light,
   .theme-toggle[data-mode="dark"] .icon-dark,
   .theme-toggle[data-mode="system"] .icon-system { display: block; }

@@ -45,6 +45,7 @@ event name in code; the test enforces the list.
 | `reset_tool` | Clear button pressed | — | Re-use within one visit |
 | `navigation_click` | Any internal link click, captured by delegation in `Base.astro`; plus the two cross-tool hand-off buttons | `link_placement` (`header`, `footer`, `breadcrumb`, `related`, `home-directory`, `hub-cards`, `content`, `handoff`, `not-found`), `link_to` (path only, no query or hash) | Which internal pathways move people between tools |
 | `share_click` | Share FAB (`floating-tools.client.ts`, tool pages only) — Copy link or Share to Reddit chosen from the popover | `channel` (`copy_link`, `reddit`) | Secondary conversion — a visitor found the tool worth sending elsewhere |
+| `palette_change` | A colour scheme is picked from the header's palette menu (`Header.astro`) | `palette` (`tangerine`, `indigo`, `mint`, `cobalt`) | Which colour schemes visitors prefer over the Tangerine default |
 
 "Once per page load" is implemented with a per-script `fired` set: `tool_use`, `tool_result` and
 `tool_error` each fire at most once, so a page load can produce at most one of each regardless of

@@ -111,6 +111,11 @@ const baseSchema = [
             document.documentElement.setAttribute('data-theme', 'dark');
           }
           // t === 'system': leave data-theme unset so prefers-color-scheme decides.
+          // Colour palette from the header picker; Tangerine is the default and needs no attribute.
+          var p = localStorage.getItem('palette');
+          if (p === 'indigo' || p === 'mint' || p === 'cobalt') {
+            document.documentElement.setAttribute('data-palette', p);
+          }
         } catch (e) {}
       })();
     </script>
@@ -126,7 +131,7 @@ const baseSchema = [
     <!-- Content is kept in sync with the resolved theme by the pre-paint script below and by
          the toggle in Header.astro — a single unconditional tag, rather than two `media`-gated
          ones, since browsers don't apply those consistently once a manual override is involved. -->
-    <meta name="theme-color" content="#151a22" />
+    <meta name="theme-color" content="#151924" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE.name} />

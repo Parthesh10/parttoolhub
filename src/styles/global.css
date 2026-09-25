@@ -2,8 +2,9 @@
    Design tokens — three-state theme (see src/components/Header.astro
    for the toggle and Base.astro for the pre-paint script that sets
    data-theme on <html>):
-     - No stored preference (first visit) or data-theme="light": always
-       light, regardless of OS setting — the app's own default.
+     - No stored preference (first visit): dark, the app's own default
+       (the pre-paint script sets data-theme="dark").
+     - data-theme="light": always light, regardless of OS setting.
      - data-theme="dark": always dark, regardless of OS setting.
      - Preference explicitly set to "system" leaves data-theme unset,
        so the (prefers-color-scheme: dark) block below decides.
@@ -12,28 +13,27 @@
    ------------------------------------------------------------------ */
 :root {
   color-scheme: light;
-  --bg: #f6f7fb;
+  --bg: #f7f6f4;
   --surface: #ffffff;
-  --surface-2: #eef0f6;
-  --border: #dee1eb;
-  --text: #161a24;
-  --text-muted: #5c6274;
-  /* Cobalt, not the framework-default blue-600 — a touch more saturated and cooler. */
-  --accent: #3450e6;
-  --accent-hover: #2740c9;
-  --accent-soft: #e7ebfd;
+  --surface-2: #f1efeb;
+  --border: #e2ddd5;
+  --text: #1b1712;
+  --text-muted: #645c52;
+  /* Default palette: Ink & Tangerine (chosen 2026-09-25). The --bg ... --grid-dot group below is
+     the palette; other palettes override exactly those tokens (see "Palettes" after the dark blocks). */
+  --accent: #c2410c;
+  --accent-hover: #a8360a;
+  --accent-soft: #fdeee4;
   /* Solid-fill variant for button backgrounds. Equal to --accent in light mode
      (white text on it already clears 4.5:1); dark mode defines its own darker
      shade below, because --accent there is deliberately pale for link legibility
      on a dark page, which fails white-on-fill contrast at button size. */
-  --accent-btn: var(--accent);
-  --accent-btn-hover: var(--accent-hover);
-  /* Warm counter-accent (brass/copper — the "tool" half of the brand), used sparingly:
-     a label, a dot, a hover glow — never a large fill. Darkened from the swatch's
-     first pass (#c2680c, 3.7:1 on --bg) so it also clears 4.5:1 as the Generators
-     tint's link/eyebrow text color, not just as a decorative dot. */
-  --accent-2: #9c5209;
-  --accent-2-soft: #fbeadb;
+  --accent-btn: #c2410c;
+  --accent-btn-hover: #a8360a;
+  /* Counter-accent, used sparingly: a label, a dot, a hover glow, never a large fill. It is also
+     the Generators tint's link/eyebrow text colour, so each palette keeps it >= 4.5:1. */
+  --accent-2: #1d5fa8;
+  --accent-2-soft: #e3eefa;
   --success: #15803d;
   --danger: #b91c1c;
   /* JSON syntax colours (json-highlight.ts, JSON tree view). Each one measured >= 4.5:1 on both
@@ -71,29 +71,28 @@
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   /* Blueprint dot-grid used behind hero sections — pure CSS, themed via currentcolor-free
      radial-gradient so it needs no image and stays in sync with the border token. */
-  --grid-dot: rgba(52, 80, 230, 0.16);
+  --grid-dot: rgba(194, 65, 12, 0.14);
 }
 
 /* "System" preference: only applies when data-theme isn't forced to light. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: #0d1117;
-    --surface: #151a22;
-    --surface-2: #1c2230;
-    --border: #2b3341;
-    --text: #e9ecf4;
-    --text-muted: #9ba3b7;
-    --accent: #7c93ff;
-    --accent-hover: #a3b4ff;
-    --accent-soft: #1c2550;
-    /* --accent is intentionally pale for link legibility on a dark page; white text on
-       it as a button fill only measures 2.8:1. This pair is a darker, still-recognisably-
-       cobalt shade sized for that job (white-on-fill 6.2:1 / 8.3:1 on hover). */
-    --accent-btn: #3f52d6;
-    --accent-btn-hover: #2f3fb8;
-    --accent-2: #f0a53d;
-    --accent-2-soft: #3a2a12;
+    --bg: #0e1119;
+    --surface: #151924;
+    --surface-2: #1c2130;
+    --border: #2b3244;
+    --text: #eceef4;
+    --text-muted: #9ea5b8;
+    --accent: #ff9a52;
+    --accent-hover: #ffb784;
+    --accent-soft: #3a2414;
+    /* --accent is intentionally pale for link legibility on a dark page; white text on it as a
+       button fill would fail 4.5:1, so buttons use this darker pair of the same hue. */
+    --accent-btn: #c2410c;
+    --accent-btn-hover: #a8360a;
+    --accent-2: #6cc4ff;
+    --accent-2-soft: #12304a;
     --tint-converters: var(--accent);
     --tint-text-tools: #2dd4bf;
     --tint-encoders: #b794f6;
@@ -109,26 +108,26 @@
     --syn-punct: #9ba3b7;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 12px 28px -8px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
-    --grid-dot: rgba(124, 147, 255, 0.14);
+    --grid-dot: rgba(255, 154, 82, 0.12);
   }
 }
 
 /* Explicit "Dark" choice: wins regardless of OS setting. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0d1117;
-  --surface: #151a22;
-  --surface-2: #1c2230;
-  --border: #2b3341;
-  --text: #e9ecf4;
-  --text-muted: #9ba3b7;
-  --accent: #7c93ff;
-  --accent-hover: #a3b4ff;
-  --accent-soft: #1c2550;
-  --accent-btn: #3f52d6;
-  --accent-btn-hover: #2f3fb8;
-  --accent-2: #f0a53d;
-  --accent-2-soft: #3a2a12;
+  --bg: #0e1119;
+  --surface: #151924;
+  --surface-2: #1c2130;
+  --border: #2b3244;
+  --text: #eceef4;
+  --text-muted: #9ea5b8;
+  --accent: #ff9a52;
+  --accent-hover: #ffb784;
+  --accent-soft: #3a2414;
+  --accent-btn: #c2410c;
+  --accent-btn-hover: #a8360a;
+  --accent-2: #6cc4ff;
+  --accent-2-soft: #12304a;
   --tint-converters: var(--accent);
   --tint-text-tools: #2dd4bf;
   --tint-encoders: #b794f6;
@@ -144,6 +143,169 @@
   --syn-punct: #9ba3b7;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 12px 28px -8px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
+  --grid-dot: rgba(255, 154, 82, 0.12);
+}
+
+
+/* ------------------------------------------------------------------
+   Palettes (visitor's choice, header colour picker; stored as
+   localStorage 'palette' and set as data-palette on <html> by the
+   pre-paint script in Base.astro). Tangerine is the default above and
+   has no block here. Each palette overrides only the palette tokens
+   (--bg ... --grid-dot); syntax, category, success/danger colours are
+   shared. Specificity does the ordering: every dark block names both
+   data-palette and the theme condition (0,3,0), so it beats the palette's
+   own light block (0,2,0) and the default dark blocks (0,2,0).
+   Every pairing is contrast-checked by tests/palette-contrast.test.ts.
+   ------------------------------------------------------------------ */
+:root[data-palette="indigo"] {
+  --bg: #f5f5fb;
+  --surface: #ffffff;
+  --surface-2: #efeff9;
+  --border: #dddcf0;
+  --text: #15142b;
+  --text-muted: #5a5878;
+  --accent: #5b3fd6;
+  --accent-hover: #4a2fc0;
+  --accent-soft: #eeeafe;
+  --accent-btn: #5b3fd6;
+  --accent-btn-hover: #4a2fc0;
+  --accent-2: #b4410e;
+  --accent-2-soft: #fdebe1;
+  --grid-dot: rgba(91, 63, 214, 0.15);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="indigo"]:not([data-theme="light"]) {
+    --bg: #0c0b1a;
+    --surface: #141327;
+    --surface-2: #1b1a33;
+    --border: #2c2a4d;
+    --text: #ecebfa;
+    --text-muted: #a3a1c4;
+    --accent: #a996ff;
+    --accent-hover: #c4b7ff;
+    --accent-soft: #241c52;
+    --accent-btn: #6446e6;
+    --accent-btn-hover: #5236d1;
+    --accent-2: #ffab70;
+    --accent-2-soft: #3b2213;
+    --grid-dot: rgba(169, 150, 255, 0.13);
+  }
+}
+:root[data-palette="indigo"][data-theme="dark"] {
+  --bg: #0c0b1a;
+  --surface: #141327;
+  --surface-2: #1b1a33;
+  --border: #2c2a4d;
+  --text: #ecebfa;
+  --text-muted: #a3a1c4;
+  --accent: #a996ff;
+  --accent-hover: #c4b7ff;
+  --accent-soft: #241c52;
+  --accent-btn: #6446e6;
+  --accent-btn-hover: #5236d1;
+  --accent-2: #ffab70;
+  --accent-2-soft: #3b2213;
+  --grid-dot: rgba(169, 150, 255, 0.13);
+}
+:root[data-palette="mint"] {
+  --bg: #f6f7f6;
+  --surface: #ffffff;
+  --surface-2: #eef1ef;
+  --border: #dce2de;
+  --text: #141917;
+  --text-muted: #56615b;
+  --accent: #0b7a5a;
+  --accent-hover: #086549;
+  --accent-soft: #e2f5ee;
+  --accent-btn: #0b7a5a;
+  --accent-btn-hover: #086549;
+  --accent-2: #b3304b;
+  --accent-2-soft: #fbe6ea;
+  --grid-dot: rgba(11, 122, 90, 0.15);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="mint"]:not([data-theme="light"]) {
+    --bg: #0f1211;
+    --surface: #161a19;
+    --surface-2: #1d2220;
+    --border: #2c3330;
+    --text: #e8ecea;
+    --text-muted: #9aa6a0;
+    --accent: #4fd8a8;
+    --accent-hover: #7ce6c0;
+    --accent-soft: #13352a;
+    --accent-btn: #0e7f5e;
+    --accent-btn-hover: #0b6a4e;
+    --accent-2: #ff8fa3;
+    --accent-2-soft: #3b1a21;
+    --grid-dot: rgba(79, 216, 168, 0.12);
+  }
+}
+:root[data-palette="mint"][data-theme="dark"] {
+  --bg: #0f1211;
+  --surface: #161a19;
+  --surface-2: #1d2220;
+  --border: #2c3330;
+  --text: #e8ecea;
+  --text-muted: #9aa6a0;
+  --accent: #4fd8a8;
+  --accent-hover: #7ce6c0;
+  --accent-soft: #13352a;
+  --accent-btn: #0e7f5e;
+  --accent-btn-hover: #0b6a4e;
+  --accent-2: #ff8fa3;
+  --accent-2-soft: #3b1a21;
+  --grid-dot: rgba(79, 216, 168, 0.12);
+}
+:root[data-palette="cobalt"] {
+  --bg: #f6f7fb;
+  --surface: #ffffff;
+  --surface-2: #eef0f6;
+  --border: #dee1eb;
+  --text: #161a24;
+  --text-muted: #5c6274;
+  --accent: #3450e6;
+  --accent-hover: #2740c9;
+  --accent-soft: #e7ebfd;
+  --accent-btn: #3450e6;
+  --accent-btn-hover: #2740c9;
+  --accent-2: #9c5209;
+  --accent-2-soft: #fbeadb;
+  --grid-dot: rgba(52, 80, 230, 0.16);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="cobalt"]:not([data-theme="light"]) {
+    --bg: #0d1117;
+    --surface: #151a22;
+    --surface-2: #1c2230;
+    --border: #2b3341;
+    --text: #e9ecf4;
+    --text-muted: #9ba3b7;
+    --accent: #7c93ff;
+    --accent-hover: #a3b4ff;
+    --accent-soft: #1c2550;
+    --accent-btn: #3f52d6;
+    --accent-btn-hover: #2f3fb8;
+    --accent-2: #f0a53d;
+    --accent-2-soft: #3a2a12;
+    --grid-dot: rgba(124, 147, 255, 0.14);
+  }
+}
+:root[data-palette="cobalt"][data-theme="dark"] {
+  --bg: #0d1117;
+  --surface: #151a22;
+  --surface-2: #1c2230;
+  --border: #2b3341;
+  --text: #e9ecf4;
+  --text-muted: #9ba3b7;
+  --accent: #7c93ff;
+  --accent-hover: #a3b4ff;
+  --accent-soft: #1c2550;
+  --accent-btn: #3f52d6;
+  --accent-btn-hover: #2f3fb8;
+  --accent-2: #f0a53d;
+  --accent-2-soft: #3a2a12;
   --grid-dot: rgba(124, 147, 255, 0.14);
 }
 
