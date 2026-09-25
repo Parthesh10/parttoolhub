@@ -1,0 +1,100 @@
+---
+/**
+ * Favourite star (UI round 3), used on every tool card (`variant="card"`, an icon in the corner)
+ * and next to each tool page's title (`variant="title"`, an icon plus a word, so it is found).
+ * State is the localStorage list the command palette's stars use too; the script paints every
+ * star on the page and announces changes as `pth:favorites-changed` (the home page's "Your
+ * tools" row listens). Astro bundles this script once per page however many stars there are.
+ */
+export interface Props {
+  slug: string;
+  name: string;
+  variant?: 'card' | 'title';
+}
+const { slug, name, variant = 'card' } = Astro.props;
+---
+
+<button type="button" class:list={['fav-star', `fav-${variant}`]} data-fav={slug} data-name={name} aria-pressed="false" aria-label={`Add ${name} to favourites`}>
+  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+  </svg>
+  {variant === 'title' && <span class="fav-word" aria-hidden="true"></span>}
+</button>
+
+<script>
+  import { FAVORITE_TOOLS_KEY, toggleFavorite, parseFavorites } from '../lib/favorite-tools';
+
+  function read(): string[] {
+    try {
+      return parseFavorites(localStorage.getItem(FAVORITE_TOOLS_KEY));
+    } catch {
+      return [];
+    }
+  }
+  function paint() {
+    const favs = read();
+    document.querySelectorAll<HTMLButtonElement>('.fav-star').forEach((b) => {
+      const on = favs.includes(b.dataset.fav ?? '');
+      b.setAttribute('aria-pressed', String(on));
+      b.setAttribute('aria-label', on ? `Remove ${b.dataset.name} from favourites` : `Add ${b.dataset.name} to favourites`);
+      const word = b.querySelector('.fav-word');
+      if (word) word.textContent = on ? 'Favourite' : 'Add to favourites';
+    });
+  }
+  document.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('.fav-star');
+    if (!b) return;
+    e.preventDefault();
+    const next = toggleFavorite(read(), b.dataset.fav ?? '');
+    try {
+      localStorage.setItem(FAVORITE_TOOLS_KEY, JSON.stringify(next));
+    } catch {
+      // Storage blocked: nothing to remember the star in.
+    }
+    const added = next.includes(b.dataset.fav ?? '');
+    b.classList.remove('pop');
+    if (added) requestAnimationFrame(() => b.classList.add('pop'));
+    paint();
+    window.pth?.track('tool_option', { option: 'favorite', value: added ? 'add' : 'remove' });
+    document.dispatchEvent(new CustomEvent('pth:favorites-changed'));
+  });
+  // Another tab, or the command palette's own stars, may change the list.
+  window.addEventListener('storage', (e) => {
+    if (e.key === FAVORITE_TOOLS_KEY) paint();
+  });
+  document.addEventListener('pth:favorites-changed', paint);
+  paint();
+</script>
+
+<style>
+  .fav-star {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0; cursor: pointer;
+    border: 0; background: none; color: var(--text-muted); fill: transparent; font: inherit;
+    transition: color 0.15s, background 0.15s, border-color 0.15s, transform 0.2s var(--ease-spring);
+  }
+  .fav-star svg path { fill: inherit; }
+  .fav-star:hover { color: var(--accent); }
+  .fav-star:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .fav-star:active { transform: scale(0.88); }
+  .fav-star[aria-pressed="true"] { color: var(--accent); fill: var(--accent); }
+  .fav-star.pop svg { animation: fav-pop 0.35s var(--ease-spring); }
+  @keyframes fav-pop { 0% { transform: scale(1); } 45% { transform: scale(1.35); } 100% { transform: scale(1); } }
+
+  /* On a card: a round icon button in the top-right corner, above the card's stretched link. */
+  .fav-card { position: absolute; top: 0.45rem; right: 0.45rem; z-index: 1; width: 2rem; height: 2rem; border-radius: 50%; }
+  .fav-card:hover { background: var(--surface-2); }
+
+  /* Beside the tool title: a small outlined pill with a word, so it is discoverable. */
+  .fav-title {
+    padding: 0.3rem 0.75rem 0.3rem 0.55rem; border: 1px solid var(--border); border-radius: 999px;
+    font-size: 0.85rem; font-weight: 600; white-space: nowrap;
+  }
+  .fav-title:hover { border-color: var(--accent); }
+  .fav-title[aria-pressed="true"] { border-color: color-mix(in srgb, var(--accent) 50%, var(--border)); background: var(--accent-soft); }
+
+  @media (pointer: coarse) {
+    .fav-card { width: 44px; height: 44px; top: 0.2rem; right: 0.2rem; }
+    .fav-title { min-height: 44px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .fav-star.pop svg { animation: none; } }
+</style>

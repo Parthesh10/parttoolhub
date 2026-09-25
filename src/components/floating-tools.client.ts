@@ -351,3 +351,49 @@ if (fabShare && shareMenu && shareCopy && shareReddit) {
     closeShareMenu();
   });
 }
+
+// --- UI round 3: copy buttons confirm in place ------------------------------------------------
+// Every tool reports a successful copy through its toast ("Copied to clipboard", "Markdown
+// copied", ...) and a failed one with different words. Rather than edit ~40 copy handlers in 32
+// tool scripts, this watches the tool's toast: when a success message appears within 1.5 s of a
+// click on a copy control, that control briefly reads "✓ Copied". Failures never trigger it.
+const COPY_CONTROL = 'button[data-copy], button[data-copy-index], button[id^="btn-copy"], button[data-now]';
+let lastCopyControl: HTMLElement | null = null;
+let lastCopyAt = 0;
+document.addEventListener(
+  'click',
+  (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('button');
+    if (b && (b.matches(COPY_CONTROL) || /^\s*copy\b/i.test(b.textContent ?? ''))) {
+      lastCopyControl = b;
+      lastCopyAt = performance.now();
+    }
+  },
+  true,
+);
+function confirmCopied(b: HTMLElement) {
+  if (b.dataset.copiedShowing) return;
+  const html = b.innerHTML;
+  const r = b.getBoundingClientRect();
+  b.dataset.copiedShowing = '1';
+  b.style.minWidth = `${r.width}px`;
+  b.style.minHeight = `${r.height}px`;
+  b.innerHTML = '<span class="copied-mark" aria-hidden="true">✓</span> Copied';
+  b.classList.add('is-copied');
+  window.setTimeout(() => {
+    b.innerHTML = html;
+    b.classList.remove('is-copied');
+    b.style.minWidth = '';
+    b.style.minHeight = '';
+    delete b.dataset.copiedShowing;
+  }, 1400);
+}
+const toolToast = document.querySelector<HTMLElement>('.tool-toast');
+if (toolToast) {
+  new MutationObserver(() => {
+    const text = (toolToast.textContent ?? '').trim();
+    if (toolToast.hidden || !/\bcopied\b/i.test(text) || /could not|failed|nothing/i.test(text)) return;
+    if (lastCopyControl && performance.now() - lastCopyAt < 1500 && lastCopyControl.isConnected) confirmCopied(lastCopyControl);
+    lastCopyControl = null;
+  }).observe(toolToast, { attributes: true, attributeFilter: ['hidden'], childList: true, characterData: true, subtree: true });
+}
