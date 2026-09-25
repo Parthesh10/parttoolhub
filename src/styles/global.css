@@ -829,3 +829,18 @@ body.no-scroll { overflow: hidden; }
 }
 .ds-fold:hover, .ds-fold:focus-visible { background: var(--accent-soft); outline: none; }
 .is-current-change { box-shadow: inset 3px 0 0 var(--accent-2); }
+
+/* UI round 5d: the main action button of a tool (floating-tools.client.ts sets data-kbd-hint on the
+   button Ctrl/Cmd+Enter presses) shows its shortcut, desktop pointers only. Drawn with ::after from
+   the attribute, so a tool rewriting the button's text (Password Generator's Copy / Copy all) or
+   the copy confirmation swapping it keeps the badge; the "/ ''" keeps it out of the accessible
+   name (the button carries aria-keyshortcuts instead). */
+@media (hover: hover) and (pointer: fine) {
+  .btn[data-kbd-hint]::after {
+    content: attr(data-kbd-hint);
+    content: attr(data-kbd-hint) / '';
+    margin-left: 0.5em; padding: 0.05em 0.35em; border: 1px solid currentColor; border-radius: 4px;
+    font-size: 0.72em; font-weight: 600; opacity: 0.7; white-space: nowrap;
+  }
+  .btn.is-copied[data-kbd-hint]::after { content: none; }
+}

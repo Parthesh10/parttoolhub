@@ -382,6 +382,11 @@ site-wide — a new tool page needs nothing extra to pick this up:
   analytics or ad script loads, because GA4 reports the full page URL. Keep it first. The recipient's
   view is applied via the settings code's `apply()`, which never marks the recipient's own remembered
   settings as changed.
+- **Ctrl/Cmd+Enter = the page's main action (UI round 5d, 2026-09-26).** A tool's own Ctrl+Enter
+  handler (on its input, calling `preventDefault`) wins; otherwise `floating-tools.client.ts` presses the
+  tool's `[data-primary-action]` button, else `#btn-copy`, from anywhere on the page, and badges that
+  button (`data-kbd-hint`, drawn by CSS `::after`, desktop only) with `aria-keyshortcuts`. Mark
+  `data-primary-action` when the main action is not `#btn-copy` (a download, JWT's payload copy).
 - **`.hl-layer` must be hidden when colouring is off** (`.code-wrap:not(.has-hl) > .hl-layer`): the
   textarea is only positioned while colouring, so an opaque layer left visible paints over it (this
   blanked the JSON Formatter's TS view from 2026-09-24 to 2026-09-26).

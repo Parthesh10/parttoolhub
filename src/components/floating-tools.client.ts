@@ -277,6 +277,7 @@ function isEditableTarget(el: Element | null): boolean {
   return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (el as HTMLElement).isContentEditable;
 }
 function openShortcuts() {
+  describeMainAction();
   shortcutsBackdrop.hidden = false;
   document.addEventListener('keydown', onShortcutsKeydown);
 }
@@ -789,5 +790,38 @@ if (shareTool && shareInputBtn && shareInputNote && fabShare && shareMenu) {
       const toolbar = shareTool.querySelector(':scope > .tool-toolbar');
       shareTool.insertBefore(note, toolbar ? toolbar.nextSibling : shareTool.firstChild);
     });
+  }
+}
+
+// --- UI round 5d: Ctrl/Cmd+Enter runs the page's main action, wherever the focus is ---------------
+// Most tools already copy on Ctrl+Enter, but only while their input has focus, and eight tools had
+// no shortcut at all. The main action is the tool's [data-primary-action] button (a download, or
+// JWT's payload copy), else its #btn-copy. A tool's own handler runs first and calls
+// preventDefault, so this only fills the gaps. The button shows the shortcut as a badge, and the
+// "?" sheet names what it does on this page.
+const mainTool = document.querySelector<HTMLElement>('.tool[data-tool]');
+const mainAction = mainTool?.querySelector<HTMLButtonElement>('[data-primary-action]') ?? mainTool?.querySelector<HTMLButtonElement>('#btn-copy') ?? null;
+const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+const shortcutEnter = document.getElementById('shortcut-enter');
+if (mainAction) {
+  mainAction.dataset.kbdHint = isMac ? '⌘ ↵' : 'Ctrl ↵';
+  mainAction.setAttribute('aria-keyshortcuts', isMac ? 'Meta+Enter' : 'Control+Enter');
+  document.addEventListener('keydown', (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.key !== 'Enter' || e.defaultPrevented || e.repeat) return;
+    if (!backdrop.hidden || !shortcutsBackdrop.hidden) return;
+    if (mainAction.disabled || mainAction.closest('[hidden]') || !mainAction.getClientRects().length) return;
+    e.preventDefault();
+    mainAction.click();
+  });
+}
+/** The "?" sheet's Ctrl+Enter line, worked out when the sheet opens (result rows appear later). */
+function describeMainAction() {
+  if (!shortcutEnter || !mainTool) return;
+  if (mainAction) shortcutEnter.textContent = `On this page: ${(mainAction.textContent ?? '').trim()}`;
+  else {
+    const perResult = [...mainTool.querySelectorAll<HTMLElement>('button, [data-copy]')].some(
+      (el) => el.matches('[data-copy], .cc-row') || /^\s*copy\b/i.test(el.textContent ?? ''),
+    );
+    shortcutEnter.textContent = perResult ? 'Not used on this page: each result has its own copy button' : 'Not used on this page';
   }
 }
