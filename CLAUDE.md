@@ -375,6 +375,13 @@ site-wide — a new tool page needs nothing extra to pick this up:
   they press the tool's own `button[id^="btn-paste"]` (same `.pane`) and `#btn-sample` / `#sample-select`,
   so keep those ids for a new tool to get this. Hidden from assistive tech (the real buttons are the
   accessible route) and hidden at the first character.
+- **Share links with input (UI round 5c, 2026-09-26).** "Copy link with your input" in the Share menu
+  packs the tool's data fields (by element id) and changed options into `#in=` (`src/lib/share-link.ts`,
+  deflate + base64url, capped at `MAX_SHARE_CHARS`). **Privacy invariant:** the first inline script in
+  `Base.astro`'s `<head>` moves that fragment into sessionStorage and cleans the address bar before any
+  analytics or ad script loads, because GA4 reports the full page URL. Keep it first. The recipient's
+  view is applied via the settings code's `apply()`, which never marks the recipient's own remembered
+  settings as changed.
 - **`.hl-layer` must be hidden when colouring is off** (`.code-wrap:not(.has-hl) > .hl-layer`): the
   textarea is only positioned while colouring, so an opaque layer left visible paints over it (this
   blanked the JSON Formatter's TS view from 2026-09-24 to 2026-09-26).

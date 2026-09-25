@@ -2,6 +2,7 @@ import { RECENT_TOOLS_KEY, MAX_RECENT_TOOLS, pushRecent, parseRecent } from '../
 import { FAVORITE_TOOLS_KEY, toggleFavorite, parseFavorites } from '../lib/favorite-tools';
 import { matchesSynonym } from '../lib/tool-synonyms';
 import { sendToTool, receiveTransfer } from '../lib/transfer';
+import { encodeShare, decodeShare, SHARE_PREFIX, SHARED_KEY, MAX_SHARE_CHARS } from '../lib/share-link';
 
 interface Entry {
   name: string;
@@ -406,10 +407,12 @@ if (toolToast) {
 // options", which changes controls without events, is captured too) and restored on the next
 // visit by driving the real controls, so each tool reacts exactly as if the visitor had clicked.
 // Stored per tool in this browser only; a note with "Reset to defaults" shows when it applied.
+type Snapshot = Record<string, string | boolean>;
+/** Filled in by the block below; "Copy link with your input" (round 5c) reads and applies options with it. */
+let settingsApi: { snapshot: () => Snapshot; defaults: Snapshot; apply: (want: Snapshot) => void } | null = null;
 const settingsTool = document.querySelector<HTMLElement>('.tool[data-tool]');
 if (settingsTool) {
   const key = `pth:settings:${settingsTool.dataset.tool}`;
-  type Snapshot = Record<string, string | boolean>;
   const controls = () =>
     [...settingsTool.querySelectorAll<HTMLElement>('select[id], input[id], button[id][aria-pressed]')].filter((el) => {
       if (el.closest('.tool-toolbar') || /sample|fullscreen/i.test(el.id)) return false;
@@ -437,7 +440,10 @@ if (settingsTool) {
   // exit; otherwise an untouched second tab of the same tool would overwrite, or delete, the
   // settings chosen in the first when it closes.
   let touched = false;
+  // Controls driven by apply() below (remembered or shared settings) are not a visitor's change.
+  let applying = false;
   const markTouched = (e: Event) => {
+    if (applying) return;
     const t = e.target as HTMLElement;
     if (controls().includes(t) || t.closest?.('button[id*="reset"]')) touched = true;
   };
@@ -450,19 +456,22 @@ if (settingsTool) {
   } catch {
     saved = null;
   }
-  if (saved && typeof saved === 'object' && !same(saved, defaults)) {
-    // Restoring fires the tools' own handlers, which would report every restored value as a
-    // visitor's choice; analytics is muted for the restore and a short tail of debounced renders.
+  // Drives the real controls to a snapshot. That fires the tools' own handlers, which would report
+  // every applied value as a visitor's choice, so analytics is muted for it and a short tail of
+  // debounced renders.
+  const realTrack = window.pth?.track;
+  let unmuteTimer: number | undefined;
+  const apply = (target: Snapshot) => {
     const pth = window.pth;
-    const realTrack = pth?.track;
     if (pth) pth.track = () => {};
+    applying = true;
     const byId = (id: string) => controls().find((el) => el.id === id);
     // Mode buttons first (they can change which fields are shown), then the fields.
-    for (const [id, want] of Object.entries(saved)) {
+    for (const [id, want] of Object.entries(target)) {
       const el = byId(id);
       if (el instanceof HTMLButtonElement && (el.getAttribute('aria-pressed') === 'true') !== want) el.click();
     }
-    for (const [id, want] of Object.entries(saved)) {
+    for (const [id, want] of Object.entries(target)) {
       const el = byId(id);
       if (!el || el instanceof HTMLButtonElement) continue;
       if (el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'radio')) {
@@ -477,10 +486,16 @@ if (settingsTool) {
         }
       }
     }
-    window.setTimeout(() => {
+    applying = false;
+    window.clearTimeout(unmuteTimer);
+    unmuteTimer = window.setTimeout(() => {
       if (pth && realTrack) pth.track = realTrack;
     }, 400);
+  };
+  settingsApi = { snapshot, defaults, apply };
 
+  if (saved && typeof saved === 'object' && !same(saved, defaults)) {
+    apply(saved);
     const note = document.createElement('p');
     note.className = 'settings-note';
     note.innerHTML = 'Your settings from last time are applied. <button type="button" class="link-reset">Reset to defaults</button>';
@@ -672,5 +687,107 @@ if (ctaTool) {
     window.setInterval(() => {
       if (document.visibilityState === 'visible') refreshers.forEach((r) => r());
     }, 400);
+  }
+}
+
+// --- UI round 5c: "Copy link with your input" --------------------------------------------------
+// A share-menu item that copies this page's address with the tool's input and changed options
+// packed into the #fragment (src/lib/share-link.ts). The link is built when the menu opens, so
+// the click can copy it at once (Safari allows clipboard writes only directly inside a click).
+// Opening such a link: Base.astro has already moved the fragment out of the address bar into
+// sessionStorage; here the options and the input are applied and a note says where they came from.
+// The recipient's own remembered settings are not overwritten (apply() is not a visitor's change).
+const shareTool = document.querySelector<HTMLElement>('.tool[data-tool]');
+// Data fields: editable textareas, plus text/number/date fields outside the Options panel (a
+// calculator's width and height). Option controls travel separately, via settingsApi; search and
+// filter boxes are views, not data.
+const shareFields = () =>
+  [...(shareTool?.querySelectorAll<HTMLTextAreaElement | HTMLInputElement>('textarea[id]:not([readonly]), input[id]:not([readonly])') ?? [])].filter(
+    (el) =>
+      el instanceof HTMLTextAreaElement ||
+      (['text', 'number', 'date', 'datetime-local', 'time', 'url', 'email'].includes(el.type) && !el.closest('.options') && !/search|filter/i.test(el.id)),
+  );
+const shareInputBtn = document.getElementById('share-input') as HTMLButtonElement | null;
+const shareInputNote = document.getElementById('share-input-note');
+if (shareTool && shareInputBtn && shareInputNote && fabShare && shareMenu) {
+  let link: string | null = null;
+  let building: Promise<void> | null = null;
+  const build = async () => {
+    link = null;
+    shareInputBtn.disabled = true;
+    shareInputNote.textContent = 'Preparing…';
+    const inputs = Object.fromEntries(shareFields().filter((f) => f.value !== '').map((f) => [f.id, f.value]));
+    const snap = settingsApi?.snapshot() ?? {};
+    const defaults = settingsApi?.defaults ?? {};
+    const o = Object.fromEntries(Object.entries(snap).filter(([k, v]) => defaults[k] !== v));
+    if (!Object.values(inputs).some((v) => v.trim()) && Object.keys(o).length === 0) {
+      shareInputBtn.disabled = true;
+      shareInputNote.textContent = 'Enter something first';
+      return;
+    }
+    const code = await encodeShare({ v: 1, i: inputs, o });
+    if (code.length > MAX_SHARE_CHARS) {
+      shareInputBtn.disabled = true;
+      shareInputNote.textContent = 'Input too long for a link';
+      return;
+    }
+    link = `${location.origin}${location.pathname}${SHARE_PREFIX}${code}`;
+    shareInputBtn.disabled = false;
+    shareInputNote.textContent = 'Anyone with the link sees it';
+  };
+  fabShare.addEventListener('click', () => {
+    if (!shareMenu.hidden) building = build();
+  });
+  shareInputBtn.addEventListener('click', async () => {
+    if (building) await building;
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      showToast('Link with your input copied');
+      window.pth?.track('share_click', {
+        tool_slug: shareTool.dataset.tool ?? '',
+        tool_category: document.body.dataset.toolCategory ?? '',
+        channel: 'copy_link_with_input',
+      });
+    } catch {
+      showToast('Could not copy link');
+    }
+    shareMenu.hidden = true;
+    fabShare.setAttribute('aria-expanded', 'false');
+  });
+}
+{
+  let parked: { p?: unknown; c?: unknown } | null = null;
+  try {
+    parked = JSON.parse(sessionStorage.getItem(SHARED_KEY) ?? 'null');
+    sessionStorage.removeItem(SHARED_KEY);
+  } catch {
+    parked = null;
+  }
+  if (parked && shareTool && parked.p === location.pathname && typeof parked.c === 'string') {
+    void decodeShare(parked.c).then((payload) => {
+      const note = document.createElement('p');
+      note.className = 'settings-note';
+      if (!payload) {
+        note.textContent = 'This shared link could not be read. It may have been cut short when it was sent.';
+      } else {
+        window.pth?.track('share_open', { tool_slug: shareTool.dataset.tool ?? '', tool_category: document.body.dataset.toolCategory ?? '' });
+        const withOptions = Object.keys(payload.o).length > 0;
+        // The sender's view: page defaults plus the options they had changed (apply() only touches
+        // controls that differ, so this also undoes any remembered settings of the recipient's).
+        settingsApi?.apply({ ...settingsApi.defaults, ...payload.o });
+        for (const f of shareFields()) {
+          const value = payload.i[f.id];
+          if (value === undefined) continue;
+          f.value = value;
+          f.dispatchEvent(new Event('input', { bubbles: true }));
+          f.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        note.textContent = `Opened from a shared link: the input${withOptions ? ' and options' : ''} below came with it.`;
+      }
+      shareTool.querySelector('.settings-note')?.remove();
+      const toolbar = shareTool.querySelector(':scope > .tool-toolbar');
+      shareTool.insertBefore(note, toolbar ? toolbar.nextSibling : shareTool.firstChild);
+    });
   }
 }

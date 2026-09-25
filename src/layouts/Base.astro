@@ -90,6 +90,22 @@ const baseSchema = [
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" />
     </noscript>
     <!--
+      A "Copy link with your input" link carries a tool's input in its #in= fragment
+      (src/lib/share-link.ts). Browsers never send a fragment to a server, but analytics reports the
+      full page address, so the fragment is parked in sessionStorage (with the page it belongs to)
+      and removed from the address bar here, before any analytics or ad script below can read it.
+      floating-tools.client.ts picks it up on that tool page.
+    -->
+    <script is:inline>
+      (function () {
+        if (location.hash.indexOf('#in=') !== 0) return;
+        try {
+          sessionStorage.setItem('pth:shared-input', JSON.stringify({ p: location.pathname, c: location.hash.slice(4) }));
+        } catch (e) { /* storage blocked: the link opens as a plain page */ }
+        history.replaceState(history.state, '', location.pathname + location.search);
+      })();
+    </script>
+    <!--
       Pre-paint theme application — must run this early (before the
       stylesheet, before any body content) so there is no flash of the
       wrong theme. Dark is the app's own default whenever no explicit
