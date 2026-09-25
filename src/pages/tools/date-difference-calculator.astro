@@ -29,9 +29,9 @@ const parseErr = dateDiff('not a date', '2025-01-01');
 if (parseErr.ok) throw new Error('page claims an unparseable date is refused');
 
 const steps = [
-  'Type or paste a <strong>Start</strong> and an <strong>End</strong> date: a date on its own (<code>2025-01-15</code>) or with a time (<code>2025-01-15T10:30:00</code>).',
+  'Type or paste a <strong>Start</strong> and an <strong>End</strong> date: a date on its own (<code>2025-01-15</code>) or with a time (<code>2025-01-15T10:30:00</code>). Or click a <strong>Quick</strong> range: until the end of this year, since its start, or today plus 30 or 90 days.',
   'Pick <strong>Interpret as</strong> (UTC or your browser\'s local time) for whichever inputs have no time zone of their own.',
-  'Read the headline sentence for the calendar breakdown, or the row below it for totals in weeks, days, hours, minutes, seconds and weekdays.',
+  'Read the headline sentence for the calendar breakdown, the timeline under it (month or year marks, and a red <em>today</em> marker when today falls inside the range), and the totals in days, weeks, weekdays, hours, minutes and seconds. Click any total to copy it.',
   'Use <strong>⇅</strong> to swap the two dates, <strong>Set end to now</strong> for "how long ago/until", or <strong>Copy result</strong> to take the whole answer.',
 ];
 
@@ -77,6 +77,8 @@ const faq = [
     <ul>
       <li><strong>Interpret as: UTC / Local time</strong> only matters for whichever of your two inputs has no time zone written into it (see the FAQ).</li>
       <li><strong>⇅ (swap)</strong> exchanges Start and End; the totals are identical either way, since the calculation always uses the absolute gap.</li>
+      <li><strong>Quick ranges</strong> fill both dates from your own calendar's today (not UTC), as plain dates, so they are then read under the Interpret as setting like typed dates. "Until end of year" ends on 31 December, the start of that day, so it does not count 31 December itself as a full day.</li>
+      <li><strong>The timeline</strong> marks days for a range under about two months, months up to about three years, and years beyond that, thinned so the labels never crowd (every 10th year over a long span).</li>
       <li><strong>Set end to now</strong> fills End with the current instant, for a quick "how long ago was Start" or, if Start is in the future, "how long until Start".</li>
       <li><strong>Load sample</strong> inserts the worked example above; <strong>Clear</strong> empties both fields.</li>
     </ul>

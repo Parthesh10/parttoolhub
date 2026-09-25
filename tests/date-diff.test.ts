@@ -120,3 +120,23 @@ test('a leap-day start (Feb 29) one non-leap year later lands on Feb 28, not Mar
   assert.equal(r.value.calendar.months, 0);
   assert.equal(r.value.calendar.days, 0);
 });
+
+test('timelineTicks: days, months or years depending on the span, on real boundaries, capped', async () => {
+  const { timelineTicks } = await import('../src/lib/date-diff.ts');
+  const d = (s: string) => Date.parse(s + 'T00:00:00Z');
+  // 10 days: daily ticks strictly inside the span.
+  assert.deepEqual(timelineTicks(d('2025-01-01'), d('2025-01-05')).map((t) => t.label), ['2 Jan', '3 Jan', '4 Jan']);
+  // Jan 15 - Jun 1: first of each month, and 1 January would show the year.
+  assert.deepEqual(timelineTicks(d('2025-01-15'), d('2025-06-01')).map((t) => t.label), ['Feb', 'Mar', 'Apr', 'May']);
+  assert.deepEqual(timelineTicks(d('2024-11-10'), d('2025-02-10')).map((t) => t.label), ['Dec', '2025', 'Feb']);
+  // Order does not matter.
+  assert.deepEqual(timelineTicks(d('2025-06-01'), d('2025-01-15')).map((t) => t.label), ['Feb', 'Mar', 'Apr', 'May']);
+  // 70 years: stepped years, never more than 12 ticks, all on 1 January.
+  const long = timelineTicks(d('1950-03-01'), d('2020-03-01'));
+  assert.ok(long.length <= 12 && long.length > 0);
+  assert.ok(long.every((t) => new Date(t.ms).getUTCMonth() === 0 && new Date(t.ms).getUTCDate() === 1));
+  assert.equal(long[0].label, '1960');
+  // Every tick is inside the span; an empty span has none.
+  for (const t of timelineTicks(d('2023-02-03'), d('2025-11-20'))) assert.ok(t.ms > d('2023-02-03') && t.ms < d('2025-11-20'));
+  assert.deepEqual(timelineTicks(d('2025-01-01'), d('2025-01-01')), []);
+});

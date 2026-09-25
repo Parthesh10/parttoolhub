@@ -145,3 +145,61 @@ export function formatCalendarDiff(c: CalendarDiff): string {
   if (parts.length === 1) return parts[0];
   return `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
 }
+
+export interface TimelineTick {
+  ms: number;
+  label: string;
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/**
+ * Calendar tick marks for the Date Difference timeline between two instants (either order):
+ * day ticks for spans under ~2 months, month ticks under ~3 years, year ticks beyond, each
+ * thinned to at most `maxTicks` by stepping (every 2nd month, every 5th year, ...). Ticks fall on
+ * real calendar boundaries (1st of the month, 1 January) in the chosen zone, strictly inside the
+ * span. Pure; `zone` decides whether boundaries are UTC or this engine's local time.
+ */
+export function timelineTicks(aMs: number, bMs: number, zone: ZoneInterpretation = 'utc', maxTicks = 12): TimelineTick[] {
+  const start = Math.min(aMs, bMs);
+  const end = Math.max(aMs, bMs);
+  const span = end - start;
+  if (!(span > 0)) return [];
+  const DAY = 86_400_000;
+  const u = zone === 'utc';
+  const make = (y: number, m: number, d: number) => (u ? Date.UTC(y, m, d) : new Date(y, m, d).getTime());
+  const parts = (ms: number) => {
+    const t = new Date(ms);
+    return u ? [t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate()] : [t.getFullYear(), t.getMonth(), t.getDate()];
+  };
+  const [sy, sm, sd] = parts(start);
+  const ticks: TimelineTick[] = [];
+  const pickStep = (count: number, steps: number[]) => steps.find((st) => count / st <= maxTicks) ?? steps[steps.length - 1];
+
+  if (span < 62 * DAY) {
+    const step = pickStep(span / DAY, [1, 2, 7, 14]);
+    for (let i = 1; ; i++) {
+      const ms = make(sy, sm, sd + i * step);
+      if (ms >= end) break;
+      const [, m, d] = parts(ms);
+      ticks.push({ ms, label: `${d} ${MONTHS[m]}` });
+    }
+  } else if (span < 3 * 366 * DAY) {
+    const step = pickStep(span / (30.44 * DAY), [1, 2, 3, 6]);
+    for (let i = 1; ; i++) {
+      const ms = make(sy, sm + i, 1);
+      if (ms >= end) break;
+      const [y, m] = parts(ms);
+      if (m % step !== 0) continue;
+      ticks.push({ ms, label: m === 0 ? String(y) : MONTHS[m] });
+    }
+  } else {
+    const step = pickStep(span / (365.25 * DAY), [1, 2, 5, 10, 25, 50, 100]);
+    for (let y = sy + 1; ; y++) {
+      const ms = make(y, 0, 1);
+      if (ms >= end) break;
+      if (y % step === 0) ticks.push({ ms, label: String(y) });
+    }
+  }
+  return ticks;
+}

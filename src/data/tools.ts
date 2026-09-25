@@ -140,7 +140,7 @@ export const TOOLS: Tool[] = [
     features: ['Calendar breakdown (years, months, days, hours, minutes, seconds) using real month lengths', 'Totals in weeks, days, hours, minutes and seconds', 'Weekday-only (Mon-Fri) count', 'Explicit UTC/local interpretation, matching the Unix Timestamp Converter', 'Works whichever date comes first'],
     intent: 'date difference calculator',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-18',
+    reviewedOn: '2026-09-25',
     spec: { name: 'ECMA-262: the Date object', url: 'https://tc39.es/ecma262/multipage/numbers-and-dates.html#sec-date-objects' },
   },
   {

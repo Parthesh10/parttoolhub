@@ -1,4 +1,4 @@
-import { dateDiff, formatCalendarDiff, type ZoneInterpretation } from '../../lib/date-diff';
+import { dateDiff, formatCalendarDiff, type ZoneInterpretation, timelineTicks } from '../../lib/date-diff';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -9,6 +9,9 @@ const status = $('status');
 const result = $('result');
 const headline = $('headline');
 const grid = $('grid');
+const ticksEl = $('ticks');
+const tlStart = $('tl-start');
+const tlEnd = $('tl-end');
 const toast = $('toast');
 
 function plural(n: number, word: string) {
@@ -57,10 +60,6 @@ for (const field of [startInput, endInput]) {
   field.addEventListener('input', () => { inputSource = justPasted ? 'pasted' : 'typed'; justPasted = false; });
 }
 
-function gridRow(label: string, value: string): string {
-  return `<div class="item"><span class="k">${label}</span><span class="v">${value}</span></div>`;
-}
-
 function render() {
   const startRaw = startInput.value;
   const endRaw = endInput.value;
@@ -96,15 +95,91 @@ function render() {
   const v = r.value;
   const directionNote = v.endBeforeStart ? ' (end is before start, showing the gap between them)' : '';
   headline.textContent = formatCalendarDiff(v.calendar) + directionNote;
-  grid.innerHTML = [
-    gridRow('Total days', plural(v.totalDays, 'day')),
-    gridRow('Total weeks', plural(v.totalWeeks, 'week')),
-    gridRow('Total hours', v.totalHours.toLocaleString()),
-    gridRow('Total minutes', v.totalMinutes.toLocaleString()),
-    gridRow('Total seconds', v.totalSeconds.toLocaleString()),
-    gridRow('Weekdays (Mon-Fri)', plural(v.weekdays, 'day')),
-  ].join('');
+  const stats: [string, string, string][] = [
+    ['days', v.totalDays.toLocaleString(), plural(v.totalDays, 'day')],
+    ['weeks', v.totalWeeks.toLocaleString(), plural(v.totalWeeks, 'week')],
+    ['weekdays', v.weekdays.toLocaleString(), `${plural(v.weekdays, 'weekday')} (Mon-Fri)`],
+    ['hours', v.totalHours.toLocaleString(), `${v.totalHours.toLocaleString()} hours`],
+    ['minutes', v.totalMinutes.toLocaleString(), `${v.totalMinutes.toLocaleString()} minutes`],
+    ['seconds', v.totalSeconds.toLocaleString(), `${v.totalSeconds.toLocaleString()} seconds`],
+  ];
+  grid.innerHTML = stats
+    .map(([key, num, text]) => {
+      const word = text.slice(num.length).trim();
+      return `<button type="button" class="dd-stat" data-copy="${key}" data-value="${escapeAttr(text)}" title="Copy"><b>${num}</b><span class="k">${escapeAttr(word)}</span></button>`;
+    })
+    .join('');
+  drawTimeline(Date.parse(v.startISO), Date.parse(v.endISO));
 }
+
+const escapeAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const shortDate = (ms: number) => {
+  const d = new Date(ms);
+  const utc = tz.value === 'utc';
+  const y = utc ? d.getUTCFullYear() : d.getFullYear();
+  const m = (utc ? d.getUTCMonth() : d.getMonth()) + 1;
+  const day = utc ? d.getUTCDate() : d.getDate();
+  return `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+};
+/** Ticks are placed by their share of the span; "today" is marked only when it falls inside it. */
+function drawTimeline(aMs: number, bMs: number) {
+  const start = Math.min(aMs, bMs);
+  const end = Math.max(aMs, bMs);
+  const pct = (ms: number) => ((ms - start) / (end - start)) * 100;
+  const ticks = timelineTicks(start, end, tz.value as ZoneInterpretation);
+  const now = Date.now();
+  const todayPct = now > start && now < end ? pct(now) : null;
+  // Labels closer than ~7% would overlap; keep the first of any crowded pair, and let the
+  // "today" marker win over any calendar tick next to it.
+  let lastPct = -100;
+  const html = ticks
+    .filter((t) => {
+      if (todayPct !== null && Math.abs(pct(t.ms) - todayPct) < 7) return false;
+      const ok = pct(t.ms) - lastPct >= 7;
+      if (ok) lastPct = pct(t.ms);
+      return ok;
+    })
+    .map((t) => `<div class="dd-tick" style="left:${pct(t.ms).toFixed(2)}%"><span>${escapeAttr(t.label)}</span></div>`);
+  if (todayPct !== null) html.push(`<div class="dd-tick dd-today" style="left:${todayPct.toFixed(2)}%"><span>today</span></div>`);
+  ticksEl.innerHTML = html.join('');
+  tlStart.textContent = shortDate(start);
+  tlEnd.textContent = shortDate(end);
+}
+
+// --- Redesign round 2: quick ranges ---------------------------------------------
+// Dates are written as plain YYYY-MM-DD in the visitor's own calendar (their "today"), then
+// interpreted like typed dates under the Interpret-as setting.
+function ymd(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+document.querySelectorAll<HTMLButtonElement>('[data-range]').forEach((chip) =>
+  chip.addEventListener('click', () => {
+    const today = new Date();
+    const y = today.getFullYear();
+    const plusDays = (n: number) => new Date(y, today.getMonth(), today.getDate() + n);
+    const ranges: Record<string, [string, string]> = {
+      'to-year-end': [ymd(today), `${y}-12-31`],
+      'from-year-start': [`${y}-01-01`, ymd(today)],
+      'plus-30': [ymd(today), ymd(plusDays(30))],
+      'plus-90': [ymd(today), ymd(plusDays(90))],
+    };
+    const r = ranges[chip.dataset.range ?? ''];
+    if (!r) return;
+    [startInput.value, endInput.value] = r;
+    inputSource = 'sample';
+    track('tool_option', { option: 'quick_range', value: chip.dataset.range ?? '' });
+    render();
+  }),
+);
+grid.addEventListener('click', (e) => {
+  const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-copy]');
+  if (!btn) return;
+  track('copy_result', { target: btn.dataset.copy ?? 'stat' });
+  navigator.clipboard.writeText(btn.dataset.value ?? '').then(
+    () => showToast('Copied to clipboard'),
+    () => showToast('Could not copy; select the text manually'),
+  );
+});
 
 let toastTimer: number | undefined;
 function showToast(msg: string) {
