@@ -283,7 +283,7 @@ export const TOOLS: Tool[] = [
     features: ['camelCase, PascalCase, snake_case, CONSTANT_CASE, kebab-case, dot.case', 'Detects camelCase/acronym boundaries automatically', 'All six styles shown together', 'Click any result to copy it'],
     intent: 'code case converter',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-18',
+    reviewedOn: '2026-09-25',
   },
   {
     slug: 'title-case-converter',

@@ -69,3 +69,15 @@ test('a single word round-trips unchanged in camel/snake/kebab (no boundary to s
   assert.equal(convertCase('hello', 'snake'), 'hello');
   assert.equal(convertCase('HELLO', 'constant'), 'HELLO');
 });
+
+test('convertEachLine keeps a pasted list a list, one result per line', async () => {
+  const { convertEachLine, convertAll } = await import('../src/lib/case-convert.ts');
+  const r = convertEachLine('user_id\nfirst name\n\n  --  \nHTTPStatusCode');
+  assert.equal(r.count, 3);
+  assert.equal(r.results.camel, 'userId\nfirstName\nhttpStatusCode');
+  assert.equal(r.results.constant, 'USER_ID\nFIRST_NAME\nHTTP_STATUS_CODE');
+  // A single line gives exactly what the whole-input conversion gives.
+  const one = convertEachLine('userFirstName');
+  assert.equal(one.count, 1);
+  assert.deepEqual(one.results, convertAll('userFirstName'));
+});

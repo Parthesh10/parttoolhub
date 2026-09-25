@@ -73,3 +73,28 @@ export function convertAll(input: string): Record<CaseStyle, string> {
   for (const style of Object.keys(CASE_LABELS) as CaseStyle[]) out[style] = toCase(tokens, style);
   return out;
 }
+
+/**
+ * Where each style is conventionally used, shown next to its result so the question "which one
+ * do I need" answers itself. Conventions, not rules: every language has codebases that differ.
+ */
+export const CASE_HINTS: Record<CaseStyle, string> = {
+  camel: 'JavaScript and TypeScript variables and functions, Java methods, JSON keys',
+  pascal: 'Class and type names in most languages, C# methods, React components',
+  snake: 'Python and Ruby variables and functions, Rust functions, SQL columns',
+  constant: 'Constants and environment variables',
+  kebab: 'URLs and slugs, CSS classes, HTML attributes, command-line flags',
+  dot: 'Config and translation keys (Java .properties, i18n message ids)',
+};
+
+/**
+ * Converts each non-empty line on its own, so a pasted list of names stays a list (the whole-input
+ * tokenizer would read line breaks as word separators and merge them into one identifier). Lines
+ * with no letters or digits are dropped. `count` is how many identifiers were converted.
+ */
+export function convertEachLine(input: string): { count: number; results: Record<CaseStyle, string> } {
+  const lines = input.split(/\r?\n/).filter((l) => tokenize(l).length > 0);
+  const styles = Object.keys(CASE_LABELS) as CaseStyle[];
+  const results = Object.fromEntries(styles.map((st) => [st, lines.map((l) => convertCase(l, st)).join('\n')])) as Record<CaseStyle, string>;
+  return { count: lines.length, results };
+}

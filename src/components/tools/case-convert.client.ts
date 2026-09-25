@@ -1,4 +1,4 @@
-import { tokenize, toCase, CASE_LABELS, SAMPLE_INPUT, type CaseStyle } from '../../lib/case-convert';
+import { tokenize, CASE_LABELS, SAMPLE_INPUT, type CaseStyle, CASE_HINTS, convertEachLine } from '../../lib/case-convert';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -86,14 +86,16 @@ function render() {
   trackRun('convert', true);
   status.hidden = true;
   grid.hidden = false;
+  // Each non-empty line is its own identifier, so a pasted list stays a list.
+  const { count, results } = convertEachLine(raw);
+  inputStat.textContent = count > 1 ? `${count} identifiers` : '';
   const styles = Object.keys(CASE_LABELS) as CaseStyle[];
   grid.innerHTML = styles
     .map((style) => {
-      const value = toCase(tokens, style);
-      const safe = escapeHtml(value);
-      return `<button type="button" class="cc-row" data-style="${style}" data-value="${safe}">
-        <span class="k">${CASE_LABELS[style]}</span><span class="v">${safe}</span>
-      </button>`;
+      const safe = escapeHtml(results[style]);
+      return `<div class="cc-line"><span class="cc-name">${CASE_LABELS[style]}<span class="cc-hint">${escapeHtml(CASE_HINTS[style])}</span></span>` +
+        `<span class="cc-val">${safe}</span>` +
+        `<button type="button" class="btn btn-sm" data-style="${style}" data-value="${safe}">${count > 1 ? 'Copy all' : 'Copy'}</button></div>`;
     })
     .join('');
 }
@@ -119,7 +121,7 @@ async function copyRow(btn: HTMLButtonElement) {
   }
 }
 grid.addEventListener('click', (e) => {
-  const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.cc-row');
+  const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-style]');
   if (btn) copyRow(btn);
 });
 

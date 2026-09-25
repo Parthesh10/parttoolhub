@@ -1,14 +1,20 @@
 ---
-/** Programming identifier case converter. Behaviour in ./case-convert.client.ts */
+/**
+ * Programming identifier case converter. Behaviour in ./case-convert.client.ts
+ *
+ * Redesign round 2 (REDESIGN-PROPOSALS.md §11): one row per style with where it is conventionally
+ * used, since the real question is usually "which one do I need", and a pasted list converts
+ * line by line.
+ */
 ---
 
 <section class="tool card" id="tool" data-tool="code-case-converter">
   <div class="single">
     <div class="pane-head">
-      <label for="input">Identifier or phrase</label>
+      <label for="input">Identifiers or phrases, one per line</label>
       <span class="stat" id="input-stat" aria-live="polite"></span>
     </div>
-    <textarea id="input" rows="2" spellcheck="false" autocomplete="off" placeholder="userFirstName"></textarea>
+    <textarea id="input" rows="3" spellcheck="false" autocomplete="off" placeholder={'userFirstName\nshipping address\nHTTP_STATUS_CODE'}></textarea>
     <div class="pane-actions">
       <button type="button" class="btn btn-sm" id="btn-paste">Paste</button>
       <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
@@ -18,9 +24,7 @@
 
   <p class="status-banner" id="status" hidden></p>
 
-  <div class="cc-grid" id="grid" hidden></div>
-
-  <p class="muted cc-note">Click any result to copy it.</p>
+  <div class="cc-list" id="grid" hidden></div>
 
   <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
 </section>
@@ -31,4 +35,18 @@
   .single textarea { min-height: 60px; }
   .cc-note { font-size: 0.85rem; margin-top: 0.75rem; }
   .cc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.7rem; margin-top: 1rem; }
+  .cc-list { margin-top: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  /* Rows are built by the client script (innerHTML), hence :global. */
+  .cc-list :global(.cc-line) {
+    display: grid; grid-template-columns: 13rem minmax(0, 1fr) auto; gap: 0.75rem; align-items: center;
+    padding: 0.6rem 0.75rem; border-top: 1px solid var(--border);
+  }
+  .cc-list :global(.cc-line:first-child) { border-top: 0; }
+  .cc-list :global(.cc-name) { font-family: var(--mono); font-weight: 700; }
+  .cc-list :global(.cc-hint) { display: block; font-family: var(--font); font-weight: 400; font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem; }
+  .cc-list :global(.cc-val) { font-family: var(--mono); font-size: 0.95rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+  @media (max-width: 640px) {
+    .cc-list :global(.cc-line) { grid-template-columns: minmax(0, 1fr) auto; }
+    .cc-list :global(.cc-name) { grid-column: 1 / -1; }
+  }
 </style>
