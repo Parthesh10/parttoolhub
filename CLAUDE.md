@@ -354,6 +354,15 @@ site-wide — a new tool page needs nothing extra to pick this up:
   under 4.5:1, and on drift between the duplicated dark blocks. Adding a palette means three blocks
   in `global.css`, an entry in the picker in `Header.astro`, the pre-paint allow-list in `Base.astro`,
   and the list in that test. The `palette_change` event (docs/ANALYTICS.md) shows which ones people pick.
+- **Tools remember their settings (2026-09-26).** `floating-tools.client.ts` (site-wide) snapshots
+  every option control inside `.tool[data-tool]` that has an `id` (checkboxes, radios, selects,
+  number/range inputs, `button[aria-pressed]`, and text inputs only inside `.options`) when the page
+  is left, and restores them on the next visit by driving the real controls (clicks / input+change
+  events), with analytics muted during the restore. Saved per tool as `pth:settings:<slug>`, only
+  after a visitor changed an option on that page. Exclusions by id: anything matching `sample` or
+  `fullscreen`, anything in `.tool-toolbar`, and every textarea/text input outside `.options` (user
+  data). So a new tool gets this for free; give option controls stable ids, and never put a
+  data-entry text field inside `.options`. A "Reset to defaults" note appears when settings applied.
 - `--tint-<category-slug>` (five hues: accent / teal / violet / accent-2 / rose) via `src/lib/category-tint.ts`
   give each category hub and its cards a consistent identity (top card border, eyebrow color, the
   tool icon chip). Cards are one component, `ToolCard.astro` (home + hubs): icon from

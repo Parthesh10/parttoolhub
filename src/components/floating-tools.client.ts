@@ -397,3 +397,118 @@ if (toolToast) {
     lastCopyControl = null;
   }).observe(toolToast, { attributes: true, attributeFilter: ['hidden'], childList: true, characterData: true, subtree: true });
 }
+
+// --- UI round 3: tools remember their settings ---------------------------------------------------
+// Option controls only (checkboxes, selects, number/range fields, pressed toggle buttons, and text
+// fields inside an Options panel such as separators), never the input a visitor pastes or types,
+// never "Load sample" or Fullscreen. Snapshotted on leaving the page (so a tool's own "Reset
+// options", which changes controls without events, is captured too) and restored on the next
+// visit by driving the real controls, so each tool reacts exactly as if the visitor had clicked.
+// Stored per tool in this browser only; a note with "Reset to defaults" shows when it applied.
+const settingsTool = document.querySelector<HTMLElement>('.tool[data-tool]');
+if (settingsTool) {
+  const key = `pth:settings:${settingsTool.dataset.tool}`;
+  type Snapshot = Record<string, string | boolean>;
+  const controls = () =>
+    [...settingsTool.querySelectorAll<HTMLElement>('select[id], input[id], button[id][aria-pressed]')].filter((el) => {
+      if (el.closest('.tool-toolbar') || /sample|fullscreen/i.test(el.id)) return false;
+      if (el instanceof HTMLInputElement) {
+        if (['checkbox', 'radio', 'number', 'range'].includes(el.type)) return true;
+        return ['text', 'search'].includes(el.type) && !!el.closest('.options');
+      }
+      return true;
+    });
+  const snapshot = (): Snapshot => {
+    const s: Snapshot = {};
+    for (const el of controls()) {
+      if (el instanceof HTMLButtonElement) s[el.id] = el.getAttribute('aria-pressed') === 'true';
+      else if (el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'radio')) s[el.id] = el.checked;
+      else s[el.id] = (el as HTMLInputElement | HTMLSelectElement).value;
+    }
+    return s;
+  };
+  const same = (a: Snapshot, b: Snapshot) => Object.keys(a).every((k) => a[k] === b[k]);
+  const defaults = snapshot();
+  // Set by "Reset to defaults": the reload it triggers fires pagehide, which must not save the
+  // settings straight back.
+  let resetting = false;
+  // Only a page where an option was actually changed (or a tool's own reset pressed) saves on
+  // exit; otherwise an untouched second tab of the same tool would overwrite, or delete, the
+  // settings chosen in the first when it closes.
+  let touched = false;
+  const markTouched = (e: Event) => {
+    const t = e.target as HTMLElement;
+    if (controls().includes(t) || t.closest?.('button[id*="reset"]')) touched = true;
+  };
+  settingsTool.addEventListener('change', markTouched, true);
+  settingsTool.addEventListener('click', markTouched, true);
+
+  let saved: Snapshot | null = null;
+  try {
+    saved = JSON.parse(localStorage.getItem(key) ?? 'null');
+  } catch {
+    saved = null;
+  }
+  if (saved && typeof saved === 'object' && !same(saved, defaults)) {
+    // Restoring fires the tools' own handlers, which would report every restored value as a
+    // visitor's choice; analytics is muted for the restore and a short tail of debounced renders.
+    const pth = window.pth;
+    const realTrack = pth?.track;
+    if (pth) pth.track = () => {};
+    const byId = (id: string) => controls().find((el) => el.id === id);
+    // Mode buttons first (they can change which fields are shown), then the fields.
+    for (const [id, want] of Object.entries(saved)) {
+      const el = byId(id);
+      if (el instanceof HTMLButtonElement && (el.getAttribute('aria-pressed') === 'true') !== want) el.click();
+    }
+    for (const [id, want] of Object.entries(saved)) {
+      const el = byId(id);
+      if (!el || el instanceof HTMLButtonElement) continue;
+      if (el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'radio')) {
+        if (el.checked !== want) el.click();
+      } else if (typeof want === 'string') {
+        const f = el as HTMLInputElement | HTMLSelectElement;
+        if (f instanceof HTMLSelectElement && ![...f.options].some((o) => o.value === want)) continue;
+        if (f.value !== want) {
+          f.value = want;
+          f.dispatchEvent(new Event('input', { bubbles: true }));
+          f.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+    }
+    window.setTimeout(() => {
+      if (pth && realTrack) pth.track = realTrack;
+    }, 400);
+
+    const note = document.createElement('p');
+    note.className = 'settings-note';
+    note.innerHTML = 'Your settings from last time are applied. <button type="button" class="link-reset">Reset to defaults</button>';
+    const toolbar = settingsTool.querySelector(':scope > .tool-toolbar');
+    settingsTool.insertBefore(note, toolbar ? toolbar.nextSibling : settingsTool.firstChild);
+    note.querySelector('button')?.addEventListener('click', () => {
+      resetting = true;
+      try {
+        localStorage.removeItem(key);
+      } catch {
+        // Nothing stored to clear.
+      }
+      window.pth?.track('tool_option', { option: 'settings_reset', value: 'reset' });
+      window.location.reload();
+    });
+  }
+
+  const persist = () => {
+    if (resetting || !touched) return;
+    try {
+      const now = snapshot();
+      if (same(now, defaults)) localStorage.removeItem(key);
+      else localStorage.setItem(key, JSON.stringify(now));
+    } catch {
+      // Storage blocked: settings just aren't remembered.
+    }
+  };
+  window.addEventListener('pagehide', persist);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') persist();
+  });
+}
