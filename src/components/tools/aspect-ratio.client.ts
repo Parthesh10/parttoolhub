@@ -12,6 +12,10 @@ const grid = $('grid');
 const scaleWidthInput = $<HTMLInputElement>('input-scale-width');
 const scaleHeightInput = $<HTMLInputElement>('input-scale-height');
 const resGrid = $('res-grid');
+const frame = $('frame');
+const frameW = $('frame-w');
+const frameH = $('frame-h');
+const frameLabel = $('frame-label');
 const toast = $('toast');
 
 let current: RatioInfo | null = null;
@@ -66,6 +70,21 @@ function gridRow(label: string, value: string): string {
   return `<div class="item"><span class="k">${label}</span><span class="v">${escapeHtml(value)}</span></div>`;
 }
 
+/**
+ * The frame takes the ratio's shape. Width is capped at the stage's height × ratio so a tall
+ * ratio stays inside the stage; extreme ratios (a 100:1 banner) are clamped to stay visible, and
+ * the edge labels still carry the real numbers.
+ */
+function drawFrame(rw: number, rh: number, wText: string, hText: string) {
+  const ratio = Math.min(12, Math.max(1 / 6, rw / rh));
+  const stageH = 220 - 28; // stage height minus its vertical padding
+  frame.style.aspectRatio = String(ratio);
+  frame.style.width = `min(${Math.round(stageH * ratio)}px, 100%)`;
+  frameW.textContent = wText;
+  frameH.textContent = hText;
+  frameLabel.textContent = `${rw}:${rh}`;
+}
+
 function render() {
   const wRaw = widthInput.value;
   const hRaw = heightInput.value;
@@ -108,6 +127,7 @@ function render() {
   const v = r.value;
 
   headline.textContent = `${v.ratioW}:${v.ratioH}`;
+  drawFrame(v.ratioW, v.ratioH, wRaw.trim(), hRaw.trim());
   match.textContent = v.knownName ? `Matches ${v.knownName}.` : 'No common name for this exact ratio.';
   grid.innerHTML = [
     gridRow('Decimal ratio', `${formatNumber(v.decimal)} : 1`),
@@ -184,6 +204,16 @@ resGrid.addEventListener('click', (e) => {
   if (btn) void copyText(btn.dataset.value ?? '', 'resolution');
 });
 
+document.querySelectorAll<HTMLButtonElement>('[data-ratio]').forEach((chip) =>
+  chip.addEventListener('click', () => {
+    const [w, h] = (chip.dataset.ratio ?? '').split(':');
+    widthInput.value = w;
+    heightInput.value = h;
+    inputSource = 'sample';
+    track('tool_option', { option: 'ratio_chip', value: chip.dataset.ratio ?? '' });
+    render();
+  }),
+);
 $('btn-swap').addEventListener('click', () => {
   trackOption($<HTMLButtonElement>('btn-swap'));
   const a = widthInput.value;

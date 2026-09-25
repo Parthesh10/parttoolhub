@@ -30,8 +30,8 @@ if (negativeErr.ok) throw new Error('page claims negative dimensions are refused
 const igResolutions = standardResolutions(9, 16);
 
 const steps = [
-  'Type the original <strong>width</strong> and <strong>height</strong>: pixels, inches, millimeters, anything.',
-  'The simplified ratio, its decimal value and its common name (if it has one) appear instantly.',
+  'Type the original <strong>width</strong> and <strong>height</strong> (pixels, inches, millimeters, anything), or click one of the <strong>Common</strong> ratio chips.',
+  'The ratio is drawn as a frame of that exact shape, with your width and height on its edges, next to the simplified ratio, its decimal value and its common name (if it has one).',
   'Under <strong>Scale to a new size</strong>, type a new width or height, and the other one updates to keep the same ratio.',
   'Click any resolution in the list, or the Copy result button, to copy it.',
 ];
@@ -88,6 +88,8 @@ CSS padding-hack: {hdSample.value.percentage}%</code></pre>
     <h2>Options explained</h2>
     <ul>
       <li><strong>Width / Height</strong>: any positive number, in pixels, inches, millimeters or any other unit, as long as both use the same one. Decimals are supported and reduced exactly.</li>
+      <li><strong>Common</strong>: one-click chips for 16:9, 16:10, 4:3, 3:2, 1:1, 4:5 and 9:16. Each fills the ratio numbers themselves (16 and 9, say), so the result and the resolution list below start from that ratio. 21:9 is deliberately not a chip: it is not a reduced fraction, so it would show as 7:3 (see Edge cases).</li>
+      <li><strong>The frame</strong> is drawn at the real ratio. Extremely wide or tall ratios (beyond about 12:1 or 1:6) are drawn at that limit so the frame stays visible; the numbers on its edges and the result are always the real ones.</li>
       <li><strong>Swap (⇅)</strong>: exchanges width and height, turning a landscape ratio into its portrait equivalent (16:9 ↔ 9:16) in one click.</li>
       <li><strong>New width / New height</strong>: type either one to solve for the other at the current ratio. Clearing one clears the other, since there's nothing to scale from.</li>
       <li><strong>Common resolutions</strong>: exact integer multiples of the simplified ratio near well-known video and display widths. Click any one to copy it.</li>

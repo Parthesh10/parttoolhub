@@ -217,7 +217,7 @@ export const TOOLS: Tool[] = [
     features: ['Simplifies to the exact whole-number ratio, decimals included', 'Names common ratios (16:9, 4:3, 1:1, 21:9, 4:5…)', 'Scale a new width or height while keeping the ratio', 'Matching common resolutions at that exact ratio'],
     intent: 'aspect ratio calculator',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-19',
+    reviewedOn: '2026-09-25',
   },
   {
     slug: 'html-to-markdown',
