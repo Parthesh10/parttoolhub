@@ -9,8 +9,13 @@
 import { SITE } from '../site.config';
 import { CATEGORIES } from '../data/categories';
 import { TOOLS } from '../data/tools';
+import { visibleGuides } from '../lib/guides';
+import { GUIDES_HUB } from '../data/guides';
 
 const current = Astro.url.pathname;
+// Shown once a guide exists (like the footer link), so the header never points at an empty section.
+const hasGuides = (await visibleGuides()).length > 0;
+const inGuides = current === GUIDES_HUB || current.startsWith(`${GUIDES_HUB}/`);
 ---
 
 <header class="site-header" data-nav="header">
@@ -52,6 +57,7 @@ const current = Astro.url.pathname;
               ))}
             </ul>
           </li>
+          {hasGuides && <li class="nav-guides"><a href={GUIDES_HUB} aria-current={inGuides ? 'page' : undefined}>Guides</a></li>}
         </ul>
       </nav>
       <div class="palette-wrap">
@@ -308,6 +314,9 @@ const current = Astro.url.pathname;
   /* Phones: the logo already links home, so the Home item goes to keep the header on one row
      now that it holds the palette picker as well as the theme toggle. */
   @media (max-width: 480px) { .nav-home { display: none; } }
+  /* Guides costs ~68px: measured, it wraps the header at 360-414px and at 481px (Home is back there).
+     Up to 500px phones reach guides from the footer, breadcrumbs and tool pages instead. */
+  @media (max-width: 500px) { .nav-guides { display: none; } }
   .theme-toggle[data-mode="light"] .icon-light,
   .theme-toggle[data-mode="dark"] .icon-dark,
   .theme-toggle[data-mode="system"] .icon-system { display: block; }

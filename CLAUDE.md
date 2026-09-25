@@ -521,10 +521,13 @@ hub state, drafts never built, forbidden phrases, tool pages linking back). Styl
 body are in the page's own `<style>` via `:global()`, because content-layer HTML carries no Astro
 scope attribute (the same gotcha as `innerHTML` in the command palette).
 
-**Internal traffic.** `Base.astro` reads `?internal=1` / `?internal=0` into `localStorage
-'pth:internal'` and, when set, calls `gtag('set', { traffic_type: 'internal' })` before the config
-call, so GA4's Internal traffic data filter drops the maintainer's own visits on any device, whatever
-the home IP. Documented in `docs/ANALYTICS.md` → Initialisation.
+**Internal traffic.** `Base.astro` calls `gtag('set', { traffic_type: 'internal' })` before the
+config call, so GA4's Internal traffic data filter drops the event, when the page is served from any
+host but `SITE.url`'s (`astro preview`, Vercel previews), when the browser is automated or headless
+(every CDP screenshot/audit run, including ones against the live site), or when the maintainer's
+`?internal=1` flag is set (`localStorage 'pth:internal'`; `?internal=0` clears it). So headless checks
+never need their own opt-out. Documented in `docs/ANALYTICS.md` → Initialisation; the storage use is
+listed in the privacy policy's "Cookies and browser storage" paragraph.
 
 **`/llms.txt`** (`src/pages/llms.txt.ts`) is the one non-page route in `src/pages/`: an Astro API
 endpoint (`export const GET: APIRoute`) rather than a `.astro` file, returning a `Response` with a

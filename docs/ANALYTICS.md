@@ -27,11 +27,13 @@ here (or listed here but no longer used), if any tool script is missing instrume
   GA4 does not log or store IP addresses. `Base.astro` sends Consent Mode v2 defaults (everything
   denied for EEA/UK/CH) before the config call; a future consent banner would send
   `gtag('consent', 'update', …)` from the same file.
-- **Internal traffic (the maintainer's own visits).** Opening any page with `?internal=1` stores
-  `localStorage 'pth:internal' = '1'` in that browser; from then on `Base.astro` calls
-  `gtag('set', { traffic_type: 'internal' })` before the config call, and GA4's **Internal
-  traffic** data filter (Admin → Data collection and modification → Data filters, state *Active*)
-  drops those events. `?internal=0` clears the flag. The parameter is removed from the address bar
+- **Internal traffic (not real visitors).** `Base.astro` calls `gtag('set', { traffic_type:
+  'internal' })` before the config call, and GA4's **Internal traffic** data filter (Admin → Data
+  collection and modification → Data filters, state *Active*) drops those events, when any of these
+  holds: the page is served from a host other than `SITE.url`'s (an `astro preview` on localhost, a
+  Vercel preview URL), the browser is automated (`navigator.webdriver`, or a `HeadlessChrome` user
+  agent: the screenshot and audit runs), or the browser carries the maintainer's flag. Opening any
+  page with `?internal=1` stores `localStorage 'pth:internal' = '1'`; `?internal=0` clears it. The parameter is removed from the address bar
   with `history.replaceState` before the page view is sent, so it never shows up in page paths.
   Do this once per browser and phone you use. It complements the IP rule under Admin → Data
   streams → Configure tag settings → Define internal traffic, which stops matching whenever a

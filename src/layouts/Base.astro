@@ -178,7 +178,7 @@ const baseSchema = [
     {analyticsOn ? (
       <>
         <script async fetchpriority="low" src={`https://www.googletagmanager.com/gtag/js?id=${ANALYTICS.ga4}`} />
-        <script is:inline define:vars={{ id: ANALYTICS.ga4, tool: tool ?? null }}>
+        <script is:inline define:vars={{ id: ANALYTICS.ga4, tool: tool ?? null, host: new URL(SITE.url).hostname }}>
           window.dataLayer = window.dataLayer || [];
           function gtag() { dataLayer.push(arguments); }
           // Consent Mode v2 defaults (must run before the config command below). This site has
@@ -197,11 +197,16 @@ const baseSchema = [
               'IS', 'LI', 'NO', 'GB', 'CH',
             ],
           });
-          // The maintainer's own visits: open any page once with ?internal=1 in each browser
-          // (?internal=0 undoes it). GA4's "Internal traffic" data filter drops events whose
-          // traffic_type is 'internal', the same parameter its IP rule sets, so this keeps
-          // working when a home broadband IP changes. The flag leaves the address bar before
-          // the page view is sent.
+          // Traffic that is not a real visitor gets traffic_type 'internal', which GA4's
+          // "Internal traffic" data filter drops (the same parameter its IP rule sets):
+          // - a production build served anywhere but the live domain (astro preview on
+          //   localhost, a Vercel preview URL);
+          // - an automated or headless browser (the screenshot and audit runs use headless
+          //   Chrome over CDP);
+          // - the maintainer's own browsers: open any page once with ?internal=1 (?internal=0
+          //   undoes it). Unlike an IP rule, this survives a home broadband IP change. The flag
+          //   leaves the address bar before the page view is sent.
+          var internal = location.hostname !== host || navigator.webdriver === true || /HeadlessChrome/.test(navigator.userAgent);
           try {
             var flag = new URLSearchParams(location.search).get('internal');
             if (flag === '1') localStorage.setItem('pth:internal', '1');
@@ -211,8 +216,9 @@ const baseSchema = [
               clean.searchParams.delete('internal');
               history.replaceState(history.state, '', clean.pathname + clean.search + clean.hash);
             }
-            if (localStorage.getItem('pth:internal') === '1') gtag('set', { traffic_type: 'internal' });
-          } catch (e) { /* storage blocked: count the visit normally */ }
+            if (localStorage.getItem('pth:internal') === '1') internal = true;
+          } catch (e) { /* storage blocked: the host and automation checks still apply */ }
+          if (internal) gtag('set', { traffic_type: 'internal' });
           gtag('js', new Date());
           gtag('config', id);
           window.pth = {
