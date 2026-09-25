@@ -24,9 +24,18 @@ here (or listed here but no longer used), if any tool script is missing instrume
   measurement (property setting) covers 90 % scroll, outbound clicks and file downloads — the site
   deliberately sends no custom scroll or outbound events to avoid duplicates.
 - **Consent.** Personalised ads are gated by the Google CMP configured in AdSense (3-choice, EEA/UK/CH).
-  GA4 does not log or store IP addresses. No Consent Mode signals are sent from this code; if
-  EEA analytics consent becomes a requirement, add `gtag('consent', 'default', …)` before the
-  config call in `Base.astro` — that is the only file to touch.
+  GA4 does not log or store IP addresses. `Base.astro` sends Consent Mode v2 defaults (everything
+  denied for EEA/UK/CH) before the config call; a future consent banner would send
+  `gtag('consent', 'update', …)` from the same file.
+- **Internal traffic (the maintainer's own visits).** Opening any page with `?internal=1` stores
+  `localStorage 'pth:internal' = '1'` in that browser; from then on `Base.astro` calls
+  `gtag('set', { traffic_type: 'internal' })` before the config call, and GA4's **Internal
+  traffic** data filter (Admin → Data collection and modification → Data filters, state *Active*)
+  drops those events. `?internal=0` clears the flag. The parameter is removed from the address bar
+  with `history.replaceState` before the page view is sent, so it never shows up in page paths.
+  Do this once per browser and phone you use. It complements the IP rule under Admin → Data
+  streams → Configure tag settings → Define internal traffic, which stops matching whenever a
+  home broadband IP changes.
 
 ## Event taxonomy
 
@@ -43,7 +52,7 @@ event name in code; the test enforces the list.
 | `copy_result` | Copy button pressed with a non-empty result | `target` (`output`, `header`, `payload`; on the image tools `data_uri`, `base64`, `html`, `css`; on Markdown to Google Docs `rich` for the formatted clipboard write and `html` for the source; on the Password and UUID generators `row` for one item copied from a batch list; on the Color Converter `hex`, `rgb`, `hsl`, `tint`; on the Unix Timestamp Converter `seconds`, `milliseconds`, `iso`, `utc`, `local` for a result row and `now_s` / `now_ms` for the live clock) | Secondary conversion — output was useful enough to take |
 | `download_result` | Download button pressed with a non-empty result | `target` (`output`; on Base64 to Image `image`, or `file` for non-image bytes saved anyway; on Markdown to Google Docs `html`) | Secondary conversion |
 | `reset_tool` | Clear button pressed | — | Re-use within one visit |
-| `navigation_click` | Any internal link click, captured by delegation in `Base.astro`; plus the cross-tool hand-off buttons | `link_placement` (`header`, `footer`, `breadcrumb`, `related`, `home-directory`, `hub-cards`, `content`, `handoff`, `next-step`, `not-found`; `next-step` = the strip under a tool's result that opens another tool with that result filled in), `link_to` (path only, no query or hash) | Which internal pathways move people between tools |
+| `navigation_click` | Any internal link click, captured by delegation in `Base.astro`; plus the cross-tool hand-off buttons | `link_placement` (`header`, `footer`, `breadcrumb`, `related`, `home-directory`, `hub-cards`, `content`, `handoff`, `next-step`, `not-found`, `guides-hub`, `guide-tools`, `more-guides`, `tool-guides`; `next-step` = the strip under a tool's result that opens another tool with that result filled in), `link_to` (path only, no query or hash) | Which internal pathways move people between tools |
 | `share_click` | Share FAB (`floating-tools.client.ts`, tool pages only) — Copy link, Copy link with your input, or Share to Reddit chosen from the popover | `channel` (`copy_link`, `copy_link_with_input`, `reddit`) | Secondary conversion — a visitor found the tool worth sending elsewhere |
 | `share_open` | A tool page opened from a "Copy link with your input" link (the input and options were applied) | `tool_slug`, `tool_category` | Whether shared links bring people back; pairs with `share_click` `copy_link_with_input`. The shared text itself never reaches analytics: `Base.astro` removes the `#in=` fragment before any analytics script runs |
 | `palette_change` | A colour scheme is picked from the header's palette menu (`Header.astro`) | `palette` (`tangerine`, `indigo`, `mint`, `cobalt`) | Which colour schemes visitors prefer over the Tangerine default |

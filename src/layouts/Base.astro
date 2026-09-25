@@ -197,6 +197,22 @@ const baseSchema = [
               'IS', 'LI', 'NO', 'GB', 'CH',
             ],
           });
+          // The maintainer's own visits: open any page once with ?internal=1 in each browser
+          // (?internal=0 undoes it). GA4's "Internal traffic" data filter drops events whose
+          // traffic_type is 'internal', the same parameter its IP rule sets, so this keeps
+          // working when a home broadband IP changes. The flag leaves the address bar before
+          // the page view is sent.
+          try {
+            var flag = new URLSearchParams(location.search).get('internal');
+            if (flag === '1') localStorage.setItem('pth:internal', '1');
+            if (flag === '0') localStorage.removeItem('pth:internal');
+            if (flag !== null) {
+              var clean = new URL(location.href);
+              clean.searchParams.delete('internal');
+              history.replaceState(history.state, '', clean.pathname + clean.search + clean.hash);
+            }
+            if (localStorage.getItem('pth:internal') === '1') gtag('set', { traffic_type: 'internal' });
+          } catch (e) { /* storage blocked: count the visit normally */ }
           gtag('js', new Date());
           gtag('config', id);
           window.pth = {
