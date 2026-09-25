@@ -5,8 +5,13 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 const input = $<HTMLTextAreaElement>('input');
 const inputLabel = $('input-label');
 const inputStat = $('input-stat');
-const output = $<HTMLTextAreaElement>('output');
-const outputLabel = $('output-label');
+// The primary value lives in `primary`, never in a variable named "output" inside track() calls:
+// the static analytics PII guard bans that identifier there (see uuid-generate.client.ts).
+let primary = '';
+const relativeEl = $('relative');
+const primaryName = $('primary-name');
+const nowS = $('now-s');
+const nowMs = $('now-ms');
 const status = $('status');
 const result = $('result');
 const grid = $('grid');
@@ -77,31 +82,52 @@ function setMode(next: 'to-date' | 'to-timestamp') {
   modeToTimestampBtn.setAttribute('aria-pressed', String(next === 'to-timestamp'));
   inputLabel.textContent = next === 'to-date' ? 'Unix timestamp' : 'Date and time';
   input.placeholder = next === 'to-date' ? '1736937000' : '2025-01-15T10:30:00';
-  outputLabel.textContent = next === 'to-date' ? 'Date & time (UTC)' : 'Unix timestamp (seconds)';
   unitField.hidden = next !== 'to-date';
   tzField.hidden = next !== 'to-timestamp';
   track('tool_option', { option: 'mode', value: next }, 'opt:mode');
   render();
 }
 
-function gridRow(label: string, value: string): string {
-  return `<div class="item"><span class="k">${label}</span><span class="v">${value}</span></div>`;
+const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+function listRow(label: string, value: string, key: string, isPrimary: boolean): string {
+  return `<div class="ts-row${isPrimary ? ' is-primary' : ''}"><span class="k">${escapeHtml(label)}</span><span class="v">${escapeHtml(value)}</span>` +
+    `<button type="button" class="btn btn-sm" data-copy="${key}" data-value="${escapeHtml(value)}">Copy</button></div>`;
 }
 
 function showBreakdown(b: TimestampBreakdown) {
   result.hidden = false;
   status.hidden = true;
-  output.value = mode === 'to-date' ? b.iso : String(b.epochSeconds);
-  const rows = [
-    gridRow('Unix seconds', String(b.epochSeconds)),
-    gridRow('Unix milliseconds', String(b.epochMilliseconds)),
-    gridRow('ISO 8601 (UTC)', b.iso),
-    gridRow('UTC', b.utc),
-    gridRow(`Local (${b.timeZone})`, b.local),
-    gridRow('Relative', b.relative),
+  // The answer to the direction chosen comes first and is the one the main Copy button takes.
+  const primaryKey = mode === 'to-date' ? 'iso' : 'seconds';
+  primary = mode === 'to-date' ? b.iso : String(b.epochSeconds);
+  primaryName.textContent = mode === 'to-date' ? 'ISO date' : 'timestamp';
+  relativeEl.textContent = b.relative.charAt(0).toUpperCase() + b.relative.slice(1);
+  const rows: [string, string, string][] = [
+    ['Unix seconds', String(b.epochSeconds), 'seconds'],
+    ['Unix milliseconds', String(b.epochMilliseconds), 'milliseconds'],
+    ['ISO 8601 (UTC)', b.iso, 'iso'],
+    ['UTC', b.utc, 'utc'],
+    [`Local (${b.timeZone})`, b.local, 'local'],
   ];
-  grid.innerHTML = rows.join('');
+  rows.sort((a, c) => Number(c[2] === primaryKey) - Number(a[2] === primaryKey));
+  grid.innerHTML = rows.map(([label, value, key]) => listRow(label, value, key, key === primaryKey)).join('');
 }
+
+// --- Redesign round 2: live "now" clock -------------------------------------
+// Ticks once a second, and not at all while the tab is hidden (no work nobody can see).
+function tick() {
+  const ms = Date.now();
+  nowS.textContent = String(Math.floor(ms / 1000));
+  nowMs.textContent = String(ms);
+}
+let clock: number | undefined;
+function startClock() {
+  tick();
+  window.clearInterval(clock);
+  clock = window.setInterval(tick, 1000);
+}
+document.addEventListener('visibilitychange', () => (document.hidden ? window.clearInterval(clock) : startClock()));
+startClock();
 
 function render() {
   const raw = input.value;
@@ -110,6 +136,7 @@ function render() {
   if (!raw.trim()) {
     status.hidden = true;
     result.hidden = true;
+    primary = '';
     return;
   }
 
@@ -144,18 +171,36 @@ function showToast(msg: string) {
   toastTimer = window.setTimeout(() => (toast.hidden = true), 1800);
 }
 
-async function copyOutput() {
-  if (!output.value) return showToast('Nothing to copy yet');
-  track('copy_result', { target: 'output' });
+async function copyText(text: string, target: string) {
+  if (!text) return showToast('Nothing to copy yet');
+  track('copy_result', { target });
   try {
-    await navigator.clipboard.writeText(output.value);
+    await navigator.clipboard.writeText(text);
     showToast('Copied to clipboard');
   } catch {
-    output.select();
+    // Clipboard API blocked: copy through a temporary, off-screen textarea instead.
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+    document.body.appendChild(ta);
+    ta.select();
     document.execCommand('copy');
+    ta.remove();
     showToast('Copied');
   }
 }
+const copyOutput = () => copyText(primary, 'output');
+grid.addEventListener('click', (e) => {
+  const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-copy]');
+  if (btn) void copyText(btn.dataset.value ?? '', btn.dataset.copy ?? 'row');
+});
+// The clock's Copy reads the time at the moment of the click, not the last tick.
+document.querySelectorAll<HTMLButtonElement>('[data-now]').forEach((b) =>
+  b.addEventListener('click', () => {
+    const ms = Date.now();
+    void copyText(b.dataset.now === 'ms' ? String(ms) : String(Math.floor(ms / 1000)), `now_${b.dataset.now}`);
+  }),
+);
 
 // Typing is debounced so a keystroke never waits on the engine — the site's
 // INP budget is < 200 ms and large pastes can take longer than that to process

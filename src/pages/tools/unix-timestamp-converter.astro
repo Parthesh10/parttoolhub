@@ -30,9 +30,9 @@ const parseErr = err(() => dateToTimestamp('not a date'));
 const steps = [
   'Choose a direction: <strong>Timestamp → Date</strong> or <strong>Date → Timestamp</strong>.',
   'Going from a timestamp, pick the unit: <em>Auto-detect</em> works for anything from the last ~55 years. Going from a date, pick <strong>Interpret as</strong> (UTC or your browser\'s local time) for dates with no time zone written in them.',
-  'Paste the value, or use <strong>Use current time</strong> to fill in right now.',
-  'Read the result: the box holds the primary answer, and the row below it shows every representation at once, including Unix seconds and milliseconds, ISO 8601, UTC, your local time, and how long ago or from now it is.',
-  '<strong>Copy result</strong> to take the primary value.',
+  'Paste the value, or press <strong>Convert now</strong> on the live clock at the top to fill in the current moment. The clock\'s own Copy buttons take the current Unix time in seconds or milliseconds directly.',
+  'Read the result: how long ago or from now it is, in large type, then every representation in one list: Unix seconds and milliseconds, ISO 8601, UTC and your local time. The answer to the direction you chose comes first and is highlighted.',
+  'Press <strong>Copy</strong> on any row, or the main Copy button (or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the input) for the highlighted answer.',
 ];
 
 const faq = [
@@ -80,7 +80,7 @@ const faq = [
       <li><strong>Direction: Timestamp → Date / Date → Timestamp</strong> switches which side you type into and which side is computed.</li>
       <li><strong>Unit (Timestamp → Date only): Auto-detect / Seconds / Milliseconds</strong> reads the number of digits: <code>1736937000</code> (10 digits) auto-detects as seconds and resolves to <code>{autoS}</code>; <code>1736937000000</code> (13 digits) auto-detects as milliseconds and resolves to the same instant, <code>{autoMs}</code>.</li>
       <li><strong>Interpret as (Date → Timestamp only): UTC / Local time</strong> only matters when the date you paste has no time zone of its own. <code>{SAMPLE_DATE_TIME}</code> becomes Unix time <code>{utcInterpret}</code> under UTC but <code>{localInterpret}</code> under this browser's local zone. Add an explicit <code>Z</code> or <code>+05:30</code> to the date and this option is ignored; the offset you wrote always wins.</li>
-      <li><strong>Use current time</strong> fills the input with right now, in whichever direction is active; <strong>Load sample</strong> inserts the worked example above; <strong>Clear</strong> empties the box.</li>
+      <li><strong>Convert now</strong> fills the input with right now, in whichever direction is active (the clock above it ticks once a second, and pauses while the tab is in the background); <strong>Load sample</strong> inserts the worked example above; <strong>Clear</strong> empties the box.</li>
     </ul>
 
     <h2>Edge cases and common errors</h2>

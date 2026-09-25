@@ -127,7 +127,7 @@ export const TOOLS: Tool[] = [
     features: ['Auto-detects seconds vs milliseconds', 'UTC, local and relative time shown together', 'Explicit UTC/local interpretation for dates with no offset', 'Works with negative (pre-1970) timestamps'],
     intent: 'unix timestamp converter',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-18',
+    reviewedOn: '2026-09-25',
     spec: { name: 'ECMA-262: the Date object', url: 'https://tc39.es/ecma262/multipage/numbers-and-dates.html#sec-date-objects' },
   },
   {

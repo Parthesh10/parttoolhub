@@ -1,10 +1,28 @@
 ---
 /**
  * Unix timestamp <-> date/time converter. Behaviour in ./timestamp.client.ts
+ *
+ * Redesign round 2 (REDESIGN-PROPOSALS.md §8): a live "now" clock at the top (the most common
+ * reason to open the page), the relative time as the headline of a result, and every
+ * representation as one list with its own Copy, instead of a result box plus a tile grid.
  */
 ---
 
 <section class="tool card" id="tool" data-tool="unix-timestamp-converter">
+  <div class="ts-clock" aria-label="Current Unix time">
+    <div class="ts-clock-item">
+      <span class="ts-clock-k">Now, seconds</span>
+      <span class="ts-clock-v" id="now-s"></span>
+      <button type="button" class="btn btn-sm" data-now="s">Copy</button>
+    </div>
+    <div class="ts-clock-item">
+      <span class="ts-clock-k">Now, milliseconds</span>
+      <span class="ts-clock-v" id="now-ms"></span>
+      <button type="button" class="btn btn-sm" data-now="ms">Copy</button>
+    </div>
+    <button type="button" class="btn btn-sm ts-clock-use" id="btn-now">Convert now ↓</button>
+  </div>
+
   <div class="options">
     <fieldset>
       <legend>Direction</legend>
@@ -50,7 +68,6 @@
     <textarea id="input" rows="2" spellcheck="false" autocomplete="off" placeholder="1736937000"></textarea>
     <div class="pane-actions">
       <button type="button" class="btn btn-sm" id="btn-paste">Paste</button>
-      <button type="button" class="btn btn-sm" id="btn-now">Use current time</button>
       <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
       <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
     </div>
@@ -59,15 +76,11 @@
   <p class="status-banner" id="status" hidden></p>
 
   <div class="ts-result" id="result" hidden>
-    <div class="pane-head">
-      <label for="output" id="output-label">Date &amp; time (UTC)</label>
+    <div class="ts-headline">
+      <span class="ts-relative" id="relative"></span>
+      <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy <span id="primary-name"></span></button>
     </div>
-    <textarea id="output" rows="2" readonly spellcheck="false"></textarea>
-    <div class="pane-actions">
-      <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy result</button>
-    </div>
-
-    <div class="ts-grid" id="grid"></div>
+    <div class="ts-list" id="grid"></div>
   </div>
 
   <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
@@ -79,15 +92,41 @@
   #mode-to-date[aria-pressed="true"], #mode-to-timestamp[aria-pressed="true"] {
     background: var(--accent-btn); border-color: var(--accent-btn); color: #fff;
   }
-  .single textarea, .ts-result textarea { min-height: 60px; }
-  .ts-result { margin-top: 1rem; }
-  /* The shared textarea look (global.css) only targets .pane/.single boxes, so this result box
-     fell back to browser defaults: ~85px wide, the date wrapped onto two lines (UI check 2026-09-25). */
-  .ts-result textarea {
-    width: 100%; resize: vertical; font-family: var(--mono); font-size: 0.95rem; line-height: 1.5;
-    padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm);
-    background: var(--surface); color: var(--text);
+  .single textarea { min-height: 60px; }
+
+  /* Live clock ------------------------------------------------------------ */
+  .ts-clock {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem; margin-bottom: 1.1rem;
+    padding: 0.85rem 1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2);
   }
-  .ts-result textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-  .ts-grid { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; margin-top: 1rem; font-size: 0.9rem; }
+  .ts-clock-item { display: flex; align-items: center; gap: 0.6rem; }
+  .ts-clock-k { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+  .ts-clock-v { font-family: var(--mono); font-size: clamp(1rem, 4.2vw, 1.25rem); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .ts-clock-use { margin-left: auto; }
+  @media (max-width: 640px) {
+    /* A 13-digit millisecond value, its label and a Copy button do not fit one 320px line. */
+    .ts-clock-item { width: 100%; flex-wrap: wrap; row-gap: 0.2rem; }
+    .ts-clock-k { width: 100%; }
+    .ts-clock-item .btn { margin-left: auto; }
+    .ts-clock-use { margin-left: 0; width: 100%; justify-content: center; }
+  }
+
+  /* Result ------------------------------------------------------------------ */
+  .ts-result { margin-top: 1.1rem; }
+  .ts-headline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.6rem; }
+  .ts-relative { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; }
+  .ts-list { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  /* Rows are built by the client script (innerHTML), hence :global. */
+  .ts-list :global(.ts-row) {
+    display: grid; grid-template-columns: 11rem minmax(0, 1fr) auto; align-items: center; gap: 0.75rem;
+    padding: 0.5rem 0.75rem; border-top: 1px solid var(--border);
+  }
+  .ts-list :global(.ts-row:first-child) { border-top: 0; }
+  .ts-list :global(.ts-row.is-primary) { background: var(--accent-soft); }
+  .ts-list :global(.ts-row .k) { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); }
+  .ts-list :global(.ts-row .v) { font-family: var(--mono); font-size: 0.92rem; overflow-wrap: anywhere; }
+  @media (max-width: 640px) {
+    .ts-list :global(.ts-row) { grid-template-columns: minmax(0, 1fr) auto; }
+    .ts-list :global(.ts-row .k) { grid-column: 1 / -1; }
+  }
 </style>
