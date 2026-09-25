@@ -40,6 +40,8 @@ const treeCount = $('tree-count');
 
 // B1: coloured keys/strings/numbers/booleans/null in the Text view (the TS view stays plain).
 const outputHl = attachJsonHighlight(output);
+// UI round 4: the input is JSON-coloured as you type too (repaints per keystroke, line by line).
+const inputHl = attachJsonHighlight(input, { live: true });
 
 let mode: 'format' | 'minify' = 'format';
 let viewMode: 'text' | 'tree' | 'ts' = 'text';
@@ -330,6 +332,8 @@ function setMode(next: 'format' | 'minify') {
 
 function render() {
   const raw = input.value;
+  // Paste, drop, samples, Clear and Auto-fix set the value in code, which fires no input event.
+  inputHl.update();
   inputStat.textContent = raw.length
     ? `${plural(raw.split('\n').length, 'line')} · ${plural(raw.length, 'character')} · ${formatBytes(raw)}`
     : plural(raw.length, 'character');
