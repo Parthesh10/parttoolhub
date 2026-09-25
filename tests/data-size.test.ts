@@ -103,3 +103,17 @@ test('formatSize: very small numbers keep their significant digits instead of ro
 test('formatSize: numbers far outside any real data size fall back to trimmed exponential notation', () => {
   assert.equal(formatSize(1e-12), '1e-12');
 });
+
+test('bothBases and humanUnit: the same bytes at 1000 and 1024, and the unit to read it in', async () => {
+  const { bothBases, humanUnit } = await import('../src/lib/data-size.ts');
+  const b = bothBases(1_500_000_000);
+  assert.equal(b.decimal.GB, 1.5);
+  assert.ok(Math.abs(b.binary.GB - 1.396983862) < 1e-9);
+  assert.equal(humanUnit(b.decimal), 'GB');
+  assert.equal(humanUnit(b.binary), 'GB');
+  // 1000 bytes is 1 KB but still under 1 KiB, so the two columns disagree on the unit.
+  const k = bothBases(1000);
+  assert.equal(humanUnit(k.decimal), 'KB');
+  assert.equal(humanUnit(k.binary), 'B');
+  assert.equal(humanUnit(bothBases(0).decimal), 'B');
+});

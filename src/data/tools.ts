@@ -153,7 +153,7 @@ export const TOOLS: Tool[] = [
     features: ['Decimal (1000-based, KB/MB/GB) and binary (1024-based, KiB/MiB/GiB) shown separately', 'Every unit converted at once; click any result to copy it', 'Bits shown alongside bytes for the Mbps-vs-MB/s mix-up', 'Handles fractional sizes (e.g. 1.5 GB) and up to petabytes'],
     intent: 'data size converter',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-18',
+    reviewedOn: '2026-09-25',
     spec: { name: 'IEC 80000-13 (binary prefixes: KiB, MiB, GiB…)', url: 'https://en.wikipedia.org/wiki/ISO/IEC_80000#Information_science_and_technology' },
   },
   {

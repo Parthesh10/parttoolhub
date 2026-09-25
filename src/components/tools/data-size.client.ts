@@ -1,4 +1,4 @@
-import { convertSize, formatSize, unitLabel, UNITS, type SizeBase, type SizeUnit } from '../../lib/data-size';
+import { convertSize, formatSize, unitLabel, bothBases, humanUnit, UNITS, type SizeBase, type SizeUnit } from '../../lib/data-size';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -115,22 +115,22 @@ function render() {
   grid.hidden = false;
   note.hidden = false;
 
-  const rows: { key: string; label: string; value: string }[] = UNITS.map((u) => {
-    const label = unitLabel(u, base);
-    const value = formatSize(result.value.values[u]);
-    return { key: u, label, value: `${value} ${label}` };
-  });
-  rows.push({ key: 'bit', label: 'Bits', value: `${formatSize(result.value.bits)} bit` });
-
-  grid.innerHTML = rows
-    .map((r) => {
-      const safe = escapeHtml(r.value);
-      const current = r.key === fromUnit ? ' is-current' : '';
-      return `<button type="button" class="cc-row${current}" data-copy="${r.key}" data-value="${safe}">
-        <span class="k">${escapeHtml(r.label)}</span><span class="v">${safe}</span>
-      </button>`;
-    })
-    .join('');
+  // Every unit at both bases, from the one exact byte count; the input's own cell is marked, and
+  // each column highlights the unit you would normally say the size in.
+  const both = bothBases(result.value.bytes);
+  const human: Record<SizeBase, SizeUnit> = { decimal: humanUnit(both.decimal), binary: humanUnit(both.binary) };
+  const cell = (u: SizeUnit, b: SizeBase) => {
+    const label = unitLabel(u, b);
+    const num = formatSize(both[b][u]);
+    const cls = `ds-cell${human[b] === u ? ' is-human' : ''}${u === fromUnit && b === base ? ' is-input' : ''}`;
+    return `<button type="button" class="${cls}" data-copy="${u}_${b}" data-value="${escapeHtml(`${num} ${label}`)}">${escapeHtml(num)} <span class="u">${escapeHtml(label)}</span></button>`;
+  };
+  const rows = [
+    `<div class="ds-row ds-head"><span>Unit</span><span>Decimal (1000)</span><span>Binary (1024)</span></div>`,
+    ...[...UNITS].reverse().map((u) => `<div class="ds-row"><span class="ds-unit">${u === 'B' ? 'B' : `${u}`}</span>${cell(u, 'decimal')}${cell(u, 'binary')}</div>`),
+    `<div class="ds-row"><span class="ds-unit">bit</span><button type="button" class="ds-cell" data-copy="bit" data-value="${escapeHtml(`${formatSize(result.value.bits)} bit`)}" style="grid-column: 2 / -1">${escapeHtml(formatSize(result.value.bits))} <span class="u">bits (the same at either base)</span></button></div>`,
+  ];
+  grid.innerHTML = rows.join('');
 }
 
 let toastTimer: number | undefined;
@@ -154,7 +154,7 @@ async function copyRow(btn: HTMLButtonElement) {
   }
 }
 grid.addEventListener('click', (e) => {
-  const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.cc-row[data-copy]');
+  const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-copy]');
   if (btn) copyRow(btn);
 });
 

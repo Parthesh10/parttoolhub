@@ -26,9 +26,9 @@ if (nonNumericErr.ok) throw new Error('page claims non-numeric input is refused'
 
 const steps = [
   'Type a size and choose which <strong>From unit</strong> it\'s in.',
-  'Pick <strong>Decimal (1000)</strong> or <strong>Binary (1024)</strong> (see the FAQ if you\'re not sure which one you need).',
-  'Every unit updates at once: bytes through petabytes, plus bits.',
-  'Click any result to copy just that value.',
+  'Under <strong>Your number is</strong>, say whether the size you typed is <strong>Decimal (1000)</strong> or <strong>Binary (1024)</strong> (see the FAQ if you\'re not sure).',
+  'The table shows every unit, bytes through petabytes plus bits, with decimal and binary side by side, so 1.5 GB and 1.4 GiB sit next to each other. The unit you would normally say it in is highlighted in each column.',
+  'Click any value to copy just that one, with its unit.',
 ];
 
 const faq = [
@@ -76,8 +76,9 @@ const faq = [
 
     <h2>Options explained</h2>
     <ul>
-      <li><strong>From unit</strong>: Bytes, KB, MB, GB, TB or PB. Selecting a unit shows every other unit's equivalent value; the row for the unit you entered is highlighted.</li>
-      <li><strong>Decimal (1000) / Binary (1024)</strong> chooses the base; see the FAQ for which one you likely want. Switching this option re-labels KB/MB/GB… as KiB/MiB/GiB… for binary, since those are the unit's real names.</li>
+      <li><strong>From unit</strong>: Bytes, KB, MB, GB, TB or PB. Selecting a unit shows every other unit's equivalent value; the cell for the unit and base you entered is marked with an amber edge.</li>
+      <li><strong>Your number is: Decimal (1000) / Binary (1024)</strong> only says how to read the number you typed (1500 MB or 1500 MiB); the table always shows both bases, with the binary column labelled KiB/MiB/GiB… since those are the units' real names. See the FAQ for which one you likely have.</li>
+      <li><strong>Highlighted cells</strong> are the largest unit where the value is at least 1, in each column. They can differ: 1,000 bytes is exactly 1 KB but still under 1 KiB, so decimal highlights KB and binary highlights bytes.</li>
       <li>Click any result row to copy just that value.</li>
     </ul>
 

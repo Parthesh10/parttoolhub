@@ -67,3 +67,19 @@ export function formatSize(n: number, sig = 6): string {
   // notation flags for a case this rare (only reached by inputs far outside any real data size).
   return precise.toExponential(Math.max(0, sig - 1)).replace(/\.?0+e/, 'e');
 }
+
+/** A byte count in every unit at both bases at once, for the side-by-side Data Size table. */
+export function bothBases(bytes: number): Record<SizeBase, Record<SizeUnit, number>> {
+  const at = (base: SizeBase) => Object.fromEntries(UNITS.map((u) => [u, bytes / unitFactor(u, base)])) as Record<SizeUnit, number>;
+  return { decimal: at('decimal'), binary: at('binary') };
+}
+
+/**
+ * The unit a person would say the size in: the largest one where the value is at least 1
+ * (1,500,000 B reads as "1.5 MB"). Bytes for anything under 1 KB, including 0.
+ */
+export function humanUnit(values: Record<SizeUnit, number>): SizeUnit {
+  let best: SizeUnit = 'B';
+  for (const u of UNITS) if (values[u] >= 1) best = u;
+  return best;
+}

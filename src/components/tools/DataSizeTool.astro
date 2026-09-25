@@ -1,5 +1,12 @@
 ---
-/** Data size converter (decimal vs binary). Behaviour in ./data-size.client.ts */
+/**
+ * Data size converter (decimal vs binary). Behaviour in ./data-size.client.ts
+ *
+ * Redesign round 2 (REDESIGN-PROPOSALS.md §9): the result is one table with decimal and binary
+ * side by side for every unit (1.5 GB | 1.4 GiB), so the difference the page explains is visible
+ * instead of toggled; the unit a person would say it in is highlighted in each column. The base
+ * control now only says how to read the number you typed.
+ */
 ---
 
 <section class="tool card" id="tool" data-tool="data-size-converter">
@@ -22,8 +29,8 @@
     </fieldset>
 
     <fieldset>
-      <legend>Base</legend>
-      <div class="row" role="group" aria-label="Decimal or binary base">
+      <legend>Your number is</legend>
+      <div class="row" role="group" aria-label="Read the number you typed as decimal or binary">
         <button type="button" class="btn btn-sm" id="base-decimal" aria-pressed="true">Decimal (1000)</button>
         <button type="button" class="btn btn-sm" id="base-binary" aria-pressed="false">Binary (1024)</button>
       </div>
@@ -45,9 +52,9 @@
 
   <p class="status-banner" id="status" hidden></p>
 
-  <div class="cc-grid" id="grid" hidden></div>
+  <div class="ds-result" id="grid" hidden></div>
 
-  <p class="muted cc-note" id="note" hidden>Click any result to copy it.</p>
+  <p class="muted cc-note" id="note" hidden>Click any value to copy it. Highlighted: the unit you would normally say it in.</p>
 
   <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
 </section>
@@ -59,7 +66,31 @@
     background: var(--accent-btn); border-color: var(--accent-btn); color: #fff;
   }
   .single textarea { min-height: 44px; resize: none; font-family: var(--mono); }
-  .cc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.7rem; margin-top: 1rem; }
-  .cc-grid :global(.cc-row.is-current) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+  .ds-result { margin-top: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  /* Rows are built by the client script (innerHTML), hence :global. Unit | Decimal | Binary. */
+  .ds-result :global(.ds-row) { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr) minmax(0, 1fr); border-top: 1px solid var(--border); }
+  .ds-result :global(.ds-row:first-child) { border-top: 0; }
+  .ds-result :global(.ds-head) { background: var(--surface-2); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); }
+  .ds-result :global(.ds-head > span) { padding: 0.45rem 0.75rem; }
+  .ds-result :global(.ds-unit) { padding: 0.55rem 0.75rem; font-weight: 700; font-family: var(--mono); color: var(--text-muted); align-self: center; }
+  .ds-result :global(.ds-cell) {
+    display: flex; align-items: baseline; gap: 0.35rem; min-width: 0; padding: 0.55rem 0.75rem; cursor: pointer; text-align: left;
+    font: inherit; font-family: var(--mono); font-size: 0.92rem; color: var(--text);
+    background: none; border: 0; border-left: 1px solid var(--border); overflow-wrap: anywhere;
+  }
+  .ds-result :global(.ds-cell .u) { color: var(--text-muted); font-size: 0.8rem; }
+  .ds-result :global(.ds-cell:hover), .ds-result :global(.ds-cell:focus-visible) { background: var(--surface-2); outline: none; }
+  .ds-result :global(.ds-cell:focus-visible) { box-shadow: inset 0 0 0 2px var(--accent); }
+  .ds-result :global(.ds-cell.is-human) { background: var(--accent-soft); font-weight: 700; }
+  .ds-result :global(.ds-cell.is-input) { box-shadow: inset 3px 0 0 var(--accent-2); }
+  @media (pointer: coarse) { .ds-result :global(.ds-cell) { min-height: 44px; } }
+  /* Narrow phones: smaller digits so a 13-character value fits its column whole, and the unit
+     wraps as one word under it rather than the number breaking mid-digit. */
+  @media (max-width: 420px) {
+    .ds-result :global(.ds-row) { grid-template-columns: 2.6rem minmax(0, 1fr) minmax(0, 1fr); }
+    .ds-result :global(.ds-unit), .ds-result :global(.ds-cell) { padding-inline: 0.45rem; }
+    .ds-result :global(.ds-cell) { flex-wrap: wrap; font-size: 0.78rem; overflow-wrap: normal; }
+    .ds-result :global(.ds-cell .u) { white-space: nowrap; }
+  }
   .cc-note { font-size: 0.85rem; margin-top: 0.75rem; }
 </style>
