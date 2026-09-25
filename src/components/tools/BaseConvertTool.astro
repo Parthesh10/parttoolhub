@@ -1,5 +1,12 @@
 ---
-/** Binary/octal/decimal/hex integer converter. Behaviour in ./base-convert.client.ts */
+/**
+ * Binary/octal/decimal/hex integer converter. Behaviour in ./base-convert.client.ts
+ *
+ * Redesign round 2 (REDESIGN-PROPOSALS.md §10): besides the four copyable values, a bit map shows
+ * the binary in 4-bit groups with each group's hex digit above it (so hex <-> binary is visible,
+ * bit positions on hover), and a table shows how the value lands in 8/16/32/64-bit storage,
+ * unsigned and signed.
+ */
 ---
 
 <section class="tool card" id="tool" data-tool="number-base-converter">
@@ -56,6 +63,16 @@
 
   <div class="cc-grid" id="grid" hidden></div>
 
+  <div class="nb-section" id="map-wrap" hidden>
+    <div class="nb-title">Bit map <span class="muted" id="map-note"></span></div>
+    <div class="nb-map" id="map"></div>
+  </div>
+
+  <div class="nb-section" id="widths-wrap" hidden>
+    <div class="nb-title">In fixed-width storage</div>
+    <div class="nb-widths" id="widths"></div>
+  </div>
+
   <p class="muted cc-note" id="note" hidden>Click any result to copy it.</p>
 
   <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
@@ -67,4 +84,27 @@
   .single textarea { min-height: 44px; resize: none; }
   .cc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.7rem; margin-top: 1rem; }
   .cc-note { font-size: 0.85rem; margin-top: 0.75rem; }
+  .nb-section { margin-top: 1.25rem; }
+  .nb-section[hidden] { display: none; }
+  .nb-title { font-weight: 650; font-size: 0.9rem; margin-bottom: 0.45rem; }
+  .nb-title .muted { font-weight: 400; font-size: 0.8rem; }
+  /* Bit map: one column per nibble, hex digit on top. Built by the client script, hence :global. */
+  .nb-map { display: flex; flex-wrap: wrap; gap: 0.35rem 0.6rem; }
+  .nb-map :global(.nb-nib) { display: flex; flex-direction: column; align-items: stretch; gap: 0.15rem; }
+  .nb-map :global(.nb-hex) { text-align: center; font-family: var(--mono); font-weight: 700; color: var(--syn-number); font-size: 0.9rem; }
+  .nb-map :global(.nb-bits) { display: flex; gap: 1px; }
+  .nb-map :global(.nb-bit) {
+    width: 1.35rem; height: 1.6rem; display: grid; place-items: center; font-family: var(--mono); font-size: 0.85rem;
+    border-radius: 3px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); cursor: default;
+  }
+  .nb-map :global(.nb-bit.on) { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  .nb-map :global(.nb-pos) { font-size: 0.65rem; color: var(--text-muted); text-align: right; font-family: var(--mono); }
+  .nb-widths { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; font-size: 0.9rem; }
+  .nb-widths :global(.nb-row) { display: grid; grid-template-columns: 5rem minmax(0, 1fr) minmax(0, 1fr); border-top: 1px solid var(--border); }
+  .nb-widths :global(.nb-row:first-child) { border-top: 0; background: var(--surface-2); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); }
+  .nb-widths :global(.nb-row > span) { padding: 0.45rem 0.75rem; font-family: var(--mono); overflow-wrap: anywhere; min-width: 0; }
+  .nb-widths :global(.nb-row > span + span) { border-left: 1px solid var(--border); }
+  .nb-widths :global(.nb-no) { color: var(--text-muted); font-family: var(--font) !important; font-style: italic; }
+  .nb-widths :global(.nb-diff) { color: var(--accent-2); font-weight: 700; }
+  @media (max-width: 420px) { .nb-widths :global(.nb-row) { grid-template-columns: 3.2rem minmax(0, 1fr) minmax(0, 1fr); font-size: 0.8rem; } }
 </style>

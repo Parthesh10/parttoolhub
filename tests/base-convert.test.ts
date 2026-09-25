@@ -75,3 +75,28 @@ test('the sample input parses as the well-known Java class-file magic number', (
   assert.equal(v.value, 3405691582n);
   assert.equal(toDigits(v.value, 16), 'cafebabe');
 });
+
+test('nibbles: hex digit above each 4-bit group, padded to whole nibbles', async () => {
+  const { nibbles } = await import('../src/lib/base-convert.ts');
+  assert.deepEqual(nibbles(0xcafen), [
+    { hex: 'C', bits: '1100' }, { hex: 'A', bits: '1010' }, { hex: 'F', bits: '1111' }, { hex: 'E', bits: '1110' },
+  ]);
+  assert.deepEqual(nibbles(5n).map((n) => n.bits), ['0101']);
+  assert.deepEqual(nibbles(0n), [{ hex: '0', bits: '0000' }]);
+  assert.equal(nibbles(1n, 32).length, 8);
+});
+
+test('widthReadings: unsigned and signed views per storage width, null when it does not fit', async () => {
+  const { widthReadings } = await import('../src/lib/base-convert.ts');
+  const cafe = widthReadings(0xcafebaben);
+  assert.deepEqual(cafe.map((r) => r.width), [8, 16, 32, 64]);
+  assert.equal(cafe[0].unsigned, null); // does not fit 8 or 16 bits
+  assert.equal(cafe[2].unsigned, 3405691582n);
+  assert.equal(cafe[2].signed, -889275714n); // same bits as int32
+  assert.equal(cafe[3].signed, 3405691582n); // positive as int64
+  const neg = widthReadings(-1n);
+  assert.deepEqual(neg.map((r) => r.unsigned), [255n, 65535n, 4294967295n, 18446744073709551615n]);
+  assert.deepEqual(widthReadings(-129n)[0], { width: 8, unsigned: null, signed: null });
+  assert.equal(widthReadings(127n)[0].signed, 127n);
+  assert.equal(widthReadings(128n)[0].signed, -128n);
+});

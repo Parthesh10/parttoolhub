@@ -29,7 +29,7 @@ const emptyErr = err(() => parseNumber(''));
 
 const steps = [
   'Paste a number (with a <code>0x</code>, <code>0b</code> or <code>0o</code> prefix, or plain decimal digits) or pick its base explicitly from <strong>From base</strong>.',
-  'Read the four results: binary, octal, decimal and hexadecimal, all computed from the same parsed value.',
+  'Read the four results: binary, octal, decimal and hexadecimal, all computed from the same parsed value. Under them, the <strong>Bit map</strong> shows the binary in groups of four with each group\'s hex digit above it (hover a bit for its position), and <strong>In fixed-width storage</strong> shows how the value reads as an unsigned and a signed 8, 16, 32 and 64-bit integer.',
   'For a negative number, tick <strong>Show as two\'s complement</strong> and pick the <strong>Bit width</strong> if you need the fixed-width bit pattern rather than a plain minus sign.',
   'Click any result to copy it: the prefix (<code>0x</code>/<code>0b</code>/<code>0o</code>) is included so it pastes straight into most languages\' source code.',
 ];
@@ -79,6 +79,8 @@ const faq = [
       <li><strong>From base: Auto-detect / Binary / Octal / Decimal / Hexadecimal</strong>: Auto-detect reads the <code>0x</code>/<code>0b</code>/<code>0o</code> prefix if present and otherwise assumes decimal; pick a base
         explicitly for input with no prefix that is not decimal (plain <code>ff</code>, for instance, is ambiguous
         between hex and an invalid decimal number without it).</li>
+      <li><strong>Bit map</strong>: one hex digit is always exactly four bits, which is why hex is the usual shorthand for binary; the map lines them up so that is visible. It is drawn for values up to 64 bits. For a negative number it shows the magnitude until two's complement is ticked, then the stored bit pattern.</li>
+      <li><strong>In fixed-width storage</strong>: for each width, the value as an unsigned integer and the same bits read as a signed one. A reading in amber differs from the number you typed: <code>0xCAFEBABE</code> is 3405691582 unsigned but -889275714 as a signed 32-bit integer, the classic overflow surprise. "Does not fit" means the value needs more bits than that width has.</li>
       <li><strong>Show as two's complement</strong> and <strong>Bit width</strong>: see the FAQ. Only affects negative
         numbers; positive numbers look the same either way.</li>
       <li><strong>Load sample</strong> inserts <code>{SAMPLE_INPUT}</code>; <strong>Clear</strong> empties the box.</li>

@@ -1,4 +1,4 @@
-import { parseNumber, toDigits, toPrefixed, twosComplement, SAMPLE_INPUT, type Base, type BitWidth } from '../../lib/base-convert';
+import { parseNumber, toDigits, toPrefixed, twosComplement, SAMPLE_INPUT, type Base, type BitWidth, nibbles, widthReadings } from '../../lib/base-convert';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -6,6 +6,11 @@ const input = $<HTMLTextAreaElement>('input');
 const inputStat = $('input-stat');
 const status = $('status');
 const grid = $('grid');
+const mapWrap = $('map-wrap');
+const mapEl = $('map');
+const mapNote = $('map-note');
+const widthsWrap = $('widths-wrap');
+const widthsEl = $('widths');
 const note = $('note');
 const toast = $('toast');
 const fromBase = $<HTMLSelectElement>('opt-from');
@@ -77,6 +82,7 @@ function render() {
     status.hidden = true;
     grid.hidden = true;
     note.hidden = true;
+    mapWrap.hidden = widthsWrap.hidden = true;
     return;
   }
 
@@ -90,6 +96,7 @@ function render() {
     status.textContent = result.error;
     grid.hidden = true;
     note.hidden = true;
+    mapWrap.hidden = widthsWrap.hidden = true;
     return;
   }
 
@@ -106,10 +113,17 @@ function render() {
     { label: 'Hexadecimal', value: toPrefixed(value, 16), copyKey: 'hex' },
   ];
 
+  // Bit map: the two's complement pattern when that is what is shown, else the magnitude.
+  let mapBits = value < 0n ? -value : value;
+  let mapMin = 4;
+  mapNote.textContent = value < 0n ? '(magnitude; tick two\'s complement to see the stored bits)' : '';
   if (twos.checked && value < 0n) {
     const w = Number(width.value) as BitWidth;
     const tc = twosComplement(value, w);
     if (tc.ok) {
+      mapBits = tc.bits;
+      mapMin = w;
+      mapNote.textContent = `(${w}-bit two's complement)`;
       rows[0] = { label: `Binary (${w}-bit two's complement)`, value: '0b' + tc.bits.toString(2).padStart(w, '0'), copyKey: 'binary' };
       rows[3] = { label: `Hex (${w}-bit two's complement)`, value: '0x' + tc.bits.toString(16).padStart(w / 4, '0'), copyKey: 'hex' };
     } else {
@@ -127,6 +141,47 @@ function render() {
       </button>`;
     })
     .join('');
+  drawMap(mapBits, mapMin);
+  drawWidths(value);
+}
+
+/** Up to 64 bits are drawn; past that the map would be a wall of cells, so it says so instead. */
+function drawMap(bits: bigint, minBits: number) {
+  mapWrap.hidden = false;
+  if (bits.toString(2).length > 64) {
+    mapEl.innerHTML = '';
+    mapNote.textContent = '(drawn for values up to 64 bits; this one is longer)';
+    return;
+  }
+  const groups = nibbles(bits, minBits);
+  const total = groups.length * 4;
+  mapEl.innerHTML = groups
+    .map((g, gi) => {
+      const cells = [...g.bits]
+        .map((b, bi) => {
+          const pos = total - 1 - (gi * 4 + bi);
+          return `<span class="nb-bit${b === '1' ? ' on' : ''}" title="bit ${pos}">${b}</span>`;
+        })
+        .join('');
+      const lowPos = total - 4 - gi * 4;
+      return `<div class="nb-nib"><span class="nb-hex">${g.hex}</span><span class="nb-bits">${cells}</span><span class="nb-pos">${lowPos}</span></div>`;
+    })
+    .join('');
+}
+
+function drawWidths(value: bigint) {
+  widthsWrap.hidden = false;
+  const no = '<span class="nb-no">does not fit</span>';
+  const head = '<div class="nb-row"><span>Width</span><span>Unsigned</span><span>Signed</span></div>';
+  widthsEl.innerHTML =
+    head +
+    widthReadings(value)
+      .map((r) => {
+        // Highlight a reading that differs from the value itself: the surprise worth seeing.
+        const cell = (v: bigint | null) => (v === null ? no : `<span${v !== value ? ' class="nb-diff"' : ''}>${v.toString()}</span>`);
+        return `<div class="nb-row"><span>${r.width}-bit</span>${cell(r.unsigned)}${cell(r.signed)}</div>`;
+      })
+      .join('');
 }
 
 let toastTimer: number | undefined;

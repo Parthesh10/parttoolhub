@@ -205,7 +205,7 @@ export const TOOLS: Tool[] = [
     features: ['Auto-detects base from 0x/0b/0o prefix', 'Exact for numbers beyond 2^53 (uses BigInt)', 'Optional two’s complement for negative numbers', 'Binary, octal, decimal and hex shown together'],
     intent: 'binary octal decimal hex converter',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-18',
+    reviewedOn: '2026-09-25',
   },
   {
     slug: 'aspect-ratio-calculator',
