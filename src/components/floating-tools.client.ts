@@ -604,3 +604,73 @@ if (nextSteps) {
     }, 3200);
   }
 }
+
+// --- UI round 5b: an empty input offers Paste and Try a sample -----------------------------------
+// Inside every empty multi-line input box (those in a .code-wrap), two buttons at the bottom of the
+// box, under the placeholder's example: they press the tool's own Paste button and sample control,
+// so each tool's behaviour and analytics stay as they are. They vanish at the first character and
+// return when the box is emptied (samples and Clear set the value in code, hence the re-check).
+// The real buttons below the box stay the keyboard and screen-reader route, so these are hidden
+// from assistive tech and left out of the tab order.
+const ctaTool = document.querySelector<HTMLElement>('.tool[data-tool]');
+if (ctaTool) {
+  const sampleCtl = ctaTool.querySelector<HTMLElement>('#btn-sample, #sample-select');
+  const refreshers: Array<() => void> = [];
+  const PASTE_SVG =
+    '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6v3H9zM8 5.5H6.5A1.5 1.5 0 0 0 5 7v12.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V7a1.5 1.5 0 0 0-1.5-1.5H16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
+  const SAMPLE_SVG =
+    '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3.5l1.7 4.8 4.8 1.7-4.8 1.7L11 16.5l-1.7-4.8L4.5 10l4.8-1.7ZM18.5 15.5v5M16 18h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  for (const field of ctaTool.querySelectorAll<HTMLTextAreaElement>('.code-wrap > textarea:not([readonly])')) {
+    const wrap = field.parentElement as HTMLElement;
+    const pane = field.closest<HTMLElement>('.pane') ?? ctaTool;
+    const pasteBtn = pane.querySelector<HTMLButtonElement>('button[id^="btn-paste"]');
+    if (!pasteBtn && !sampleCtl) continue;
+    const dropHint = pane.querySelector<HTMLElement>('.drop-hint');
+    const cta = document.createElement('div');
+    cta.className = 'empty-cta';
+    cta.setAttribute('aria-hidden', 'true');
+    cta.innerHTML =
+      '<div class="empty-cta-row">' +
+      (pasteBtn ? `<button type="button" class="btn btn-sm btn-primary" data-cta="paste" tabindex="-1">${PASTE_SVG} Paste</button>` : '') +
+      (sampleCtl ? `<button type="button" class="btn btn-sm" data-cta="sample" tabindex="-1">${SAMPLE_SVG} Try a sample</button>` : '') +
+      '</div>' +
+      (dropHint ? '<span class="empty-cta-hint">or drop a file onto this box</span>' : '');
+    wrap.appendChild(cta);
+    cta.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-cta]');
+      if (!b) return;
+      window.pth?.track('tool_option', {
+        tool_slug: ctaTool.dataset.tool ?? '',
+        tool_category: document.body.dataset.toolCategory ?? '',
+        option: 'empty_cta',
+        value: b.dataset.cta ?? '',
+      });
+      if (b.dataset.cta === 'paste') pasteBtn?.click();
+      else if (sampleCtl instanceof HTMLSelectElement) {
+        const first = [...sampleCtl.options].find((o) => o.value);
+        if (first) {
+          sampleCtl.value = first.value;
+          sampleCtl.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      } else sampleCtl?.click();
+    });
+    const refresh = () => {
+      const empty = field.value.length === 0;
+      if (cta.hidden === !empty) return;
+      cta.hidden = !empty;
+      // The hint below the box says the same thing while the box is empty; visibility (not
+      // display) keeps its line, so nothing below moves when typing starts.
+      if (dropHint) dropHint.style.visibility = empty ? 'hidden' : '';
+    };
+    cta.hidden = false;
+    if (dropHint) dropHint.style.visibility = 'hidden';
+    field.addEventListener('input', refresh);
+    refreshers.push(refresh);
+    refresh();
+  }
+  if (refreshers.length) {
+    window.setInterval(() => {
+      if (document.visibilityState === 'visible') refreshers.forEach((r) => r());
+    }, 400);
+  }
+}

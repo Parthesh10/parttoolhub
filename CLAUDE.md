@@ -370,6 +370,14 @@ site-wide — a new tool page needs nothing extra to pick this up:
   hands it over through `src/lib/transfer.ts`; on the receiving page a tool's own `receiveTransfer()`
   wins (it runs first), else the text goes into the first editable textarea with an `input` event. Only
   add a chain where the target genuinely takes the result as its input.
+- **Empty inputs (UI round 5b, 2026-09-26).** `floating-tools.client.ts` puts Paste / Try a sample
+  buttons at the bottom of every empty editable textarea inside a `.code-wrap` (not single-line boxes):
+  they press the tool's own `button[id^="btn-paste"]` (same `.pane`) and `#btn-sample` / `#sample-select`,
+  so keep those ids for a new tool to get this. Hidden from assistive tech (the real buttons are the
+  accessible route) and hidden at the first character.
+- **`.hl-layer` must be hidden when colouring is off** (`.code-wrap:not(.has-hl) > .hl-layer`): the
+  textarea is only positioned while colouring, so an opaque layer left visible paints over it (this
+  blanked the JSON Formatter's TS view from 2026-09-24 to 2026-09-26).
 - `--tint-<category-slug>` (five hues: accent / teal / violet / accent-2 / rose) via `src/lib/category-tint.ts`
   give each category hub and its cards a consistent identity (top card border, eyebrow color, the
   tool icon chip). Cards are one component, `ToolCard.astro` (home + hubs): icon from

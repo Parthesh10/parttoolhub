@@ -423,6 +423,21 @@ th { background: var(--surface-2); font-weight: 650; }
 .muted { color: var(--text-muted); }
 /* UX-002: the "Or drop a file..." caption under a tool's drag-and-drop input pane. */
 .drop-hint { font-size: 0.8rem; margin: 0.4rem 0 0; }
+/* UI round 5b: Paste / Try a sample inside an empty input box (built by floating-tools.client.ts).
+   Bottom of the box, so the placeholder's example stays readable above it; only the buttons take
+   clicks, so a click anywhere else still lands in the textarea. Right of the line-number gutter. */
+.empty-cta {
+  position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 0.4rem;
+  padding: 0 1rem 1.1rem; animation: empty-cta-in 0.3s ease-out;
+}
+.code-wrap:has(> .gutter) > .empty-cta { left: 3rem; }
+.empty-cta-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+.empty-cta .btn { pointer-events: auto; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: var(--shadow-lg); }
+.empty-cta .btn:not(.btn-primary) { background: var(--surface); }
+.empty-cta-hint { font-size: 0.78rem; color: var(--text-muted); }
+@keyframes empty-cta-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .empty-cta { animation: none; } }
 
 /* Buttons ---------------------------------------------------------- */
 .btn {
@@ -644,6 +659,10 @@ body.no-scroll { overflow: hidden; }
   white-space: pre-wrap; overflow-wrap: break-word; scrollbar-gutter: stable;
 }
 .code-wrap .hl-layer { padding-left: 3.4rem; }
+/* Only while colouring is on. Otherwise the textarea is not positioned, so this absolutely positioned,
+   opaque layer painted over it: the JSON Formatter's TS view was blank from B1 (2026-09-24) until
+   2026-09-26, and an empty input hid its placeholder and an oversize one its text. */
+.code-wrap:not(.has-hl) > .hl-layer { display: none; }
 .hl-layer.no-wrap { white-space: pre; overflow-wrap: normal; }
 /* The same layer under an editable input (JSON Diff): it takes the input's own background, which
    lightens on focus like every other input box. */
