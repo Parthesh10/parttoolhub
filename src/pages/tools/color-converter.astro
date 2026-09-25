@@ -44,8 +44,8 @@ const faq = [
     a: 'No. It is optional. Both "#3366ff" and "3366ff" parse the same way, so you can paste a hex value straight out of a design tool’s color picker without editing it first.',
   },
   {
-    q: 'What is Best text color?',
-    a: 'Whichever of pure black or pure white has the higher contrast ratio against the color you entered, a quick answer to "should this button’s label be black or white text" without comparing two numbers yourself.',
+    q: 'What does the "best" label on the preview mean?',
+    a: 'It marks whichever of pure black or pure white text has the higher contrast ratio against the color you entered, a quick answer to "should this button’s label be black or white text" without comparing two numbers yourself.',
   },
 ];
 ---
@@ -74,9 +74,9 @@ const faq = [
     <ul>
       <li><strong>HEX / RGB / HSL</strong> are computed together from one parsed color; there is no separate "convert to"
         step, so pasting any one of the three immediately shows the other two.</li>
-      <li><strong>Contrast on black text / Contrast on white text</strong> apply the WCAG 2 formula to the color as a
-        background, assuming plain black or white text on top. See the FAQ for what the AA/AAA labels mean.</li>
-      <li><strong>Best text color</strong>: see the FAQ.</li>
+      <li><strong>The preview's contrast badges</strong> (on the "Black text" and "White text" samples) apply the WCAG 2
+        formula to the color as a background, assuming plain black or white text on top. See the FAQ for what the AA/AAA
+        labels and the <strong>best</strong> mark mean.</li>
       <li><strong>Load sample</strong> inserts <code>{SAMPLE_COLOR}</code>; <strong>Clear</strong> empties the box.</li>
     </ul>
 
