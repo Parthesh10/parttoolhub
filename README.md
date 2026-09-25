@@ -24,6 +24,23 @@ and this README should stay consistent with it as the site grows.
   `/generators`, `/compare`), generated from `src/data/categories.ts` by `src/pages/[category].astro`
 - `/tools/<slug>` — one page per tool. Every tool is reachable in at most 2 clicks from home
   (home → category hub → tool, or directly from the home directory).
+- `/guides` — the guides hub, grouped by topic (`src/pages/guides.astro`); noindex and linked from
+  nowhere until at least one guide is published.
+- `/guides/<slug>` — one long-form article per Markdown file in `src/content/guides/`
+  (`src/pages/guides/[slug].astro`). `draft: true` in the front matter keeps a guide out of
+  production builds; it still renders under `npm run dev`. Rules: `../seo-rules.md` §3B.
+
+### Adding a guide
+
+1. Create `src/content/guides/<slug>.md` (lowercase, hyphenated; the file name is the permanent URL)
+   with front matter: `title` (≤ 60 chars), optional `headline` (the `<h1>`, ≤ 110), `description`
+   (70–155), `topic` (a slug from `GUIDE_TOPICS` in `src/data/guides.ts`), `publishedOn`, optional
+   `updatedOn`, `tools` (tool slugs it uses) and `draft: true`.
+2. Write the body from `##` down, run every snippet, and keep the maintainer's first-hand section.
+3. `npm run dev` and open `/guides/<slug>` to read it rendered.
+4. To publish: set `publishedOn` to today, `draft: false`, then `npm run build` and `npm test`
+   (`tests/guides.test.ts` and `tests/content.test.ts` refuse a guide with leftover placeholders,
+   a future date, an em dash or a forbidden phrase).
 
 The header shows only **Home** + a **Tools** dropdown of categories — never the full tool list — to
 keep the content-to-clutter ratio high as the tool count grows. The footer lists a few tools per

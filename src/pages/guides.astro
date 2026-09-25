@@ -1,0 +1,114 @@
+---
+/**
+ * /guides: every published guide, grouped by topic (src/data/guides.ts order), newest first
+ * within a topic. Opens with intro prose like the category hubs (seo-rules §3.4). With no
+ * published guide the page still builds (Astro always emits a static page) but is noindex,
+ * left out of the sitemap (astro.config.mjs) and linked from nowhere, so an empty section can
+ * never reach search results.
+ */
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { SITE } from '../site.config';
+import { canonicalUrl } from '../lib/urls';
+import { formatDate } from '../lib/dates';
+import { WEBSITE_ID } from '../lib/schema';
+import { visibleGuides } from '../lib/guides';
+import { GUIDE_TOPICS, GUIDES_HUB, guidePath, readingMinutes } from '../data/guides';
+
+const guides = await visibleGuides();
+const groups = GUIDE_TOPICS.map((topic) => ({ topic, items: guides.filter((g) => g.data.topic === topic.slug) })).filter((g) => g.items.length > 0);
+const ordered = groups.flatMap((g) => g.items);
+const empty = guides.length === 0;
+
+const title = 'Developer Guides';
+const description = 'Guides from real backend and web development work: data conversions, error messages, scaling and cloud choices, with code that has been run.';
+
+const schema = empty
+  ? []
+  : [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: title,
+        description,
+        url: canonicalUrl(GUIDES_HUB),
+        inLanguage: 'en',
+        isPartOf: { '@id': WEBSITE_ID },
+        mainEntity: {
+          '@type': 'ItemList',
+          itemListElement: ordered.map((g, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            name: g.data.headline ?? g.data.title,
+            url: canonicalUrl(guidePath(g.id)),
+          })),
+        },
+      },
+    ];
+---
+
+<Base title={title} description={description} schema={schema} noindex={empty}>
+  <Breadcrumbs items={[{ label: 'Guides' }]} />
+
+  <header class="hero bg-grid">
+    <p class="eyebrow">{empty ? 'Guides' : `${guides.length} guide${guides.length === 1 ? '' : 's'}`}</p>
+    <h1>{title}</h1>
+    <p class="lead">Problems from day-to-day development, the cause behind each one, and the fix, with the code to run it.</p>
+  </header>
+
+  <div class="prose intro">
+    <p>
+      These guides come out of work on real backend and web projects: a spreadsheet column that has to become a SQL
+      list, an error message that seems to point at the wrong place, or a design choice such as scaling a service out
+      instead of up. Each one covers what the problem looked like, what causes it, and what fixed it.
+    </p>
+    <p>
+      They are written by <a href={SITE.authorUrl}>{SITE.author}</a>, a backend-focused software developer who also
+      builds the tools on this site. Formulas and code are tried before a guide goes up. Where one of the site's tools
+      does the job in the browser, the guide links to it; where none fits, the guide shows the code to run yourself.
+    </p>
+  </div>
+
+  {empty ? (
+    <p class="muted">No guides are published yet.</p>
+  ) : (
+    groups.map(({ topic, items }) => (
+      <section class="topic" aria-labelledby={`topic-${topic.slug}`}>
+        <h2 id={`topic-${topic.slug}`}>{topic.name}</h2>
+        <p class="muted topic-blurb">{topic.blurb}</p>
+        <div class="grid" data-nav="guides-hub">
+          {items.map((g) => (
+            <a class="card guide-card" href={guidePath(g.id)}>
+              <h3>{g.data.headline ?? g.data.title}</h3>
+              <p>{g.data.description}</p>
+              <span class="meta">
+                <time datetime={g.data.publishedOn}>{formatDate(g.data.publishedOn)}</time> · {readingMinutes(g.body ?? '')} min read
+                {g.data.draft && <> · <strong>Draft</strong></>}
+              </span>
+            </a>
+          ))}
+        </div>
+      </section>
+    ))
+  )}
+</Base>
+
+<style>
+  .hero { max-width: 72ch; margin-bottom: 1.75rem; padding-top: 0.25rem; }
+  .lead { font-size: 1.1rem; color: var(--text-muted); }
+  .intro { margin-bottom: 1.75rem; }
+  .topic { margin-bottom: 2rem; }
+  .topic h2 { font-size: 1.25rem; margin: 0 0 0.3rem; }
+  .topic-blurb { margin: 0 0 0.9rem; max-width: 76ch; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+  .guide-card {
+    display: flex; flex-direction: column; padding: 1.2rem 1.35rem; color: var(--text);
+    border-top: 3px solid var(--accent);
+    transition: transform 0.15s var(--ease-spring), box-shadow 0.15s;
+  }
+  .guide-card:hover { text-decoration: none; transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  .guide-card:active { transform: scale(0.98); }
+  .guide-card h3 { margin: 0 0 0.45rem; font-size: 1.1rem; }
+  .guide-card p { color: var(--text-muted); font-size: 0.95rem; flex: 1; }
+  .meta { font-size: 0.85rem; color: var(--text-muted); }
+</style>

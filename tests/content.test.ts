@@ -16,6 +16,13 @@ import { resolve } from 'node:path';
 import { TOOLS, toolPath } from '../src/data/tools.ts';
 import { CATEGORIES } from '../src/data/categories.ts';
 import { SITE } from '../src/site.config.ts';
+import { GUIDES_HUB, guidePath } from '../src/data/guides.ts';
+import { publishedGuideFiles, readGuideFiles } from '../src/data/guide-files.ts';
+
+// Published guides (src/content/guides, draft: false). While there are none, the /guides hub is
+// built but noindex and outside the sitemap, so it is not an "indexable page" below.
+const GUIDES = publishedGuideFiles();
+const GUIDE_ROUTES = GUIDES.length > 0 ? [GUIDES_HUB, ...GUIDES.map((g) => guidePath(g.slug))] : [];
 
 const dist = resolve(import.meta.dirname, '../dist');
 const built = existsSync(dist);
@@ -241,7 +248,7 @@ function tool_lastmod(iso: string) {
 }
 
 test('every internal link in the build resolves to a built page or public file', { skip }, () => {
-  const pages = ['/', '/about', '/contact', '/privacy-policy', '/terms', '/404', ...CATEGORIES.map((c) => `/${c.slug}`), ...TOOLS.map(toolPath)];
+  const pages = ['/', '/about', '/contact', '/privacy-policy', '/terms', '/404', ...CATEGORIES.map((c) => `/${c.slug}`), ...TOOLS.map(toolPath), GUIDES_HUB, ...GUIDES.map((g) => guidePath(g.slug))];
   const exists = (href: string) => {
     const path = href.replace(/[#?].*$/, '');
     if (path === '' || path === '/') return true;
@@ -255,7 +262,7 @@ test('every internal link in the build resolves to a built page or public file',
 });
 
 test('every <title> is 60 characters or fewer after the brand suffix rule', { skip }, () => {
-  const routes = ['/index', '/about', '/contact', '/privacy-policy', '/terms', ...CATEGORIES.map((c) => `/${c.slug}`), ...TOOLS.map(toolPath)];
+  const routes = ['/index', '/about', '/contact', '/privacy-policy', '/terms', ...CATEGORIES.map((c) => `/${c.slug}`), ...TOOLS.map(toolPath), ...GUIDE_ROUTES];
   for (const route of routes) {
     const raw = read(route).match(/<title>([^<]*)<\/title>/)?.[1] ?? '';
     const title = raw.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
@@ -265,7 +272,7 @@ test('every <title> is 60 characters or fewer after the brand suffix rule', { sk
 
 // ---- Site-wide metadata: every indexable page, not just tools ---------------
 
-const INDEXABLE = ['/index', '/about', '/contact', '/privacy-policy', '/terms', ...CATEGORIES.map((c) => `/${c.slug}`), ...TOOLS.map(toolPath)];
+const INDEXABLE = ['/index', '/about', '/contact', '/privacy-policy', '/terms', ...CATEGORIES.map((c) => `/${c.slug}`), ...TOOLS.map(toolPath), ...GUIDE_ROUTES];
 
 // An em dash reads as an AI-writing tell (seo-rules.md's "Em dashes: zero on the live
 // site" rule) -- especially bad on a site that sells an AI Text Cleaner tool whose own
@@ -399,3 +406,68 @@ test('llms-full.txt inlines every tool\'s real page content (scripts/make-llms-f
   assert.ok(!/<div class="ad-slot/.test(outsideCode), 'ad-slot markup leaked into llms-full.txt');
   assert.ok(!/<\/?(?:section|article)[\s>]/.test(outsideCode), 'raw block-level HTML leaked into llms-full.txt');
 });
+
+// ---- Guides (/guides, /guides/<slug>; seo-rules §3B) -------------------------
+
+test('/guides hub is noindex and unlinked while empty, indexable and complete once a guide is published', { skip }, () => {
+  const hub = read(GUIDES_HUB);
+  const home = read('/index');
+  assert.equal(count(hub, /<h1[\s>]/g), 1, '/guides: one <h1>');
+  if (GUIDES.length === 0) {
+    assert.ok(/<meta name="robots" content="noindex/.test(hub), 'an empty guides hub must be noindex');
+    assert.ok(!home.includes(`href="${GUIDES_HUB}"`), 'nothing may link to an empty guides hub');
+    return;
+  }
+  assert.ok(!/noindex/.test(hub), '/guides must be indexable once a guide is published');
+  assert.ok(home.includes(`href="${GUIDES_HUB}"`), 'the footer links the guides hub');
+  for (const g of GUIDES) assert.ok(hub.includes(`href="${guidePath(g.slug)}"`), `/guides: missing link to ${g.slug}`);
+  const words = visibleText(hub).split(' ').length;
+  assert.ok(words >= 150, `/guides reads thin (${words} words)`);
+});
+
+test('draft guides are never built', { skip }, () => {
+  for (const g of readGuideFiles().filter((f) => f.draft)) {
+    assert.ok(!existsSync(resolve(dist, `.${guidePath(g.slug)}.html`)), `draft guide ${g.slug} was built into dist/`);
+  }
+});
+
+for (const g of GUIDES) {
+  const route = guidePath(g.slug);
+
+  test(`${route}: one <h1>, byline, Article schema that matches the page, no placeholders`, { skip }, () => {
+    const html = read(route);
+    assert.equal(count(html, /<h1[\s>]/g), 1, 'exactly one <h1> (the Markdown body must start at ##)');
+    const h1 = unescape(inner(html, 'h1')[0] ?? '');
+
+    const ld = jsonLd(html);
+    const article = ld.find((o) => o['@type'] === 'Article');
+    assert.ok(article, 'Article JSON-LD present');
+    assert.equal(article!.headline, h1, 'Article headline is the visible <h1>');
+    assert.equal(article!.url, `${SITE.url}${route}`);
+    assert.equal(article!['@id'], article!.url, 'Article @id is its canonical URL');
+    assert.equal(article!.datePublished, g.publishedOn);
+    assert.equal(article!.dateModified, g.updatedOn || g.publishedOn);
+    assert.deepEqual((article!.author as { '@id': string })['@id'], `${SITE.url}/#author`);
+    assert.deepEqual((article!.isPartOf as { '@id': string })['@id'], `${SITE.url}/#website`);
+
+    assert.ok(html.includes(`<time datetime="${g.publishedOn}"`), 'the published date is visible');
+    assert.ok(html.includes(`>${SITE.author}</a>`), 'the byline names the maintainer');
+    assert.ok(html.includes(`href="${GUIDES_HUB}"`), 'links back to the guides hub');
+
+    const crumbs = ld.find((o) => o['@type'] === 'BreadcrumbList')!;
+    assert.deepEqual((crumbs.itemListElement as { name: string }[]).map((i) => i.name), ['Home', 'Guides', g.title]);
+
+    assert.ok(!/TODO\(maintainer\)|MAINTAINER CHECKLIST/.test(html), 'a published guide still has the maintainer placeholder or checklist in it');
+  });
+
+  test(`${route}: no forbidden phrases (seo-rules §3A)`, { skip }, () => {
+    const text = visibleText(read(route)).toLowerCase();
+    for (const phrase of FORBIDDEN) assert.ok(!text.includes(phrase), `forbidden phrase "${phrase}" on ${route}`);
+  });
+
+  test(`${route}: every tool it lists links back to it`, { skip }, () => {
+    for (const slug of g.tools) {
+      assert.ok(read(`/tools/${slug}`).includes(`href="${route}"`), `/tools/${slug} does not link back to ${route}`);
+    }
+  });
+}

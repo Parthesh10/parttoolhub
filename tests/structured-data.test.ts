@@ -38,6 +38,13 @@ const TYPES: Record<string, { required: string[]; allowed: string[] }> = {
   Person: { required: ['name'], allowed: ['url', 'sameAs'] },
   WebPage: { required: ['name', 'url', 'dateModified', 'author'], allowed: ['description', 'inLanguage', 'isAccessibleForFree', 'isPartOf'] },
   CollectionPage: { required: ['name', 'url', 'mainEntity'], allowed: ['description', 'inLanguage', 'isPartOf'] },
+  // Guides (/guides/<slug>). Google's Article markup has no required properties and no rating or
+  // price requirement; headline, dates, author and image are its recommended ones, all of which the
+  // page shows (headline = <h1>, dates = the byline, author = the named maintainer).
+  Article: {
+    required: ['headline', 'url', 'datePublished', 'dateModified', 'author'],
+    allowed: ['description', 'inLanguage', 'publisher', 'image', 'isAccessibleForFree', 'isPartOf'],
+  },
   ItemList: { required: ['itemListElement'], allowed: [] },
   ListItem: { required: ['position', 'name'], allowed: ['item', 'url'] },
   BreadcrumbList: { required: ['itemListElement'], allowed: [] },
@@ -180,7 +187,7 @@ test('every page carries exactly one WebSite and one Person, and at most one pag
     const count = (t: string) => top.filter((b) => b['@type'] === t).length;
     assert.equal(count('WebSite'), 1, `${route}: one WebSite`);
     assert.equal(count('Person'), 1, `${route}: one Person`);
-    assert.ok(count('WebPage') + count('CollectionPage') <= 1, `${route}: more than one page entity`);
+    assert.ok(count('WebPage') + count('CollectionPage') + count('Article') <= 1, `${route}: more than one page entity`);
     const site = top.find((b) => b['@type'] === 'WebSite')!;
     assert.equal(site['@id'], `${SITE.url}/#website`);
     const person = top.find((b) => b['@type'] === 'Person')!;

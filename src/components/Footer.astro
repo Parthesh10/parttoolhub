@@ -2,7 +2,11 @@
 import { SITE } from '../site.config';
 import { CATEGORIES } from '../data/categories';
 import { toolsInCategory, toolPath } from '../data/tools';
+import { visibleGuides } from '../lib/guides';
+import { GUIDES_HUB } from '../data/guides';
 const year = new Date().getFullYear();
+// Linked only once a guide exists, so the footer never points at an empty section.
+const hasGuides = (await visibleGuides()).length > 0;
 ---
 
 <footer class="site-footer" data-nav="footer">
@@ -22,6 +26,7 @@ const year = new Date().getFullYear();
     <div>
       <span class="col-head">Site</span>
       <ul>
+        {hasGuides && <li><a href={GUIDES_HUB}>Guides</a></li>}
         <li><a href="/about">About</a></li>
         <li><a href="/contact">Contact</a></li>
         <li><a href="/privacy-policy">Privacy Policy</a></li>

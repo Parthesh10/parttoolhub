@@ -3,6 +3,8 @@ import { SITE } from '../site.config';
 import { CATEGORIES } from '../data/categories';
 import { toolsInCategory, toolPath } from '../data/tools';
 import { canonicalUrl } from '../lib/urls';
+import { visibleGuides } from '../lib/guides';
+import { guidePath } from '../data/guides';
 
 /**
  * /llms.txt — the informal llmstxt.org convention for giving an LLM crawler a
@@ -13,7 +15,7 @@ import { canonicalUrl } from '../lib/urls';
  * drift the way a checked-in static copy would (seo-rules §11: one source of
  * truth). tests/content.test.ts asserts every registered tool is listed.
  */
-export const GET: APIRoute = () => {
+export const GET: APIRoute = async () => {
   const lines: string[] = [
     `# ${SITE.name}`,
     '',
@@ -26,6 +28,13 @@ export const GET: APIRoute = () => {
     for (const t of toolsInCategory(cat.slug)) {
       lines.push(`- [${t.name}](${canonicalUrl(toolPath(t))}): ${t.short}`);
     }
+    lines.push('');
+  }
+
+  const guides = await visibleGuides();
+  if (guides.length > 0) {
+    lines.push('## Guides');
+    for (const g of guides) lines.push(`- [${g.data.headline ?? g.data.title}](${canonicalUrl(guidePath(g.id))}): ${g.data.description}`);
     lines.push('');
   }
 

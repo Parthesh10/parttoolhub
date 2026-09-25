@@ -25,6 +25,8 @@ import { AUTHOR_ID, WEBSITE_ID } from '../lib/schema';
 import { categoryBySlug } from '../data/categories';
 import { toolPath, type Tool } from '../data/tools';
 import FavoriteStar from '../components/FavoriteStar.astro';
+import { visibleGuides } from '../lib/guides';
+import { guidePath } from '../data/guides';
 
 export interface Props {
   tool: Tool;
@@ -68,6 +70,10 @@ const toolSchema = {
   author: { '@id': AUTHOR_ID },
   isPartOf: { '@id': WEBSITE_ID },
 };
+
+// Guides whose front matter lists this tool (src/content/guides). Empty for most tools, and
+// then nothing renders: the link runs one way, from a guide's `tools` list, never hand-added.
+const guides = (await visibleGuides()).filter((g) => g.data.tools.includes(tool.slug));
 ---
 
 <Base
@@ -109,6 +115,15 @@ const toolSchema = {
 
   <RelatedTools current={tool} />
 
+  {guides.length > 0 && (
+    <aside class="tool-guides" aria-labelledby="tool-guides" data-nav="tool-guides">
+      <h2 id="tool-guides">Guides that use this tool</h2>
+      <ul>
+        {guides.map((g) => <li><a href={guidePath(g.id)}>{g.data.headline ?? g.data.title}</a></li>)}
+      </ul>
+    </aside>
+  )}
+
   <p class="trust-line muted">
     Runs entirely in your browser: this page is a static file with no server behind it, so nothing you paste can be
     uploaded. Last reviewed <time datetime={tool.reviewedOn}>{formatDate(tool.reviewedOn)}</time> by <a href={SITE.authorUrl}>{tool.reviewedBy}</a>.
@@ -130,4 +145,7 @@ const toolSchema = {
   .lead { font-size: 1.1rem; color: var(--text-muted); margin: 0; max-width: 76ch; }
   .steps li { margin-bottom: 0.45rem; }
   .trust-line { font-size: 0.875rem; margin-top: 2rem; max-width: 76ch; }
+  .tool-guides { margin-top: 2rem; max-width: 76ch; }
+  .tool-guides h2 { font-size: 1.2rem; }
+  .tool-guides ul { padding-left: 1.2rem; margin: 0; }
 </style>

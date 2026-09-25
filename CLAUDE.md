@@ -501,6 +501,31 @@ meta tag in sync — its initial value in `Base.astro`'s `<head>` is the dark su
 Adding a category means adding it to `categories.ts` *and* to the URL-structure list in `README.md`
 and this paragraph — `tests/registry.test.ts` checks both mention every hub.
 
+**Guides** (`/guides`, `/guides/<slug>`; rules in `../seo-rules.md` §3B, added 2026-09-25) are the one
+part of the site that is content-collection driven rather than registry driven: one Markdown file per
+guide in `src/content/guides/`, schema in `src/content.config.ts` (Astro content layer, `glob` loader,
+`z` from `astro/zod`), topics in `src/data/guides.ts`. Three readers of the same files, on purpose:
+pages use `src/lib/guides.ts` (`visibleGuides()`: published guides, plus drafts under `astro dev`
+only); `astro.config.mjs` and the tests use `src/data/guide-files.ts` (plain `fs`, because neither runs
+inside the content layer) for the sitemap filter, `<lastmod>`, and the list of routes to check. The
+hub (`src/pages/guides.astro`) always builds but is **noindex, out of the sitemap and linked from
+nowhere while no guide is published**, so the section can merge and release at any time without an
+empty page reaching Google. Once one is published, the footer's Site column links it. A guide's
+`tools` front matter drives both its tool cards and the "Guides that use this tool" block that
+`ToolLayout` renders after Related Tools. Markdown code blocks render as plain `<pre><code>`
+(`markdown.syntaxHighlight: false`), like the tool pages. `tests/guides.test.ts` checks the source
+files (slug, topic, dates not in the future, known tools, no `#` heading in the body, and, for
+published guides, no `TODO(maintainer)` / `MAINTAINER CHECKLIST` left and no em dash);
+`tests/content.test.ts` checks the built pages (Article schema ↔ `<h1>` and byline dates, breadcrumb,
+hub state, drafts never built, forbidden phrases, tool pages linking back). Styles for the Markdown
+body are in the page's own `<style>` via `:global()`, because content-layer HTML carries no Astro
+scope attribute (the same gotcha as `innerHTML` in the command palette).
+
+**Internal traffic.** `Base.astro` reads `?internal=1` / `?internal=0` into `localStorage
+'pth:internal'` and, when set, calls `gtag('set', { traffic_type: 'internal' })` before the config
+call, so GA4's Internal traffic data filter drops the maintainer's own visits on any device, whatever
+the home IP. Documented in `docs/ANALYTICS.md` → Initialisation.
+
 **`/llms.txt`** (`src/pages/llms.txt.ts`) is the one non-page route in `src/pages/`: an Astro API
 endpoint (`export const GET: APIRoute`) rather than a `.astro` file, returning a `Response` with a
 `text/plain` body. Astro's static build calls it once and writes the result as a plain file, the

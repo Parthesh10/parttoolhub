@@ -1,0 +1,178 @@
+---
+/**
+ * One guide, from src/content/guides/<slug>.md. Order: breadcrumb → topic eyebrow → <h1> →
+ * lead (the description) → byline with dates → "On this page" (3+ sections) → the article →
+ * [ad] → tools used → more guides → trust line. The Markdown body starts at <h2>; the <h1>
+ * comes from the front matter, so a page always has exactly one.
+ *
+ * Structured data: Article (headline = the visible <h1>, dates = the visible byline dates,
+ * author/publisher → the site's Person) + BreadcrumbList. tests/structured-data.test.ts holds
+ * the allowlist; tests/content.test.ts checks the schema against the page.
+ */
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import AdSlot from '../../components/AdSlot.astro';
+import { SITE } from '../../site.config';
+import { canonicalUrl } from '../../lib/urls';
+import { formatDate } from '../../lib/dates';
+import { AUTHOR_ID, WEBSITE_ID } from '../../lib/schema';
+import { visibleGuides, guideModified, type Guide } from '../../lib/guides';
+import { GUIDES_HUB, guidePath, guideTopic, readingMinutes } from '../../data/guides';
+import { toolBySlug, toolPath } from '../../data/tools';
+
+export async function getStaticPaths() {
+  const guides = await visibleGuides();
+  return guides.map((guide) => ({ params: { slug: guide.id }, props: { guide, all: guides } }));
+}
+
+interface Props { guide: Guide; all: Guide[] }
+const { guide, all } = Astro.props;
+const { data } = guide;
+const { Content, headings } = await render(guide);
+
+const headline = data.headline ?? data.title;
+const topic = guideTopic(data.topic);
+const modified = guideModified(guide);
+const minutes = readingMinutes(guide.body ?? '');
+const toc = headings.filter((h) => h.depth === 2);
+const tools = data.tools.map(toolBySlug);
+// Same topic first, then the newest of the rest; three at most.
+const more = [...all.filter((g) => g.id !== guide.id && g.data.topic === data.topic), ...all.filter((g) => g.data.topic !== data.topic)].slice(0, 3);
+
+const url = canonicalUrl(guidePath(guide.id));
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  '@id': url,
+  headline,
+  description: data.description,
+  url,
+  inLanguage: 'en',
+  datePublished: data.publishedOn,
+  dateModified: modified,
+  author: { '@id': AUTHOR_ID },
+  publisher: { '@id': AUTHOR_ID },
+  image: new URL(SITE.ogImage, SITE.url).href,
+  isAccessibleForFree: true,
+  isPartOf: { '@id': WEBSITE_ID },
+};
+---
+
+<Base title={data.title} description={data.description} schema={[articleSchema]} noindex={data.draft}>
+  <Breadcrumbs items={[{ label: 'Guides', href: GUIDES_HUB }, { label: data.title }]} />
+
+  {data.draft && (
+    <p class="draft-banner" role="note">
+      Draft. This page exists only under <code>npm run dev</code>. Set <code>draft: false</code> in the front matter to publish it.
+    </p>
+  )}
+
+  <header class="hero">
+    <p class="eyebrow">{topic.name}</p>
+    <h1>{headline}</h1>
+    <p class="lead">{data.description}</p>
+    <p class="byline muted">
+      <span>By <a href={SITE.authorUrl}>{SITE.author}</a></span>
+      <span aria-hidden="true">·</span>
+      <span>Published <time datetime={data.publishedOn}>{formatDate(data.publishedOn)}</time></span>
+      {data.updatedOn && data.updatedOn !== data.publishedOn && (
+        <><span aria-hidden="true">·</span><span>Updated <time datetime={data.updatedOn}>{formatDate(data.updatedOn)}</time></span></>
+      )}
+      <span aria-hidden="true">·</span>
+      <span>{minutes} min read</span>
+    </p>
+  </header>
+
+  {toc.length >= 3 && (
+    <nav class="toc" aria-labelledby="toc-head">
+      <p id="toc-head" class="toc-head">On this page</p>
+      <ol>
+        {toc.map((h) => <li><a href={`#${h.slug}`}>{h.text}</a></li>)}
+      </ol>
+    </nav>
+  )}
+
+  <article class="prose guide-body">
+    <Content />
+  </article>
+
+  <AdSlot slot="article" format="rectangle" />
+
+  {tools.length > 0 && (
+    <section class="guide-tools" aria-labelledby="guide-tools" data-nav="guide-tools">
+      <h2 id="guide-tools">Tools used in this guide</h2>
+      <div class="grid">
+        {tools.map((t) => (
+          <a class="card tool-card" href={toolPath(t)}>
+            <h3>{t.name}</h3>
+            <p>{t.short}</p>
+            <span class="cta">Open tool →</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+
+  {more.length > 0 && (
+    <section class="more-guides" aria-labelledby="more-guides" data-nav="more-guides">
+      <h2 id="more-guides">More guides</h2>
+      <ul>
+        {more.map((g) => (
+          <li><a href={guidePath(g.id)}>{g.data.headline ?? g.data.title}</a> <span class="muted">{g.data.description}</span></li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  <p class="trust-line muted">
+    Written by <a href={SITE.authorUrl}>{SITE.author}</a> from problems met in real development work. Code and formulas are
+    tried before a guide is published. Last updated <time datetime={modified}>{formatDate(modified)}</time>. <a href={GUIDES_HUB}>All guides</a>.
+  </p>
+</Base>
+
+<style>
+  .hero { margin-bottom: 1.5rem; max-width: 76ch; }
+  .lead { font-size: 1.1rem; color: var(--text-muted); margin: 0 0 0.75rem; }
+  .byline { font-size: 0.9rem; margin: 0; display: flex; flex-wrap: wrap; gap: 0.2rem 0.45rem; align-items: baseline; }
+  .draft-banner {
+    max-width: 76ch; padding: 0.6rem 0.9rem; margin: 0 0 1rem; font-size: 0.9rem;
+    border: 1px dashed var(--accent); border-radius: var(--radius-sm); background: var(--surface-2);
+  }
+  .toc {
+    max-width: 76ch; margin: 0 0 1.75rem; padding: 0.85rem 1.1rem;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  }
+  .toc-head {
+    margin: 0 0 0.4rem; font-family: var(--mono); font-size: 0.75rem; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted);
+  }
+  .toc ol { margin: 0; padding-left: 1.3rem; }
+  .toc li { margin-bottom: 0.2rem; }
+  .guide-tools, .more-guides { max-width: 76ch; margin-top: 2.25rem; }
+  .guide-tools { max-width: none; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+  .tool-card {
+    display: flex; flex-direction: column; padding: 1.1rem 1.25rem; color: var(--text);
+    border-top: 3px solid var(--accent);
+    transition: transform 0.15s var(--ease-spring), box-shadow 0.15s;
+  }
+  .tool-card:hover { text-decoration: none; transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  .tool-card:active { transform: scale(0.98); }
+  .tool-card h3 { margin: 0 0 0.35rem; font-size: 1.05rem; }
+  .tool-card p { color: var(--text-muted); font-size: 0.95rem; flex: 1; }
+  .cta { color: var(--accent); font-weight: 600; font-size: 0.9rem; }
+  .more-guides ul { list-style: none; padding: 0; margin: 0; }
+  .more-guides li { margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.15rem; }
+  .trust-line { font-size: 0.875rem; margin-top: 2rem; max-width: 76ch; }
+
+  /* The Markdown body is unscoped HTML from the content layer, so its rules need :global(). */
+  .guide-body :global(h2) { margin-top: 2.25rem; scroll-margin-top: 5rem; }
+  .guide-body :global(h3) { scroll-margin-top: 5rem; }
+  /* A wide table scrolls inside itself instead of widening a 320 px page. */
+  .guide-body :global(table) { display: block; overflow-x: auto; }
+  .guide-body :global(blockquote) {
+    margin: 0 0 1.25rem; padding: 0.2rem 0 0.2rem 1rem; border-left: 3px solid var(--accent-2); color: var(--text-muted);
+  }
+  .guide-body :global(img) { max-width: 100%; height: auto; border-radius: var(--radius-sm); }
+</style>
