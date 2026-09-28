@@ -1,0 +1,58 @@
+---
+/**
+ * A complete, runnable script shown under "Do the same thing in code" on a tool page.
+ * Markup only: Copy and Download are handled once, site-wide, in floating-tools.client.ts
+ * (the block sits in the page's prose, outside the tool widget and its own script).
+ * The script is imported with `?raw` from src/lib/<lang>/ so the page shows the exact file
+ * the parity test runs.
+ */
+interface Props {
+  code: string;
+  filename: string;
+}
+const { code, filename } = Astro.props;
+const ext = filename.slice(filename.lastIndexOf('.'));
+---
+
+<figure class="code-script" data-script={filename}>
+  <figcaption>
+    <code>{filename}</code>
+    <span class="code-script-actions">
+      <button type="button" class="btn btn-sm" data-script-action="copy">Copy script</button>
+      <button type="button" class="btn btn-sm" data-script-action="download">Download {ext}</button>
+    </span>
+  </figcaption>
+  <pre tabindex="0"><code>{code.trimEnd()}</code></pre>
+</figure>
+
+<style>
+  .code-script {
+    margin: 0 0 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+  }
+  figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  figcaption > code {
+    font-size: 0.85rem;
+  }
+  .code-script-actions {
+    display: flex;
+    gap: 0.4rem;
+  }
+  pre {
+    margin: 0;
+    border: 0;
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    max-height: 32rem;
+    overflow: auto;
+  }
+</style>

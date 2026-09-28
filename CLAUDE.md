@@ -206,6 +206,18 @@ page and the client import it. Where a page states a behaviour the engine must e
 sample is flagged, a wrong `data:` prefix is reported), the page's frontmatter asserts it and throws
 at build time rather than hedging in prose.
 
+**Published scripts ("Do the same thing in code", one tool a week from 2026-09-29).** A complete,
+runnable script lives as a real file in `src/lib/<lang>/` (first: `src/lib/python/ai_text_cleaner.py`),
+is imported into the page with `?raw` and rendered by `CodeScript.astro` (markup only; its Copy script /
+Download buttons are one delegated handler in `floating-tools.client.ts`, reporting `copy_result` /
+`download_result` with `target: 'script'`). Every script gets a parity test that runs it and the engine
+on the same inputs (the engine's unit-test cases, the page's examples and seeded generated ones under
+random options) and fails on any difference: `tests/text-clean-python.test.ts` is the template. It skips
+when Python 3 is not on PATH, so run it somewhere Python exists before release. Porting JS regexes to
+Python: JS `\w`/`\d` are ASCII (spell out `[A-Za-z0-9_]`/`[0-9]`), JS `\s` is a different set from
+Python's (the script spells it out), and `\p{…}` needs the third-party `regex` module. Prove the test
+can fail by mutating the script once before trusting a green run.
+
 **Tool implementation is a three-file pattern**, repeated per tool:
 - `src/lib/<tool>.ts` — pure logic, no DOM, fully unit-testable (`tests/<tool>.test.ts`).
 - `src/components/tools/<Name>Tool.astro` — server-rendered markup for the widget.

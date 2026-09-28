@@ -2,7 +2,10 @@
 import ToolLayout from '../../layouts/ToolLayout.astro';
 import AiTextCleanerTool from '../../components/tools/AiTextCleanerTool.astro';
 import { toolBySlug } from '../../data/tools';
+import CodeScript from '../../components/CodeScript.astro';
 import { cleanText } from '../../lib/text-clean';
+// The exact file tests/text-clean-python.test.ts checks against the engine.
+import pythonScript from '../../lib/python/ai_text_cleaner.py?raw';
 
 const tool = toolBySlug('ai-text-cleaner');
 
@@ -92,12 +95,30 @@ const faq = [
     </ul>
 
     <h2>Do the same thing in code</h2>
-    <p>The invisible-character step is the one people most often need in a script:</p>
     <h3>Python</h3>
-    <pre><code>import re
-ZERO_WIDTH = r"[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF\u00AD]"
-clean = re.sub(ZERO_WIDTH, "", text).replace("\u00A0", " ")</code></pre>
+    <p>
+      This script runs the same steps as the tool, in the same order and with the same defaults, for cleaning files in bulk
+      or inside a pipeline. It needs Python 3.9 or later and only the standard library; the optional emoji step also needs <code>pip install regex</code>,
+      because Python's built-in <code>re</code> module has no emoji character classes.
+    </p>
+    <CodeScript code={pythonScript} filename="ai_text_cleaner.py" />
+    <p>
+      Run it on a file or pipe text through it. Each option above has a flag
+      (<code>--em-dash hyphen</code>, <code>--keep-citations</code>, <code>--remove-emoji</code> and so on; <code>--help</code> lists them all):
+    </p>
+    <pre><code>python ai_text_cleaner.py answer.md &gt; clean.txt
+python ai_text_cleaner.py --em-dash hyphen --keep-citations &lt; answer.md</code></pre>
+    <p>
+      To use it from your own code, put the file next to yours, import it with <code>from ai_text_cleaner import clean_text</code>,
+      then call <code>clean_text(text, em_dash="hyphen")</code>.
+    </p>
+    <p class="muted">
+      The site's test suite runs this script and the tool on the same inputs (the tool's own test cases plus several hundred
+      generated ones mixing Markdown, dashes, quotes, citation markers, invisible characters and emoji, under random option
+      combinations) and fails if a single output differs.
+    </p>
     <h3>JavaScript</h3>
+    <p>Just the invisible-character step, the one people most often need on its own:</p>
     <pre><code>const clean = text
   .replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF\u00AD]/g, "")
   .replace(/\u00A0/g, " ");</code></pre>

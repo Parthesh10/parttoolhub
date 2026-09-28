@@ -401,6 +401,35 @@ if (toolToast) {
   }).observe(toolToast, { attributes: true, attributeFilter: ['hidden'], childList: true, characterData: true, subtree: true });
 }
 
+// --- Published scripts (CodeScript.astro): Copy and Download ---------------------------------------
+// A tool page can carry a complete script under "Do the same thing in code". The block sits in the
+// page's prose, outside the widget, so its two buttons are handled here once instead of in every tool
+// script. target 'script' separates "took the script" from "took the tool's result" in GA4.
+document.addEventListener('click', async (e) => {
+  const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-script-action]');
+  const block = b?.closest<HTMLElement>('[data-script]');
+  const code = block?.querySelector('pre code')?.textContent ?? '';
+  if (!b || !block || !code) return;
+  const params = { tool_slug: currentSlug ?? '', tool_category: document.body.dataset.toolCategory ?? '', target: 'script' };
+  if (b.dataset.scriptAction === 'copy') {
+    try {
+      await navigator.clipboard.writeText(code);
+      confirmCopied(b);
+      window.pth?.track('copy_result', params);
+    } catch {
+      showToast('Could not copy. Select the script and copy it by hand.');
+    }
+    return;
+  }
+  const url = URL.createObjectURL(new Blob([code + '\n'], { type: 'text/plain;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = block.dataset.script ?? 'script.txt';
+  a.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  window.pth?.track('download_result', params);
+});
+
 // --- UI round 3: tools remember their settings ---------------------------------------------------
 // Option controls only (checkboxes, selects, number/range fields, pressed toggle buttons, and text
 // fields inside an Options panel such as separators), never the input a visitor pastes or types,

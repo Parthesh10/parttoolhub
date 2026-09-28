@@ -308,7 +308,7 @@ export const TOOLS: Tool[] = [
     features: ['Remove Markdown formatting', 'Replace em and en dashes', 'Straighten curly quotes', 'Delete zero-width and invisible characters', 'Remove emoji and citation markers'],
     intent: 'ai text cleaner',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-18',
+    reviewedOn: '2026-09-28',
     spec: { name: 'CommonMark (the Markdown syntax it strips)', url: 'https://spec.commonmark.org/' },
   },
   {
