@@ -1,0 +1,119 @@
+---
+/** SQL formatter / beautifier / minifier. Behaviour in ./sql-formatter.client.ts */
+import { DIALECTS } from '../../lib/sql-format';
+---
+
+<section class="tool card" id="tool" data-tool="sql-formatter">
+  <div class="tool-toolbar">
+    <button type="button" class="btn btn-sm" id="btn-fullscreen" aria-pressed="false">⛶ Fullscreen</button>
+  </div>
+  <div class="panes">
+    <div class="pane">
+      <div class="pane-head">
+        <label for="input">Paste SQL</label>
+        <span class="stat" id="input-stat" aria-live="polite">0 characters</span>
+      </div>
+      <div class="code-wrap">
+        <div class="gutter" id="input-gutter" aria-hidden="true"><span>1</span></div>
+        <textarea
+          id="input"
+          rows="14"
+          spellcheck="false"
+          autocomplete="off"
+          placeholder={'select id, name from users where active = 1 order by name'}
+        ></textarea>
+      </div>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-paste">Paste</button>
+        <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+        <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+      </div>
+      <p class="muted drop-hint">Or drop a .sql/.txt file onto the box above.</p>
+    </div>
+
+    <div class="pane">
+      <div class="pane-head">
+        <label for="output">Result</label>
+        <span class="stat" id="output-stat" aria-live="polite"></span>
+      </div>
+      <textarea id="output" rows="14" readonly spellcheck="false" placeholder="Formatted SQL appears here as you type"></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy to clipboard</button>
+        <button type="button" class="btn btn-sm" id="btn-download">Download .sql</button>
+        <button type="button" class="btn btn-sm" id="btn-wrap" aria-pressed="false">No-wrap</button>
+      </div>
+      <div class="status-banner sql-issues" id="status" role="status" hidden>
+        <p id="status-title"></p>
+        <ul id="status-list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="options">
+    <fieldset>
+      <legend>Action</legend>
+      <div class="row" role="group" aria-label="Format or minify">
+        <button type="button" class="btn btn-sm" id="mode-format" aria-pressed="true">Format</button>
+        <button type="button" class="btn btn-sm" id="mode-minify" aria-pressed="false">Minify</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Dialect</legend>
+      <div class="row">
+        <label class="field">
+          <span>Database</span>
+          <select id="opt-dialect">
+            {DIALECTS.map((d) => <option value={d.value}>{d.label}</option>)}
+          </select>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Keywords</legend>
+      <div class="row">
+        <label class="field">
+          <span>Keyword case</span>
+          <select id="opt-case">
+            <option value="upper">UPPERCASE</option>
+            <option value="lower">lowercase</option>
+            <option value="preserve">As typed</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Layout</legend>
+      <div class="row">
+        <label class="field">
+          <span>Indent</span>
+          <select id="opt-indent">
+            <option value="2">2 spaces</option>
+            <option value="4">4 spaces</option>
+            <option value="tab">Tab</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Commas</span>
+          <select id="opt-commas">
+            <option value="end">End of line</option>
+            <option value="start">Start of line</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+  </div>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<style>
+  .sql-issues { flex-direction: column; gap: 0.35rem; }
+  .sql-issues p { margin: 0; font-weight: 600; }
+  .sql-issues ul { margin: 0; padding-left: 1.2rem; }
+  .sql-issues li { overflow-wrap: anywhere; }
+</style>
+
+<script src="./sql-formatter.client.ts"></script>

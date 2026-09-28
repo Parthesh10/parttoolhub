@@ -1,0 +1,151 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import SqlFormatterTool from '../../components/tools/SqlFormatterTool.astro';
+import { toolBySlug } from '../../data/tools';
+import { formatSql, minifySql, SAMPLE_SQL } from '../../lib/sql-format';
+
+const tool = toolBySlug('sql-formatter');
+
+// Every example, output and message on this page comes from the real engine at build time. Where
+// the prose states a behaviour, the check below throws if the engine stops doing it.
+const must = (cond: boolean, what: string) => {
+  if (!cond) throw new Error(`sql-formatter page: engine no longer ${what}`);
+};
+const line = (sql: string, n: number, opts = {}) => formatSql(sql, opts).output.split('\n')[n].trim();
+
+const sampleOut = formatSql(SAMPLE_SQL).output;
+
+const dashMysql = line('select balance--1 from account', 1, { dialect: 'mysql' });
+const dashStandard = line('select balance--1 from account', 1);
+must(dashMysql === 'balance - -1', 'keeps MySQL balance--1 as arithmetic');
+must(dashStandard === 'balance --1 from account', 'treats -- as a comment in Standard SQL');
+
+const countOut = line('select count (*) from orders', 1);
+must(countOut === 'COUNT(*)', 'removes the space in COUNT (*)');
+
+const trailingSql = 'SELECT id, name, FROM users';
+const trailing = formatSql(trailingSql).issues;
+must(trailing.length === 1 && formatSql(trailingSql, { dialect: 'bigquery' }).issues.length === 0, 'flags a comma before FROM except in BigQuery');
+const trailingMsg = `Line ${trailing[0].line}, column ${trailing[0].column}: ${trailing[0].message}`;
+
+const backslashSql = "SELECT * FROM notes WHERE body = 'it\\'s done'";
+const backslash = formatSql(backslashSql).issues;
+must(backslash.length === 1 && formatSql(backslashSql, { dialect: 'mysql' }).issues.length === 0, "reads \\' as an escape only in MySQL/BigQuery");
+const backslashMsg = backslash[0].message;
+
+const bracket = formatSql('SELECT (price * qty FROM items').issues[0];
+const bracketMsg = `Line ${bracket.line}, column ${bracket.column}: ${bracket.message}`;
+
+const namesOut = formatSql('select date, count, year(created_at) from events').output;
+must(namesOut.includes('  date,') && namesOut.includes('  count,') && namesOut.includes('YEAR(created_at)'), 'leaves column names alone');
+
+const minSql = 'select /*+ BKA(o) */ id, -- the key\n  total from orders o;';
+const minOut = minifySql(minSql, { dialect: 'mysql' }).output;
+must(minOut === 'SELECT /*+ BKA(o) */ id,total FROM orders o;', 'keeps optimizer hints and drops other comments when minifying');
+
+const leadingOut = formatSql('select id, email, created_at from users', { commas: 'start' }).output;
+
+const steps = [
+  'Paste a query, drop a <code>.sql</code> file on the box, or press <strong>Load sample</strong>.',
+  'Pick your database under <strong>Dialect</strong>, so quotes, comments and backslashes are read the way your server reads them.',
+  'Choose <strong>Format</strong> for one clause per line, or <strong>Minify</strong> for one line per statement.',
+  'Read the box under the result: it lists any unclosed quote, unmatched bracket or stray comma, with its line and column.',
+  '<strong>Copy to clipboard</strong> or <strong>Download .sql</strong>.',
+];
+
+const faq = [
+  {
+    q: 'Does formatting change what my query does?',
+    a: 'No. The formatter only moves whitespace and changes the case of keywords it recognises. Table and column names, string values, numbers and comments are written back character for character. The site\'s tests re-read every formatted result with the same tokenizer and check that it produces the same pieces as the input, in the same order, on hand-written queries and on 18,000 generated ones per run.',
+  },
+  {
+    q: 'Why does it say a string is never closed when the query runs fine?',
+    a: `The <strong>Dialect</strong> probably does not match your database. MySQL and BigQuery let you write a quote inside a string as <code>\\'</code>; Standard SQL, PostgreSQL, SQL Server and SQLite do not, so there the string ends at that quote and the rest of the query looks unclosed. The warning says so: "${backslashMsg}"`,
+  },
+  {
+    q: 'Can it tell me whether my SQL is valid?',
+    a: 'Only partly. It catches the mistakes that stop a statement in every dialect: an unclosed string, quoted name or comment, brackets that do not match, a comma right before FROM, WHERE or a closing bracket, and two commas in a row. It does not know your tables or columns and does not check grammar, so a misspelled keyword passes. Running the query with <code>EXPLAIN</code> in front is the reliable check.',
+  },
+  {
+    q: 'Why are words like date and count not uppercased?',
+    a: 'Because they are often column names. Words that double as common column names (date, year, count, text, json and similar) are recased only when called as a function, like <code>COUNT(*)</code> or <code>YEAR(created_at)</code>, or in the type position of a CREATE TABLE column. A name written after a dot, as in <code>o.order</code>, is never treated as a keyword at all.',
+  },
+  {
+    q: 'Is it safe to paste a query that contains customer data?',
+    a: 'The page has no server side to send it to. Formatting runs in your browser with JavaScript, the query is never executed, and nothing you paste is stored or uploaded; you can disconnect from the network after the page loads and the tool keeps working. Your browser remembers the options you picked; the query itself is not kept.',
+  },
+];
+---
+
+<ToolLayout {tool} {steps} {faq}>
+  <SqlFormatterTool />
+
+  <Fragment slot="content">
+    <h2>What the formatter changes, and what it never touches</h2>
+    <p>
+      A query copied out of a log, an ORM's debug output or a string in application code usually arrives as one long line. The SQL Formatter lays it out the way most teams write SQL by hand: each clause (SELECT, FROM, WHERE, GROUP BY, ORDER BY) starts a line with its items indented underneath, joins sit under FROM with their ON condition, and every AND or OR in a condition starts a new line, except the AND that belongs to BETWEEN.
+    </p>
+    <p>
+      Subqueries and the bodies of WITH clauses are indented one level. A bracketed group that fits in 60 characters stays on one line, so <code>COUNT(*)</code> or a short window like <code>OVER (PARTITION BY customer_id)</code> never gets spread over five lines. IN lists and VALUES rows stay on one line at any length, one row per line, and a CREATE TABLE column list always gets one column per line.
+    </p>
+    <p>
+      Only whitespace and keyword case change. Names, string values, numbers and comments are written back exactly as typed, including the body of a PostgreSQL function between <code>$$</code> markers. The tool is not a database and not a full parser: it never runs anything, and its warnings cover the mistakes that break a statement in every dialect rather than your schema.
+    </p>
+
+    <h2>Example</h2>
+    <p>The query that <strong>Load sample</strong> inserts, as one line:</p>
+    <pre><code>{SAMPLE_SQL}</code></pre>
+    <p>comes out with the default options (Standard SQL, UPPERCASE, 2 spaces, commas at the end of the line) as:</p>
+    <pre><code>{sampleOut}</code></pre>
+    <p>The two joins sit under FROM, the CASE expression gets its own block with one WHEN per line, and the IN list and the SUM calls stay on one line because they fit.</p>
+
+    <h2>Options explained</h2>
+    <ul>
+      <li><strong>Format / Minify</strong>: Format lays the query out as described above. Minify writes each statement on one line with the fewest spaces that keep it valid, and removes comments except MySQL's <code>/*! … */</code> executable comments and <code>/*+ … */</code> optimizer hints, which change what a query does.</li>
+      <li><strong>Dialect</strong> (the <strong>Database</strong> list) decides how the text is read, not how it is laid out. See the table below.</li>
+      <li><strong>Keyword case: UPPERCASE / lowercase / As typed</strong> applies to keywords, built-in functions and data types. As typed keeps each keyword the way you wrote it and only changes spacing.</li>
+      <li><strong>Indent: 2 spaces / 4 spaces / Tab</strong> is the width of one indentation level. Format only.</li>
+      <li><strong>Commas: End of line / Start of line</strong>. Start of line puts each comma in front of the next item, a style many people use so that commenting out the last column never leaves a dangling comma. Format only.</li>
+      <li><strong>No-wrap</strong> (under the result) stops long lines from wrapping, with a horizontal scroll bar instead.</li>
+    </ul>
+    <p>With <strong>Start of line</strong> commas, <code>select id, email, created_at from users</code> becomes:</p>
+    <pre><code>{leadingOut}</code></pre>
+    <table>
+      <thead>
+        <tr><th scope="col">Dialect</th><th scope="col">Strings</th><th scope="col">Quoted names</th><th scope="col">Comments</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Standard SQL</td><td><code>'…'</code>, with <code>''</code> for a quote inside</td><td><code>"…"</code></td><td><code>--</code>, <code>/* */</code></td></tr>
+        <tr><td>MySQL / MariaDB</td><td><code>'…'</code> and <code>"…"</code>, backslash escapes</td><td><code>`…`</code></td><td><code>--</code> followed by a space, <code>#</code>, <code>/* */</code></td></tr>
+        <tr><td>PostgreSQL</td><td><code>'…'</code>, <code>E'…'</code> with backslash escapes, <code>$$…$$</code></td><td><code>"…"</code></td><td><code>--</code>, nested <code>/* */</code></td></tr>
+        <tr><td>SQL Server (T-SQL)</td><td><code>'…'</code>, <code>N'…'</code></td><td><code>[…]</code>, <code>"…"</code></td><td><code>--</code>, nested <code>/* */</code>; <code>GO</code> alone on a line separates batches</td></tr>
+        <tr><td>SQLite</td><td><code>'…'</code></td><td><code>"…"</code>, <code>`…`</code>, <code>[…]</code></td><td><code>--</code>, <code>/* */</code></td></tr>
+        <tr><td>BigQuery</td><td><code>'…'</code>, <code>"…"</code>, triple-quoted, <code>r'…'</code> raw</td><td><code>`…`</code></td><td><code>--</code>, <code>#</code>, <code>/* */</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>Two dashes mean different things in MySQL.</strong> MySQL starts a comment only when whitespace follows <code>--</code>, so <code>balance--1</code> is arithmetic there and comes out as <code>{dashMysql}</code>. In Standard SQL the same text starts a comment, and the formatter keeps it as one: <code>{dashStandard}</code>. Pick the dialect you actually run.</li>
+      <li><strong>A space before a function's bracket breaks MySQL.</strong> By default MySQL rejects <code>COUNT (*)</code> for its built-in functions, so the formatter never puts a space there and removes one it finds: <code>count (*)</code> becomes <code>{countOut}</code>. Names it does not know, such as your own functions, keep the spacing you gave them.</li>
+      <li><strong>A comma before FROM</strong>, usually left behind after deleting the last column, is reported as "{trailingMsg}" BigQuery accepts a trailing comma at the end of the SELECT list, so with that dialect the warning does not appear.</li>
+      <li><strong>An unclosed bracket</strong> is reported where it opens: "{bracketMsg}" The query is still formatted, so you can see where the layout goes wrong.</li>
+      <li><strong>Backslash escapes in the wrong dialect</strong> make the rest of the query look like one long string. The FAQ below has the message and the fix.</li>
+      <li><strong>Column names that look like keywords</strong> are left alone: <code>select date, count, year(created_at) from events</code> keeps <code>date</code> and <code>count</code> as typed and only uppercases <code>YEAR(created_at)</code>, because there it is called as a function.</li>
+      <li><strong>Invisible non-breaking spaces</strong>, which arrive with text copied from web pages, chat apps and documents, look like spaces but database parsers do not treat them as one, so an innocent-looking query fails with a syntax error. The formatter reads them as whitespace and writes an ordinary space in their place.</li>
+      <li><strong>Minify and comments</strong>: <code>{minSql.replace('\n', ' ')}</code> minifies to <code>{minOut}</code>. The hint stays because MySQL acts on it. The line comment has to go: on a single line it would comment out everything after it.</li>
+      <li><strong>Stored procedures and scripts</strong> (BEGIN … END blocks, IF, loops, DECLARE) are laid out as a sequence of plain statements. Nothing is lost, but the result reads better for queries and table definitions than for procedural code. A SQL Server column or alias called <code>go</code> is never left alone on a line, where SSMS would read it as a batch separator.</li>
+      <li><strong>Large files</strong>: a 200 KB script of about 1,250 statements is formatted and drawn in about a fifth of a second on a laptop. Above 50,000 characters the tool waits for a pause in typing before it reformats, so each keystroke stays instant while you edit.</li>
+    </ul>
+
+    <h2>Do the same thing in code</h2>
+    <pre><code>import sqlparse
+
+print(sqlparse.format(sql, reindent=True, keyword_case="upper"))</code></pre>
+    <pre><code>import {'{'} format {'}'} from 'sql-formatter';
+
+console.log(format(sql, {'{'} language: 'postgresql', keywordCase: 'upper', tabWidth: 2 {'}'}));</code></pre>
+    <p class="muted">Python's <a href="https://sqlparse.readthedocs.io/" rel="noopener">sqlparse</a> and the <a href="https://github.com/sql-formatter-org/sql-formatter" rel="noopener">sql-formatter</a> package for JavaScript both have options along the same lines as this page, but each has its own layout rules, so the output will not match line for line. To compare two versions of a query, format both here with the same options first and then paste them into the <a href="/tools/text-diff-checker">Text Diff Checker</a>, so only real changes show up.</p>
+    <p class="muted">Building a <code>WHERE id IN (…)</code> list from a column of values is a different job: the SQL IN preset of <a href="/tools/column-to-comma-separated-list">Column to Comma Separated List</a> does it and doubles any quote inside a value. A JSON column you pulled out of a result set is easier to read in the <a href="/tools/json-formatter">JSON Formatter</a>.</p>
+  </Fragment>
+</ToolLayout>

@@ -442,6 +442,19 @@ export const TOOLS: Tool[] = [
     reviewedOn: '2026-09-18',
     spec: { name: 'RFC 3986 §2.1 (percent-encoding)', url: 'https://www.rfc-editor.org/rfc/rfc3986#section-2.1' },
   },
+  // ---- SQL Tools -----------------------------------------------------------
+  {
+    slug: 'sql-formatter',
+    name: 'SQL Formatter',
+    title: 'SQL Formatter & Beautifier: MySQL, PostgreSQL, T-SQL',
+    description: 'Format messy SQL into readable, indented queries for MySQL, PostgreSQL, SQL Server, SQLite or BigQuery, or minify it. Flags unclosed quotes.',
+    short: 'Lay out SQL with one clause per line and indented subqueries, or minify it to one line. Points out unclosed quotes and stray commas.',
+    category: 'sql-tools',
+    features: ['Six dialects, from Standard SQL to BigQuery', 'Format or minify', 'UPPERCASE, lowercase or as-typed keywords', 'Leading or trailing commas', 'Warns about unclosed quotes, brackets and stray commas'],
+    intent: 'sql formatter',
+    reviewedBy: SITE.author,
+    reviewedOn: '2026-09-28',
+  },
   // ---- Compare & Diff Tools ------------------------------------------------
   {
     slug: 'text-diff-checker',

@@ -29,6 +29,16 @@ export const CATEGORIES: Category[] = [
     ],
   },
   {
+    slug: 'sql-tools',
+    name: 'SQL Tools',
+    description: 'Free SQL tools that run in your browser: format and beautify queries for MySQL, PostgreSQL, SQL Server, SQLite and BigQuery, or minify them.',
+    blurb: 'Lay out, check and compact SQL text without connecting to a database.',
+    intro: [
+      'SQL usually arrives in the worst possible shape: a query copied out of a slow-query log, an ORM\'s debug output, a one-line string in application code, or a colleague\'s paste in chat. These tools work on the text of the query only. Nothing is executed and no database is involved, so a query against production tables is as safe to paste as a toy example, and nothing you paste leaves the browser.',
+      'Use the <a href="/tools/sql-formatter">SQL Formatter</a> to lay a query out with one clause per line and indented subqueries, or to minify it to a single line for a string in code. It reads the quoting rules of MySQL, PostgreSQL, SQL Server, SQLite and BigQuery, and it points to the line and column of an unclosed quote, a missing bracket or a stray comma before FROM. If what you have is a column of IDs from a spreadsheet that has to become a <code>WHERE id IN (…)</code> list, that is a job for the <strong>SQL IN</strong> preset of <a href="/tools/column-to-comma-separated-list">Column to Comma Separated List</a>, which also doubles any single quote inside a value.',
+    ],
+  },
+  {
     slug: 'text-tools',
     name: 'Text Tools',
     description: 'Free text utilities: fix title case, clean AI text, remove duplicate lines, and turn Markdown into plain text, a Google Docs paste, or a .docx file.',

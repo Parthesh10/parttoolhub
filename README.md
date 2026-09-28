@@ -20,7 +20,7 @@ and this README should stay consistent with it as the site grows.
 ## URL structure
 
 - `/` — full tool directory, grouped by category
-- `/<category>` — one hub page per category (`/converters`, `/text-tools`, `/encoders`,
+- `/<category>` — one hub page per category (`/converters`, `/sql-tools`, `/text-tools`, `/encoders`,
   `/generators`, `/compare`), generated from `src/data/categories.ts` by `src/pages/[category].astro`
 - `/tools/<slug>` — one page per tool. Every tool is reachable in at most 2 clicks from home
   (home → category hub → tool, or directly from the home directory).

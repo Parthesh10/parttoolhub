@@ -280,6 +280,31 @@ since well-formed XML is necessary but not sufficient for Word to actually rende
 whose text is also inline code needs the Hyperlink style plus the code font added directly (not via
 `CodeChar`'s own `rStyle`), not both `rStyle`s at once (see `textRun`'s `style.link` branch).
 
+**`src/lib/sql-format.ts` is the SQL Formatter's engine** (2026-09-28, branch `sql-tools`): a
+dialect-aware tokenizer (the only part that differs per dialect: MySQL `--` needs trailing whitespace
+and `"…"`/`\'` are strings, PostgreSQL `$$` bodies and nested comments, SQL Server `[…]`, `#temp` and
+`GO`, BigQuery `#` comments and triple quotes), a classifier that names each word's layout role and
+merges multi-word keywords, and a stack-of-frames layout loop (no recursion, so deep nesting cannot
+overflow; each `(` decides inline vs block with a look-ahead that stops at `INLINE_WIDTH` = 60
+characters, so the whole pass is linear). Two guarantees are pinned by `tests/sql-format.test.ts`:
+**only whitespace and keyword case change** (the output re-tokenises to the same tokens) and
+**formatting is idempotent**, checked on a corpus per dialect and a seeded fuzzer of 18,000 random
+token soups per run. The fuzzer earned its place: it found nine tokenizer/spacing bugs where two
+tokens glued into a different one (`:p $` → one parameter, `:: :p` → `:::p`, a dot next to anything
+starting with a digit → a number, `.5between` read as one word, `[w] ]` → `[w]]`, `< @v` → `<@`,
+`U & 's'` → PostgreSQL's `U&'s'`, and two where Minify's removed comment changed the neighbours:
+`x /*c*/N'n'` merging, `by /*c*/ .5` re-reading `.5` as a qualifier) plus a semantic one (a SQL Server
+name `go` left alone on a line, which SSMS reads as a batch separator). **If you touch
+the spacing functions (`spaceBetween`, `minSpace`), run the fuzzer with more seeds than the suite
+does**; the deep sweep used during development was 40 seeds × 6 dialects × 2,500. Words that are
+also common column names (`date`, `count`, `year`, `text`) are recased only when called as a function
+or in a CREATE TABLE type position; a word next to a dot is never a keyword. Lint (`issues`) covers
+only what fails in every dialect (unclosed quotes/comments/`$$`, unbalanced brackets, comma before a
+clause or `)`, double comma; BigQuery's legal trailing comma before FROM is exempt). Tooling gotcha
+found while writing it: the Write tool decodes `\uXXXX` escapes in file content into the literal
+characters (a U+2028 inside a regex literal broke the parse), so write non-ASCII code points as
+`charCodeAt` numbers or `String.fromCharCode(…)` rather than escapes.
+
 **`src/lib/json-parse.ts` is the one place `JSON.parse` gets called** when a tool needs a helpful
 error, not a raw exception — `parseJson(input, emptyMessage)` returns `{ok:true,value}` or
 `{ok:false,error,line?,column?,snippet?}`, translating whatever a given JS engine's SyntaxError
@@ -516,7 +541,7 @@ fallback must always agree, or the button shows the wrong icon on first load), a
 (the toggle button, which cycles the three states, persists the choice, and keeps the `theme-color`
 meta tag in sync — its initial value in `Base.astro`'s `<head>` is the dark surface color to match).
 
-**Category hub pages** (`/converters`, `/text-tools`, `/encoders`, `/generators`, `/compare`) are one dynamic route,
+**Category hub pages** (`/converters`, `/sql-tools`, `/text-tools`, `/encoders`, `/generators`, `/compare`) are one dynamic route,
 `src/pages/[category].astro`, using `getStaticPaths()` over `CATEGORIES` — not one file per category.
 Adding a category means adding it to `categories.ts` *and* to the URL-structure list in `README.md`
 and this paragraph — `tests/registry.test.ts` checks both mention every hub.
