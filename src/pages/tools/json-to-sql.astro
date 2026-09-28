@@ -1,0 +1,146 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import JsonToSqlTool from '../../components/tools/JsonToSqlTool.astro';
+import { toolBySlug } from '../../data/tools';
+import { jsonToSql, sqlType, SAMPLE_JSON_SQL, type InsertResult } from '../../lib/sql-insert';
+
+const tool = toolBySlug('json-to-sql');
+
+// Every output, type and message below comes from the real engine at build time. Where the prose
+// states a behaviour, the check throws if the engine stops doing it.
+const must = (cond: boolean, what: string) => {
+  if (!cond) throw new Error(`json-to-sql page: engine no longer ${what}`);
+};
+const run = (json: string, opts = {}) => {
+  const r: InsertResult = jsonToSql(json, opts);
+  if (!r.ok) throw new Error(`json-to-sql page: ${r.error}`);
+  return r;
+};
+const firstRow = (json: string, opts = {}) => run(json, { createTable: false, ...opts }).output.split('\n')[1].trim().replace(/[,;]$/, '');
+
+const sampleOut = run(SAMPLE_JSON_SQL).output;
+const pgNested = run(SAMPLE_JSON_SQL, { dialect: 'postgresql' }).columns.filter((c) => c.type === 'json').map((c) => `${c.name} ${sqlType(c, 'postgresql')}`).join(', ');
+const pgFlat = run(SAMPLE_JSON_SQL, { dialect: 'postgresql', flatten: true }).output.split('\n').slice(0, 10).join('\n');
+must(pgNested === 'address JSONB, tags JSONB', 'stores nested values as JSONB in PostgreSQL');
+
+const bigRow = firstRow('[{"id": 9007199254740993}]');
+must(bigRow === '(9007199254740993)', 'copies long integers digit for digit');
+
+const typesRow = firstRow('[{"code": "42", "note": "", "email": null}]');
+must(typesRow === "('42', '', NULL)", 'keeps a JSON string as text and tells null from an empty string');
+
+const floatType = sqlType(run('[{"ratio": 1.5e3}]').columns[0], 'postgresql');
+must(floatType === 'DOUBLE PRECISION', 'maps exponent numbers to a floating-point type');
+
+const wrapNote = run('{"page": 1, "results": [{"id": 1}, {"id": 2}]}').notes[0];
+const linesNote = run('{"id": 1}\n{"id": 2}').notes[0];
+const clash = run('[{"user": {"name": "Ada"}, "user_name": "ada"}]', { flatten: true });
+const clashNote = clash.notes[0];
+must(!!wrapNote && !!linesNote && !!clashNote, 'reports wrappers, JSON Lines and name clashes');
+
+const invalid = jsonToSql('[{"id": 1},]');
+must(!invalid.ok && !!invalid.line, 'reports where invalid JSON fails');
+const invalidMsg = invalid.ok ? '' : `${invalid.error} (line ${invalid.line}, column ${invalid.column})`;
+const mixed = jsonToSql('[{"id": 1}, "two"]');
+const mixedMsg = mixed.ok ? '' : mixed.error;
+must(!mixed.ok, 'rejects an array that mixes objects and strings');
+
+const missingRow = run('[{"a": 1}, {"b": 2, "a": 3}]', { createTable: false }).output;
+
+const pySnippet = `import json, sqlite3
+import pandas as pd
+
+rows = json.load(open("data.json", encoding="utf-8"))
+df = pd.json_normalize(rows, sep="_")  # nested keys become address_city
+df = df.map(lambda v: json.dumps(v) if isinstance(v, list) else v)
+df.to_sql("my_table", sqlite3.connect("data.db"), index=False)`;
+const pgSnippet = `INSERT INTO my_table
+SELECT * FROM jsonb_populate_recordset(NULL::my_table, '[{"id": 1, "name": "Ada"}]');`;
+
+const steps = [
+  'Paste a JSON array of objects, drop a <code>.json</code> or <code>.jsonl</code> file on the box, or press <strong>Load sample</strong>.',
+  'Pick your database under <strong>Dialect</strong> and type the <strong>Table name</strong>.',
+  'Choose how <strong>Nested objects</strong> are stored: kept as JSON text, or flattened into columns.',
+  'Set <strong>Rows per INSERT</strong>, and untick <strong>Add CREATE TABLE</strong> if the table already exists.',
+  '<strong>Copy to clipboard</strong> or <strong>Download .sql</strong>, or open the result in the SQL Formatter with <strong>Format this SQL</strong>.',
+];
+
+const faq = [
+  {
+    q: 'What JSON shapes does it accept?',
+    a: 'An array of objects, one row per object, is the usual case. It also takes a single object (one row), an API response that wraps the rows in a property such as <code>data</code> or <code>results</code> (the rows are taken from that array, and a note says which), an array of arrays (columns <code>column_1</code>, <code>column_2</code> …) and JSON Lines, one object per line, as log exports write it.',
+  },
+  {
+    q: 'Why is a number in quotes, like “42”, written as text?',
+    a: `Because the JSON says it is a string. Whoever produced it quoted the value on purpose, which is common for IDs, codes and phone numbers that must keep leading zeros. The tool follows the JSON types: <code>{"code": "42", "note": "", "email": null}</code> becomes <code>${typesRow}</code>, with the empty string and the null kept apart.`,
+  },
+  {
+    q: 'Should nested objects be JSON columns or flattened?',
+    a: 'Flatten them when you will filter, join or index on the nested fields, and when every row has the same nested keys. Keep them as JSON when the shape differs from row to row or you only need to store and return it. PostgreSQL and MySQL can still query inside a JSON column. Arrays are always stored as JSON, because a list has no fixed set of columns.',
+  },
+  {
+    q: 'Are large numbers kept exactly?',
+    a: `Yes. JavaScript's own JSON reader turns 9007199254740993 into 9007199254740992, because its numbers have 53 bits of precision. This tool keeps every number exactly as it is written in the JSON, so that ID is inserted as <code>${bigRow}</code>. The same goes for decimals: 1.50 stays 1.50, and the DECIMAL column gets enough digits to hold it.`,
+  },
+  {
+    q: 'Is my data uploaded anywhere?',
+    a: 'No. The conversion runs in your browser with JavaScript, there is no server side that could receive the JSON, and nothing is stored. You can load the page, disconnect from the network and convert an export full of customer records. Your browser remembers the options you picked; the JSON itself is not kept.',
+  },
+];
+---
+
+<ToolLayout {tool} {steps} {faq}>
+  <JsonToSqlTool />
+
+  <Fragment slot="content">
+    <h2>How JSON values become SQL columns</h2>
+    <p>
+      Each object becomes a row and each key a column. The columns are every key that appears in any object, in the order they first appear, so objects with missing keys or keys in a different order still line up: a missing key is NULL. Because JSON already says what each value is, the column types follow it: numbers become INTEGER, BIGINT or a DECIMAL sized to the data (a number written with an exponent gets a floating-point type), true and false become a boolean, and strings stay text unless every one of them is a real date or timestamp.
+    </p>
+    <p>
+      Numbers are copied exactly as they appear in the JSON rather than through JavaScript's number type, so long IDs keep every digit. Nested objects and arrays are written as compact JSON into a JSON column (<code>JSON</code> in MySQL, <code>JSONB</code> in PostgreSQL, <code>NVARCHAR(MAX)</code> in SQL Server, <code>TEXT</code> in SQLite), or, with <strong>Flatten into columns</strong>, each nested key gets a column of its own named <code>parent_child</code>.
+    </p>
+    <p>
+      Strings are escaped the way the chosen database reads them, with the same rules as the <a href="/tools/csv-to-sql">CSV to SQL Converter</a>: a doubled single quote everywhere, doubled backslashes for MySQL (which matters here, because JSON text inside a JSON column is full of backslashes) and <code>N'…'</code> for SQL Server.
+    </p>
+
+    <h2>Example</h2>
+    <p>The array that <strong>Load sample</strong> inserts, with a null, an apostrophe, a nested object and an array:</p>
+    <pre><code>{SAMPLE_JSON_SQL}</code></pre>
+    <p>becomes, with the default options (Standard SQL, nested objects kept as JSON text):</p>
+    <pre><code>{sampleOut}</code></pre>
+    <p>With <strong>PostgreSQL</strong> the two nested columns are <code>{pgNested}</code>. With <strong>Flatten into columns</strong> as well, the table starts like this, and <code>tags</code> stays JSON because it is an array:</p>
+    <pre><code>{pgFlat}</code></pre>
+
+    <h2>Options explained</h2>
+    <ul>
+      <li><strong>Dialect</strong>: Standard SQL, MySQL / MariaDB, PostgreSQL, SQL Server (T-SQL) or SQLite. It sets the quoting of names and strings, the boolean literals (TRUE/FALSE, or 1/0 in SQL Server and SQLite) and the type names, including which JSON column type is used.</li>
+      <li><strong>Table name</strong>: used in every statement and as the download's file name; <code>schema.table</code> works.</li>
+      <li><strong>Rows per INSERT: 1 / 100 / 500 / 1,000 / All rows in one INSERT</strong>. SQL Server is capped at 1,000 rows per statement, so larger batches are split for it.</li>
+      <li><strong>Add CREATE TABLE</strong>: untick it when the table already exists.</li>
+      <li><strong>Detect numbers, booleans and dates</strong>: untick it to make every column text and quote every value (nulls stay NULL).</li>
+      <li><strong>Nested objects: Keep as JSON text / Flatten into columns</strong>. Flattening goes as deep as the objects go; arrays are always kept as JSON.</li>
+      <li><strong>Column names in snake_case</strong> rewrites keys such as <code>createdAt</code> or <code>First Name</code> into names that never need quotes.</li>
+    </ul>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>Invalid JSON</strong> is reported with its position, the same way the <a href="/tools/json-formatter">JSON Formatter</a> does it: a trailing comma gives "{invalidMsg}".</li>
+      <li><strong>An array that mixes objects with other values</strong> cannot become rows: "{mixedMsg}"</li>
+      <li><strong>Objects with different keys</strong> share one column list, and a key an object lacks is NULL there: <code>[{`{"a": 1}, {"b": 2, "a": 3}`}]</code> becomes</li>
+    </ul>
+    <pre><code>{missingRow}</code></pre>
+    <ul>
+      <li><strong>An API response with the rows inside it</strong> is unwrapped: "{wrapNote}"</li>
+      <li><strong>JSON Lines</strong> (one object per line, no surrounding array) is recognised: "{linesNote}"</li>
+      <li><strong>Flattened names can collide</strong> with a key that already has that name, so the later one is renamed: "{clashNote}"</li>
+      <li><strong>Numbers with an exponent</strong>, such as <code>1.5e3</code>, make the column floating point (<code>{floatType}</code> in PostgreSQL) rather than an exact DECIMAL.</li>
+      <li><strong>Large files</strong>: 10,000 objects (about 2 MB of JSON) convert in about 0.15 seconds on a laptop. For hundreds of thousands of rows a database loader is faster than an INSERT script.</li>
+    </ul>
+
+    <h2>Do the same thing in code</h2>
+    <pre><code>{pySnippet}</code></pre>
+    <pre><code>{pgSnippet}</code></pre>
+    <p class="muted">pandas' <code>json_normalize</code> flattens nested objects much like <strong>Flatten into columns</strong>; lists have to be turned into JSON text first, which is the second line. PostgreSQL can also read the JSON itself: <code>jsonb_populate_recordset</code> maps each object onto an existing table's columns by name. If the data is going to a spreadsheet instead of a database, use the <a href="/tools/json-to-csv-converter">JSON to CSV Converter</a>, and the <a href="/tools/sql-formatter">SQL Formatter</a> lays out the generated script before you run it.</p>
+  </Fragment>
+</ToolLayout>

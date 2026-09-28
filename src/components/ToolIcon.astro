@@ -81,6 +81,7 @@ const BY_SLUG: Record<string, keyof typeof GLYPH> = {
   'json-diff-checker': 'diffDocs',
   'sql-formatter': 'indentLines',
   'csv-to-sql': 'dbRows',
+  'json-to-sql': 'dbRows',
 };
 const glyph = GLYPH[BY_SLUG[slug] ?? 'wrench'];
 ---

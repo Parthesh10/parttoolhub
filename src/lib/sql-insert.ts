@@ -13,6 +13,8 @@
  */
 
 import { parseCsv, type Delimiter } from './csv-json';
+import { parseJson } from './json-parse';
+import { parseExact, stringifyExact, type JsonValue } from './json-exact';
 
 export type InsertDialect = 'standard' | 'mysql' | 'postgresql' | 'sqlserver' | 'sqlite';
 
@@ -25,7 +27,19 @@ export const INSERT_DIALECTS: { value: InsertDialect; label: string }[] = [
   { value: 'sqlite', label: 'SQLite' },
 ];
 
-export type ColumnType = 'integer' | 'bigint' | 'decimal' | 'boolean' | 'date' | 'datetime' | 'text' | 'empty';
+export type ColumnType = 'integer' | 'bigint' | 'decimal' | 'float' | 'boolean' | 'date' | 'datetime' | 'json' | 'text' | 'empty';
+
+/**
+ * A value whose type is known (from JSON): `v` is its text (a number's source digits, 'true' /
+ * 'false', a nested object as compact JSON). A plain string is a CSV cell, whose type is guessed
+ * from the text alone.
+ */
+export interface TypedCell {
+  t: 'string' | 'number' | 'boolean' | 'null' | 'json';
+  v: string;
+}
+export type Cell = string | TypedCell;
+const cellText = (c: Cell) => (typeof c === 'string' ? c : c.v);
 
 export interface Column {
   /** Name as written into the SQL (already cleaned, not yet quoted). */
@@ -74,7 +88,7 @@ export const DEFAULT_CSV_SQL: CsvSqlOptions = {
 
 export type InsertResult =
   | { ok: true; output: string; rows: number; columns: Column[]; statements: number; notes: string[] }
-  | { ok: false; error: string };
+  | { ok: false; error: string; line?: number; column?: number };
 
 // ---------------------------------------------------------------------------------------------
 // Values and types
@@ -99,7 +113,7 @@ function validDate(y: string, m: string, d: string): boolean {
   return dd <= days;
 }
 
-type CellKind = 'empty' | 'integer' | 'bigint' | 'decimal' | 'boolean' | 'date' | 'datetime' | 'text';
+type CellKind = 'empty' | 'null' | 'integer' | 'bigint' | 'decimal' | 'float' | 'boolean' | 'date' | 'datetime' | 'json' | 'text';
 
 /** What one cell looks like. Leading zeros (007, 01234) are text: turning them into numbers
  *  would drop real digits from ZIP codes, phone numbers and IDs. */
@@ -125,7 +139,25 @@ function cellKind(v: string): { kind: CellKind; intDigits: number; scale: number
   return { kind: 'text', intDigits: 0, scale: 0 };
 }
 
-const NUMERIC_KINDS = new Set<CellKind>(['integer', 'bigint', 'decimal']);
+const NONE = { intDigits: 0, scale: 0 };
+
+/** The kind of a CSV cell (guessed from its text) or of a JSON value (its own type, except that a
+ *  JSON string is only ever read as a date: "42" in JSON was written as a string on purpose). */
+function kindOf(c: Cell, detect: boolean): { kind: CellKind; intDigits: number; scale: number } {
+  if (typeof c === 'string') return detect ? cellKind(c) : { kind: c === '' ? 'empty' : 'text', ...NONE };
+  if (c.t === 'null') return { kind: 'null', ...NONE };
+  if (!detect) return { kind: 'text', ...NONE };
+  if (c.t === 'number') {
+    const k = cellKind(c.v);
+    return k.kind === 'text' ? { kind: 'float', ...NONE } : k; // 1.5e10: an exponent means floating point
+  }
+  if (c.t === 'boolean') return { kind: 'boolean', ...NONE };
+  if (c.t === 'json') return { kind: 'json', ...NONE };
+  const k = cellKind(c.v);
+  return k.kind === 'date' || k.kind === 'datetime' ? k : { kind: 'text', ...NONE };
+}
+
+const NUMERIC_KINDS = new Set<CellKind>(['integer', 'bigint', 'decimal', 'float']);
 
 /** Length the way each database measures VARCHAR / NVARCHAR: SQL Server counts UTF-16 code units,
  *  the others count characters. */
@@ -134,27 +166,24 @@ function valueLength(v: string, dialect: InsertDialect): number {
 }
 
 /** One column's type from all its values: the narrowest type every non-empty value fits. */
-function inferColumn(name: string, values: string[], opts: InsertOptions): Column {
+function inferColumn(name: string, values: Cell[], opts: InsertOptions): Column {
   let maxLength = 0;
-  for (const v of values) maxLength = Math.max(maxLength, valueLength(v, opts.dialect));
+  for (const v of values) maxLength = Math.max(maxLength, valueLength(cellText(v), opts.dialect));
   const col: Column = { name, type: 'empty', maxLength, precision: 0, scale: 0 };
-  if (!opts.detectTypes) {
-    col.type = values.some((v) => v !== '') ? 'text' : 'empty';
-    return col;
-  }
   const kinds = new Set<CellKind>();
   let intDigits = 0;
   let scale = 0;
   for (const v of values) {
-    const k = cellKind(v);
-    if (k.kind === 'empty') continue;
+    const k = kindOf(v, opts.detectTypes);
+    if (k.kind === 'empty' || k.kind === 'null') continue;
     kinds.add(k.kind);
     intDigits = Math.max(intDigits, k.intDigits);
     scale = Math.max(scale, k.scale);
   }
   if (kinds.size === 0) return col;
   if ([...kinds].every((k) => NUMERIC_KINDS.has(k))) {
-    if (kinds.has('decimal')) {
+    if (kinds.has('float')) col.type = 'float';
+    else if (kinds.has('decimal')) {
       const precision = Math.max(1, intDigits + scale);
       if (precision > MAX_PRECISION) {
         col.type = 'text';
@@ -167,6 +196,7 @@ function inferColumn(name: string, values: string[], opts: InsertOptions): Colum
     return col;
   }
   if (kinds.size === 1 && kinds.has('boolean')) col.type = 'boolean';
+  else if (kinds.size === 1 && kinds.has('json')) col.type = 'json';
   else if ([...kinds].every((k) => k === 'date' || k === 'datetime')) col.type = kinds.has('datetime') ? 'datetime' : 'date';
   else col.type = 'text';
   return col;
@@ -182,6 +212,14 @@ export function sqlType(col: Column, dialect: InsertDialect): string {
     case 'decimal':
       if (dialect === 'sqlite') return 'NUMERIC';
       return `${dialect === 'postgresql' ? 'NUMERIC' : 'DECIMAL'}(${col.precision}, ${col.scale})`;
+    case 'float':
+      return { standard: 'DOUBLE PRECISION', mysql: 'DOUBLE', postgresql: 'DOUBLE PRECISION', sqlserver: 'FLOAT', sqlite: 'REAL' }[dialect];
+    case 'json':
+      if (dialect === 'mysql') return 'JSON';
+      if (dialect === 'postgresql') return 'JSONB';
+      if (dialect === 'sqlserver') return 'NVARCHAR(MAX)';
+      if (dialect === 'sqlite') return 'TEXT';
+      return `VARCHAR(${n})`;
     case 'boolean':
       return { standard: 'BOOLEAN', mysql: 'BOOLEAN', postgresql: 'BOOLEAN', sqlserver: 'BIT', sqlite: 'INTEGER' }[dialect];
     case 'date':
@@ -206,13 +244,22 @@ export function stringLiteral(v: string, dialect: InsertDialect): string {
   return dialect === 'sqlserver' ? `N'${s}'` : `'${s}'`;
 }
 
-function literal(v: string, col: Column, opts: InsertOptions): string {
+function literal(c: Cell, col: Column, opts: InsertOptions): string {
+  if (typeof c !== 'string') {
+    // A JSON null is NULL; a JSON "" is a real empty string, whatever "Empty text cells" says.
+    return c.t === 'null' ? 'NULL' : valueLiteral(c.v, col, opts);
+  }
   // A column with no values at all is created as text, so the text rule applies to it too.
-  if (v === '') return (col.type === 'text' || col.type === 'empty') && opts.emptyAs === 'empty' ? stringLiteral('', opts.dialect) : 'NULL';
+  if (c === '') return (col.type === 'text' || col.type === 'empty') && opts.emptyAs === 'empty' ? stringLiteral('', opts.dialect) : 'NULL';
+  return valueLiteral(c, col, opts);
+}
+
+function valueLiteral(v: string, col: Column, opts: InsertOptions): string {
   switch (col.type) {
     case 'integer':
     case 'bigint':
     case 'decimal':
+    case 'float':
       return v; // the digits as written: no float rounding, even past 2^53
     case 'boolean': {
       const t = v.toLowerCase() === 'true';
@@ -280,7 +327,7 @@ function columnNames(header: string[], width: number, opts: InsertOptions, notes
     if (opts.snakeCase) name = snakeCase(name);
     if (!name) {
       name = `column_${i + 1}`;
-      if (header.length) notes.push(`Column ${i + 1} has no name in the header row; it is called ${name}.`);
+      if (header.length) notes.push(`Column ${i + 1} has no name; it is called ${name}.`);
     }
     let unique = name;
     for (let k = 2; seen.has(unique.toLowerCase()); k++) unique = `${name}_${k}`;
@@ -296,7 +343,7 @@ function columnNames(header: string[], width: number, opts: InsertOptions, notes
 // ---------------------------------------------------------------------------------------------
 
 /** CREATE TABLE and INSERT statements for rows of text cells under the given column names. */
-export function buildSql(names: string[], rows: string[][], opts: InsertOptions, notes: string[] = []): InsertResult {
+export function buildSql(names: string[], rows: Cell[][], opts: InsertOptions, notes: string[] = []): InsertResult {
   const table = quoteTable(opts.tableName, opts.dialect);
   const columns = names.map((name, i) =>
     inferColumn(
@@ -321,7 +368,7 @@ export function buildSql(names: string[], rows: string[][], opts: InsertOptions,
     notes.push(`SQL Server accepts at most ${SQLSERVER_MAX_ROWS.toLocaleString('en-US')} rows in one INSERT, so the rows are split into statements of ${SQLSERVER_MAX_ROWS.toLocaleString('en-US')}.`);
   }
   const head = `INSERT INTO ${table} (${quoted.join(', ')}) VALUES`;
-  const tuple = (r: string[]) => `(${columns.map((c, i) => literal(r[i] ?? '', c, opts)).join(', ')})`;
+  const tuple = (r: Cell[]) => `(${columns.map((c, i) => literal(r[i] ?? '', c, opts)).join(', ')})`;
   const inserts: string[] = [];
   if (batch === 1) {
     for (const r of rows) inserts.push(`${head} ${tuple(r)};`);
@@ -365,6 +412,156 @@ export function csvToSql(text: string, options: Partial<CsvSqlOptions> = {}): In
   }
   return buildSql(names, rows, o, notes);
 }
+
+// ---------------------------------------------------------------------------------------------
+// JSON front end
+// ---------------------------------------------------------------------------------------------
+
+export interface JsonSqlOptions extends InsertOptions {
+  /** Expand nested objects into parent_child columns instead of storing them as JSON text. */
+  flatten: boolean;
+}
+
+export const DEFAULT_JSON_SQL: JsonSqlOptions = {
+  dialect: 'standard',
+  tableName: DEFAULT_TABLE,
+  createTable: true,
+  batchSize: 100,
+  emptyAs: 'null', // unused for JSON: null and "" are different values there
+  detectTypes: true,
+  snakeCase: false,
+  flatten: false,
+};
+
+const NULL_CELL: TypedCell = { t: 'null', v: '' };
+
+function toCell(v: JsonValue): TypedCell {
+  switch (v.t) {
+    case 'string':
+      return { t: 'string', v: v.v };
+    case 'number':
+      return { t: 'number', v: v.v };
+    case 'boolean':
+      return { t: 'boolean', v: String(v.v) };
+    case 'null':
+      return NULL_CELL;
+    default:
+      return { t: 'json', v: stringifyExact(v) };
+  }
+}
+
+function describe(v: JsonValue): string {
+  return { string: 'a string', number: 'a number', boolean: 'true or false', null: 'null', array: 'an array', object: 'an object' }[v.t];
+}
+
+/**
+ * JSON to SQL. Accepts an array of objects (one row each), an array of arrays, a single object, an
+ * object that wraps the rows in an array property ({"data": [...]}), or JSON Lines.
+ */
+export function jsonToSql(text: string, options: Partial<JsonSqlOptions> = {}): InsertResult {
+  const o: JsonSqlOptions = { ...DEFAULT_JSON_SQL, ...options };
+  if (!text.trim()) return { ok: false, error: 'Paste JSON to convert.' };
+  const clean = text.startsWith(BOM) ? text.slice(1) : text;
+  const notes: string[] = [];
+  try {
+    let root: JsonValue;
+    const parsed = parseJson(clean, 'Paste JSON to convert.');
+    if (parsed.ok) root = parseExact(clean);
+    else {
+      const lines = clean.split('\n').filter((l) => l.trim());
+      if (lines.length > 1 && lines.every((l) => parseJson(l, '').ok)) {
+        root = { t: 'array', v: lines.map((l) => parseExact(l)) };
+        notes.push('Read as JSON Lines: one JSON value per line.');
+      } else return { ok: false, error: parsed.error, line: parsed.line, column: parsed.column };
+    }
+
+    let items: JsonValue[];
+    if (root.t === 'array') items = root.v;
+    else if (root.t === 'object') {
+      const inner = [...root.v].find(([, v]) => v.t === 'array' && v.v.length > 0 && v.v.every((x) => x.t === 'object'));
+      if (inner) {
+        items = (inner[1] as Extract<JsonValue, { t: 'array' }>).v;
+        notes.push(`The rows come from the "${inner[0]}" array inside the object.`);
+      } else items = [root];
+    } else return { ok: false, error: `The JSON is ${describe(root)}, not an object or an array of objects.` };
+
+    if (!items.length) return { ok: false, error: 'The array is empty, so there are no rows to insert.' };
+
+    if (items.every((x) => x.t === 'array')) {
+      const arrays = items as Extract<JsonValue, { t: 'array' }>[];
+      const width = Math.max(...arrays.map((a) => a.v.length));
+      const names = columnNames([], width, o, notes);
+      const rows = arrays.map((a) => Array.from({ length: width }, (_, i) => (a.v[i] ? toCell(a.v[i]) : NULL_CELL)));
+      return buildSql(names, rows, o, notes);
+    }
+    const bad = items.findIndex((x) => x.t !== 'object');
+    if (bad >= 0) {
+      return {
+        ok: false,
+        error: `Item ${bad + 1} is ${describe(items[bad])}, not an object. Each item becomes one row, so every item must be an object (or every item an array).`,
+      };
+    }
+
+    // Columns: every key path, in the order it first appears.
+    const objects = items.map((x) => (x as Extract<JsonValue, { t: 'object' }>).v);
+    const paths: string[][] = [];
+    const seen = new Set<string>();
+    const collect = (obj: Map<string, JsonValue>, prefix: string[]) => {
+      for (const [k, v] of obj) {
+        const path = [...prefix, k];
+        if (o.flatten && v.t === 'object' && v.v.size > 0) collect(v.v, path);
+        else {
+          const key = JSON.stringify(path);
+          if (!seen.has(key)) {
+            seen.add(key);
+            paths.push(path);
+          }
+        }
+      }
+    };
+    for (const obj of objects) collect(obj, []);
+
+    const cellAt = (obj: Map<string, JsonValue>, path: string[]): TypedCell => {
+      let cur: JsonValue | undefined = { t: 'object', v: obj };
+      for (const k of path) {
+        if (cur?.t !== 'object') return NULL_CELL;
+        cur = cur.v.get(k);
+      }
+      if (!cur) return NULL_CELL;
+      // A flattened object's fields have their own columns.
+      if (o.flatten && cur.t === 'object' && cur.v.size > 0) return NULL_CELL;
+      return toCell(cur);
+    };
+    const names = columnNames(paths.map((p) => p.join('_')), paths.length, o, notes);
+    const rows = objects.map((obj) => paths.map((p) => cellAt(obj, p)));
+    return buildSql(names, rows, o, notes);
+  } catch (e) {
+    if (e instanceof RangeError) return { ok: false, error: 'The JSON is nested too deeply to convert.' };
+    throw e;
+  }
+}
+
+/** What "Load sample" inserts on the JSON to SQL page, and its worked example. */
+export const SAMPLE_JSON_SQL = `[
+  {
+    "id": 1,
+    "name": "Ada Lovelace",
+    "email": "ada@example.com",
+    "active": true,
+    "signup": "2026-01-15",
+    "address": { "city": "London", "zip": "01234" },
+    "tags": ["admin", "beta"]
+  },
+  {
+    "id": 2,
+    "name": "Seán O'Brien",
+    "email": null,
+    "active": false,
+    "signup": "2026-02-03",
+    "address": { "city": "Dublin", "zip": null },
+    "tags": []
+  }
+]`;
 
 /** What "Load sample" inserts, and the page's worked example. */
 export const SAMPLE_CSV_SQL = [

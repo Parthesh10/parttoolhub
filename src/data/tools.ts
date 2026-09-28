@@ -467,6 +467,18 @@ export const TOOLS: Tool[] = [
     reviewedBy: SITE.author,
     reviewedOn: '2026-09-28',
   },
+  {
+    slug: 'json-to-sql',
+    name: 'JSON to SQL Converter',
+    title: 'JSON to SQL Converter: INSERT Statements and CREATE TABLE',
+    description: 'Turn a JSON array into SQL INSERT statements and a CREATE TABLE for MySQL, PostgreSQL, SQL Server or SQLite, with nested objects kept or flattened.',
+    short: 'Turn a JSON array of objects into INSERT statements and a CREATE TABLE, keeping nested objects as JSON or flattening them into columns.',
+    category: 'sql-tools',
+    features: ['Column types from the JSON values', 'Nested objects as JSON columns or flattened', 'Numbers copied digit for digit', 'Accepts JSON Lines and API response wrappers'],
+    intent: 'json to sql',
+    reviewedBy: SITE.author,
+    reviewedOn: '2026-09-28',
+  },
   // ---- Compare & Diff Tools ------------------------------------------------
   {
     slug: 'text-diff-checker',

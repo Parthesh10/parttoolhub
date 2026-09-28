@@ -59,6 +59,10 @@ export const NEXT_STEPS: Record<string, NextStepPlan> = {
     source: '#output',
     steps: [{ to: 'sql-formatter', label: 'Format this SQL' }],
   },
+  'json-to-sql': {
+    source: '#output',
+    steps: [{ to: 'sql-formatter', label: 'Format this SQL' }],
+  },
   'ai-text-cleaner': { source: '#output', steps: TO_DOCS },
   'html-to-markdown': { source: '#output', steps: TO_DOCS },
   'google-docs-to-markdown': { source: '#output', steps: [TO_DOCS[0], TO_DOCS[2]] },

@@ -318,6 +318,17 @@ that dialect (`tests/sql-insert.test.ts` decodes it the way the database would) 
 cells, and the SQLite output is executed in a real SQLite database via Node's built-in `node:sqlite`
 (skipped on a Node without it). The CSV to SQL page also asserts in its frontmatter each behaviour its
 prose describes; that check caught an all-empty column ignoring the "Empty text ('')" option.
+JSON to SQL (`jsonToSql`, same module) passes `TypedCell`s instead of CSV strings, so JSON's own
+types decide the columns: a JSON string is never read as a number (only as a date), `null` is NULL and
+`""` an empty string, an exponent number makes a float column, nested values become JSON columns
+(JSON / JSONB / NVARCHAR(MAX)) or `parent_child` columns with "Flatten". It reads the input with
+**`src/lib/json-exact.ts`** after `parseJson` has validated it: an iterative reader that keeps every
+number's source text (JSON.parse rounds past 2^53) and decodes each string, keys included, as its own
+`JSON.parse` call. **Do not replace that with a plain `JSON.parse` for keys:** V8 (Node 24, Chrome/Edge
+154, found 2026-09-28) decodes an escaped object key such as `"\n"` as a lone backslash once it has
+built an object of the same shape whose key there was `"\\"`, silently. `tests/json-to-sql.test.ts`
+pins that case and uses its own generator, not JSON.parse, as the oracle for the reader. The site's
+other JSON tools still use JSON.parse and are exposed to that bug in the rare input that triggers it.
 
 **`src/lib/json-parse.ts` is the one place `JSON.parse` gets called** when a tool needs a helpful
 error, not a raw exception — `parseJson(input, emptyMessage)` returns `{ok:true,value}` or
