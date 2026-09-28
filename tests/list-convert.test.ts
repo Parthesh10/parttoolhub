@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { columnToList, listToColumn, detectDelimiter, PRESETS, DEFAULT_OPTIONS, DELIMITER_CHOICES } from '../src/lib/list-convert.ts';
+import { columnToList, listToColumn, detectDelimiter, PRESETS, DEFAULT_OPTIONS, DELIMITER_CHOICES, quoteEscapeFor, matchingPreset } from '../src/lib/list-convert.ts';
 
 test('the default separator is "Comma only", and the UI starts on it', () => {
   // Maintainer's decision (2026-09-15): most destinations (CSV cells, query strings, IN lists) want no space.
@@ -102,4 +102,43 @@ test('round trip is stable', () => {
   const original = 'alpha\nbeta\ngamma';
   const joined = columnToList(original, { delimiter: ', ', itemPrefix: '"', itemSuffix: '"', listPrefix: '[', listSuffix: ']' }).output;
   assert.equal(listToColumn(joined).output, original);
+});
+
+// --- Quotes inside items (bug found 2026-09-25: the SQL IN preset produced ('o'brien'), invalid SQL) ---
+
+const preset = (id: string) => PRESETS.find((p) => p.id === id)!.options;
+
+test('SQL IN preset doubles single quotes inside items', () => {
+  assert.equal(columnToList("o'brien\nsmith", preset('sql')).output, "('o''brien', 'smith')");
+  assert.equal(columnToList("it''s", preset('sql')).output, "('it''''s')", 'every quote is doubled, even ones already doubled');
+  assert.equal(columnToList('say "hi"', preset('sql')).output, `('say "hi"')`, 'double quotes are fine inside a SQL string');
+});
+
+test('JSON array preset backslash-escapes " and \\ so the result parses', () => {
+  const r = columnToList('say "hi"\nC:\\temp\nplain', preset('json')).output;
+  assert.equal(r, String.raw`["say \"hi\"", "C:\\temp", "plain"]`);
+  assert.deepEqual(JSON.parse(r), ['say "hi"', 'C:\\temp', 'plain']);
+});
+
+test("Python list preset backslash-escapes ' (doubling would silently concatenate)", () => {
+  assert.equal(columnToList("o'brien\nC:\\x", preset('python')).output, String.raw`['o\'brien', 'C:\\x']`);
+});
+
+test('auto escaping follows the preset the wrapper matches, whatever the separator', () => {
+  const sqlNoSpace = { ...DEFAULT_OPTIONS, ...preset('sql'), delimiter: ',' };
+  assert.equal(quoteEscapeFor(sqlNoSpace), 'double');
+  assert.equal(matchingPreset(sqlNoSpace), undefined, 'the chip clears, but the escaping still applies');
+  assert.equal(quoteEscapeFor({ ...DEFAULT_OPTIONS, itemPrefix: "'", itemSuffix: "'" }), 'none', 'a hand-made wrapper is left alone');
+  assert.equal(columnToList("o'brien", { itemPrefix: "'", itemSuffix: "'" }).output, "'o'brien'");
+});
+
+test('an explicit escape choice overrides auto, and only applies when "After" is one quote character', () => {
+  assert.equal(columnToList("o'brien", { itemPrefix: "'", itemSuffix: "'", quoteEscape: 'double' }).output, "'o''brien'");
+  assert.equal(columnToList("o'brien", { ...preset('sql'), quoteEscape: 'none' }).output, "('o'brien')");
+  assert.equal(columnToList("o'brien", { ...preset('sql'), quoteEscape: 'backslash' }).output, String.raw`('o\'brien')`);
+  assert.equal(columnToList("o'brien", { itemPrefix: '<', itemSuffix: '>', quoteEscape: 'double' }).output, "<o'brien>");
+});
+
+test('escaping happens after dedupe and sort, so they compare the raw values', () => {
+  assert.equal(columnToList("b'\na'\nb'", { ...preset('sql'), dedupe: true, sort: 'az' }).output, "('a''', 'b''')");
 });

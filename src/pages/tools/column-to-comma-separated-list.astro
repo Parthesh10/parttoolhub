@@ -11,7 +11,11 @@ const sample = 'apple\nbanana\ncherry';
 const examples = PRESETS.map((p) => ({ ...p, output: columnToList(sample, p.options).output }));
 const idSample = '1042\n1043\n1044';
 const sqlExample = columnToList(idSample, { delimiter: ', ' }).output;
-const sqlQuoteGotcha = columnToList("O'Brien\nSmith", PRESETS.find((p) => p.id === 'sql')!.options).output;
+const presetOptions = (id: string) => PRESETS.find((p) => p.id === id)!.options;
+const sqlQuoted = columnToList("O'Brien\nSmith", presetOptions('sql')).output;
+const pythonQuoted = columnToList("O'Brien\nSmith", presetOptions('python')).output;
+const jsonQuoted = columnToList('say "hi"', presetOptions('json')).output;
+const handWrapped = columnToList("O'Brien", { itemPrefix: "'", itemSuffix: "'" }).output;
 const versionNumeric = columnToList('v2.10\nv2.9\nv2.1', { sort: 'num-asc' }).output;
 const versionNatural = columnToList('v2.10\nv2.9\nv2.1', { sort: 'az' }).output;
 const trailingNewline = columnToList('a\nb\n');
@@ -112,7 +116,8 @@ const faq = [
     <ul>
       <li><strong>Presets</strong> (No spaces, Plain, SQL IN, JSON array, Python list, Semicolon, Pipe, Regex OR) fill the separator and wrapper boxes in one click. <strong>No spaces</strong> is what the page starts on. The highlighted chip is the preset that matches the current settings; edit any box by hand and the highlight clears.</li>
       <li><strong>Between items</strong> is the separator: Comma only (the default), Comma + space, Semicolon + space, Semicolon only, Pipe with spaces, Pipe only, Space, Tab, New line, or <em>Custom…</em> for anything you type, including several characters such as <code> :: </code>.</li>
-      <li><strong>Wrap each item: Before / After</strong> adds text around every item, e.g. <code>'</code> and <code>'</code> for SQL string literals. Nothing inside the item is escaped (see edge cases).</li>
+      <li><strong>Wrap each item: Before / After</strong> adds text around every item, e.g. <code>'</code> and <code>'</code> for SQL string literals.</li>
+      <li><strong>Quotes inside items</strong> decides what happens to a quote inside a value when the <em>After</em> box is a single <code>'</code>, <code>"</code> or <code>`</code>. <em>Auto</em> (the default) follows the preset: SQL IN doubles it, JSON array and Python list put a backslash before it (and double any backslash). <em>Double them</em> and <em>Backslash</em> force one rule; <em>Leave as is</em> changes nothing. Clicking a preset sets it back to Auto.</li>
       <li><strong>Wrap whole list: Start / End</strong> adds text once at the beginning and end, e.g. <code>(</code> and <code>)</code>.</li>
       <li><strong>Trim spaces around items</strong> (on by default) removes leading and trailing spaces and tabs from each line before anything else happens.</li>
       <li><strong>Skip blank lines</strong> (on by default) drops lines that are empty after trimming and reports them as dropped. Untick it to keep them as empty items: <code>a, , b</code>.</li>
@@ -125,7 +130,8 @@ const faq = [
 
     <h2>Edge cases and common errors</h2>
     <ul>
-      <li><strong>Quotes inside values are not escaped.</strong> <code>O'Brien</code> with the SQL IN preset produces <code>{sqlQuoteGotcha}</code>, which is not valid SQL, and a value containing <code>"</code> breaks the JSON array preset the same way. Fix those values by hand, or run the JSON result through the <a href="/tools/json-formatter">JSON Formatter</a>, which will show exactly where it breaks.</li>
+      <li><strong>Quotes inside values are escaped the way the target language expects.</strong> <code>O'Brien</code> with the SQL IN preset produces <code>{sqlQuoted}</code> (SQL doubles a quote), with the Python list preset <code>{pythonQuoted}</code>, and <code>say "hi"</code> in a JSON array becomes <code>{jsonQuoted}</code>. Doubling would be wrong in Python: <code>'O''Brien'</code> is two strings side by side, which Python silently joins into <code>OBrien</code>.</li>
+      <li><strong>Quotes you type into the wrap boxes yourself are not escaped on Auto.</strong> A hand-made wrapper matches no preset, so the tool can't tell which language it is for, and <code>O'Brien</code> between <code>'</code> and <code>'</code> stays <code>{handWrapped}</code>. Choose <em>Double them</em> or <em>Backslash</em> under <em>Quotes inside items</em>. Changing only the separator keeps Auto working, e.g. SQL IN with <em>Comma only</em>.</li>
       <li><strong>Values containing the separator</strong>: a line such as <code>Smith, John</code> becomes two items to anything that reads the output as CSV. Choose a separator that does not occur in the data (Pipe or Tab), or wrap each item in quotes.</li>
       <li><strong>Numeric sort reads the first number it can find</strong> after stripping everything except digits, <code>.</code> and <code>-</code>: <code>$42</code> sorts as 42, <code>1,234.5</code> as 1234.5, and lines with no digits go last. Version strings do not work this way. <code>v2.10</code> reads as 2.1 and sorts as <code>{versionNumeric}</code>. Use <em>A → Z</em> instead, which compares digit runs naturally: <code>{versionNatural}</code>.</li>
       <li><strong>A trailing newline counts as a blank line.</strong> Three lines followed by Enter shows “{trailingNewline.count} items · {trailingNewline.dropped} dropped”; nothing is missing, the final empty line was skipped.</li>

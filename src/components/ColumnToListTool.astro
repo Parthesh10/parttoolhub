@@ -81,6 +81,15 @@ import { PRESETS, DELIMITER_CHOICES } from '../lib/list-convert';
       <div class="row">
         <label class="field"><span>Before</span><input type="text" id="opt-item-prefix" placeholder={'e.g. "'} /></label>
         <label class="field"><span>After</span><input type="text" id="opt-item-suffix" placeholder={'e.g. "'} /></label>
+        <label class="field">
+          <span>Quotes inside items</span>
+          <select id="opt-quote-escape">
+            <option value="auto">Auto (match the preset)</option>
+            <option value="double">Double them: O''Brien</option>
+            <option value="backslash">Backslash: O\'Brien</option>
+            <option value="none">Leave as is</option>
+          </select>
+        </label>
       </div>
     </fieldset>
 

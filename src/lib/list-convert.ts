@@ -5,6 +5,12 @@
 
 export type SortMode = 'none' | 'az' | 'za' | 'num-asc' | 'num-desc' | 'len-asc' | 'len-desc';
 export type CaseMode = 'keep' | 'lower' | 'upper' | 'title';
+/**
+ * How a quote character inside an item is escaped when items are wrapped in that quote.
+ * 'double' is the SQL/CSV rule (O'Brien -> 'O''Brien'); 'backslash' is the JSON/Python/JS rule
+ * (O'Brien -> 'O\'Brien', and a backslash itself becomes two). 'auto' picks by preset: see quoteEscapeFor.
+ */
+export type QuoteEscape = 'auto' | 'double' | 'backslash' | 'none';
 
 export interface ColumnToListOptions {
   /** The literal string placed between items, e.g. ", " or "|". */
@@ -12,6 +18,8 @@ export interface ColumnToListOptions {
   /** Text added before / after each individual item. */
   itemPrefix: string;
   itemSuffix: string;
+  /** Escaping for quotes inside items; only applies when "After" is a single ' " or ` character. */
+  quoteEscape: QuoteEscape;
   /** Text added before / after the entire joined output. */
   listPrefix: string;
   listSuffix: string;
@@ -35,6 +43,7 @@ export const DEFAULT_OPTIONS: ColumnToListOptions = {
   delimiter: ',',
   itemPrefix: '',
   itemSuffix: '',
+  quoteEscape: 'auto',
   listPrefix: '',
   listSuffix: '',
   trim: true,
@@ -130,6 +139,11 @@ export function columnToList(input: string, opts: Partial<ColumnToListOptions> =
 
   items = sortItems(items, o.sort);
   if (o.reverse) items = items.reverse();
+
+  const quote = /^['"`]$/.test(o.itemSuffix) ? o.itemSuffix : '';
+  const escape = quote ? quoteEscapeFor(o) : 'none';
+  if (escape === 'double') items = items.map((s) => s.replaceAll(quote, quote + quote));
+  else if (escape === 'backslash') items = items.map((s) => s.replaceAll('\\', '\\\\').replaceAll(quote, '\\' + quote));
 
   const wrapped = items.map((s) => o.itemPrefix + s + o.itemSuffix);
   const body = wrapped.join(o.delimiter);
@@ -236,6 +250,8 @@ export interface Preset {
   /** Example of the shape this preset produces. */
   hint: string;
   options: Partial<ColumnToListOptions>;
+  /** What 'auto' quote escaping means while the wrapper fields match this preset. */
+  escape?: Exclude<QuoteEscape, 'auto'>;
 }
 
 const bare = { itemPrefix: '', itemSuffix: '', listPrefix: '', listSuffix: '' };
@@ -243,13 +259,43 @@ const bare = { itemPrefix: '', itemSuffix: '', listPrefix: '', listSuffix: '' };
 export const PRESETS: Preset[] = [
   { id: 'compact', label: 'No spaces', hint: 'a,b,c', options: { ...bare, delimiter: ',' } },
   { id: 'plain', label: 'Plain', hint: 'a, b, c', options: { ...bare, delimiter: ', ' } },
-  { id: 'sql', label: 'SQL IN', hint: "('a', 'b', 'c')", options: { delimiter: ', ', itemPrefix: "'", itemSuffix: "'", listPrefix: '(', listSuffix: ')' } },
-  { id: 'json', label: 'JSON array', hint: '["a", "b", "c"]', options: { delimiter: ', ', itemPrefix: '"', itemSuffix: '"', listPrefix: '[', listSuffix: ']' } },
-  { id: 'python', label: 'Python list', hint: "['a', 'b', 'c']", options: { delimiter: ', ', itemPrefix: "'", itemSuffix: "'", listPrefix: '[', listSuffix: ']' } },
+  { id: 'sql', label: 'SQL IN', hint: "('a', 'b', 'c')", options: { delimiter: ', ', itemPrefix: "'", itemSuffix: "'", listPrefix: '(', listSuffix: ')' }, escape: 'double' },
+  { id: 'json', label: 'JSON array', hint: '["a", "b", "c"]', options: { delimiter: ', ', itemPrefix: '"', itemSuffix: '"', listPrefix: '[', listSuffix: ']' }, escape: 'backslash' },
+  { id: 'python', label: 'Python list', hint: "['a', 'b', 'c']", options: { delimiter: ', ', itemPrefix: "'", itemSuffix: "'", listPrefix: '[', listSuffix: ']' }, escape: 'backslash' },
   { id: 'semicolon', label: 'Semicolon', hint: 'a; b; c', options: { ...bare, delimiter: '; ' } },
   { id: 'pipe', label: 'Pipe', hint: 'a | b | c', options: { ...bare, delimiter: ' | ' } },
   { id: 'regex', label: 'Regex OR', hint: '(a|b|c)', options: { delimiter: '|', itemPrefix: '', itemSuffix: '', listPrefix: '(', listSuffix: ')' } },
 ];
+
+/** The preset whose separator and wrapper fields equal these options, if any (drives the highlighted chip). */
+export function matchingPreset(o: ColumnToListOptions): Preset | undefined {
+  return PRESETS.find(
+    (p) =>
+      p.options.delimiter === o.delimiter &&
+      (p.options.itemPrefix ?? '') === o.itemPrefix &&
+      (p.options.itemSuffix ?? '') === o.itemSuffix &&
+      (p.options.listPrefix ?? '') === o.listPrefix &&
+      (p.options.listSuffix ?? '') === o.listSuffix,
+  );
+}
+
+/**
+ * Resolve 'auto': the escaping of the preset the wrapper matches, keyed on the list brackets as well
+ * as the quote, because ('a') is SQL (double it) while ['a'] is Python (backslash). A hand-made
+ * wrapper that matches no preset is left alone, since there is no way to tell its language.
+ */
+export function quoteEscapeFor(o: ColumnToListOptions): Exclude<QuoteEscape, 'auto'> {
+  if (o.quoteEscape !== 'auto') return o.quoteEscape;
+  const p = PRESETS.find(
+    (x) =>
+      x.escape &&
+      (x.options.itemPrefix ?? '') === o.itemPrefix &&
+      (x.options.itemSuffix ?? '') === o.itemSuffix &&
+      (x.options.listPrefix ?? '') === o.listPrefix &&
+      (x.options.listSuffix ?? '') === o.listSuffix,
+  );
+  return p?.escape ?? 'none';
+}
 
 /** Delimiter choices for the UI select. `value` is used verbatim in the join. */
 export const DELIMITER_CHOICES = [

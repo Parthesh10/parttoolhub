@@ -1,4 +1,4 @@
-import { columnToList, PRESETS, CUSTOM_DELIMITER, type ColumnToListOptions, type SortMode, type CaseMode } from '../lib/list-convert';
+import { columnToList, PRESETS, CUSTOM_DELIMITER, matchingPreset, type ColumnToListOptions, type SortMode, type CaseMode, type QuoteEscape } from '../lib/list-convert';
 import { sendToTool, receiveTransfer } from '../lib/transfer';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -14,6 +14,7 @@ const delimiterCustom = $<HTMLInputElement>('opt-delimiter-custom');
 const customField = $('custom-delim-field');
 const itemPrefix = $<HTMLInputElement>('opt-item-prefix');
 const itemSuffix = $<HTMLInputElement>('opt-item-suffix');
+const quoteEscape = $<HTMLSelectElement>('opt-quote-escape');
 const listPrefix = $<HTMLInputElement>('opt-list-prefix');
 const listSuffix = $<HTMLInputElement>('opt-list-suffix');
 const trim = $<HTMLInputElement>('opt-trim');
@@ -249,6 +250,7 @@ function readOptions(): ColumnToListOptions {
     delimiter: delim,
     itemPrefix: itemPrefix.value,
     itemSuffix: itemSuffix.value,
+    quoteEscape: quoteEscape.value as QuoteEscape,
     listPrefix: listPrefix.value,
     listSuffix: listSuffix.value,
     trim: trim.checked,
@@ -292,16 +294,9 @@ function render() {
 
 /** Mark the preset chip whose settings equal the current wrapper/delimiter fields. */
 function highlightMatchingPreset() {
-  const o = readOptions();
+  const match = matchingPreset(readOptions());
   for (const chip of document.querySelectorAll<HTMLButtonElement>('[data-preset]')) {
-    const p = PRESETS.find((x) => x.id === chip.dataset.preset)!;
-    const match =
-      p.options.delimiter === o.delimiter &&
-      (p.options.itemPrefix ?? '') === o.itemPrefix &&
-      (p.options.itemSuffix ?? '') === o.itemSuffix &&
-      (p.options.listPrefix ?? '') === o.listPrefix &&
-      (p.options.listSuffix ?? '') === o.listSuffix;
-    chip.setAttribute('aria-pressed', String(match));
+    chip.setAttribute('aria-pressed', String(chip.dataset.preset === match?.id));
   }
 }
 
@@ -321,6 +316,7 @@ function applyPreset(id: string) {
   itemSuffix.value = o.itemSuffix ?? '';
   listPrefix.value = o.listPrefix ?? '';
   listSuffix.value = o.listSuffix ?? '';
+  quoteEscape.value = 'auto';
   render();
 }
 
@@ -360,7 +356,7 @@ function downloadOutput() {
 // --- wiring -----------------------------------------------------------------
 
 const controls = [
-  delimiter, delimiterCustom, itemPrefix, itemSuffix, listPrefix, listSuffix,
+  delimiter, delimiterCustom, itemPrefix, itemSuffix, quoteEscape, listPrefix, listSuffix,
   trim, skipEmpty, dedupe, dedupeCi, reverse, sort, textCase,
 ];
 for (const c of controls) {

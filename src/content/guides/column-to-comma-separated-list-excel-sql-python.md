@@ -183,7 +183,7 @@ print(buf.getvalue().strip())
 
 That prints `ana@example.com,ben@example.com,"Smith, John",o'brien@example.com`.
 
-**A quote inside a value.** The tool's **SQL IN** preset wraps each item in single quotes but does not escape quotes already in it, so `o'brien@example.com` comes out as `'o'brien@example.com'`, and the string ends early. Fix those items by hand, or use the Python version above, which doubles the quote.
+**A quote inside a value.** Wrap `o'brien@example.com` in single quotes without escaping it and you get `'o'brien@example.com'`: the string ends early and the query fails. SQL escapes a quote by doubling it, which is what the Python version above does, and so does the tool's **SQL IN** preset (`'o''brien@example.com'`). The **JSON array** and **Python list** presets use a backslash instead, because in those languages two quotes in a row mean something else.
 
 **Length limits.** An Excel cell holds 32,767 characters and `TEXTJOIN` returns `#VALUE!` when the result would be longer. A Google Sheets cell holds 50,000. MySQL cuts at `group_concat_max_len` without an error. A few hundred short values fit everywhere; a full export of a table does not.
 
