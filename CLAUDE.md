@@ -26,7 +26,9 @@ restructuring anything:
    explicitly asks for a release; never merge or push to `main` on your own initiative. **Vercel's
    Production environment auto-deploys on every push to `main`** (git-triggered, no manual step,
    unlike the old Netlify setup) — so merging to `main` *is* the release, there is no separate deploy
-   command to run afterward. Pushes to `staging` only create disconnected Preview deployments (no
+   command to run afterward. **After a release is live, run `node scripts/indexnow.mjs`** (Bing and the
+   other IndexNow engines recrawl the sitemap within minutes; `--dry-run` lists without sending; key file
+   is `public/<key>.txt`, public by design). Pushes to `staging` only create disconnected Preview deployments (no
    custom domain), so they can never affect the live site. Vercel's Hobby plan has no hard cap on
    deployment count (~6,000 build-minutes/month and ~100GB bandwidth/month are the real ceilings, both
    far above this site's usage) — the old Netlify "ran out of credits" failure mode does not apply
@@ -157,6 +159,7 @@ enforce the parts of this they can (category routes in README/CLAUDE.md, event n
 | `node --test --import tsx tests/<file>.test.ts` | Run a single test file |
 | `npm run build` | `astro check` (type-check) then `astro build` to `dist/` — **run this and then `npm test` before considering any change done** |
 | `npm run preview` | Serve the production build locally (Astro 7 runs it as a background daemon; `npx astro preview stop` ends it) |
+| `node scripts/indexnow.mjs [--dry-run] [paths…]` | After a release is live: submit the live sitemap (or just the given paths, no leading slash) to IndexNow. Refuses until the key file answers on the live site |
 | `node scripts/make-og-image.mjs [--from img.png]` | Regenerate `public/og-default.png` (1200×630), or centre-crop an external image to it |
 
 No lint script exists; `astro check` is the type/diagnostic gate. The order matters: `tests/content.test.ts`
