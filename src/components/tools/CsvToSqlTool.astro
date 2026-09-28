@@ -1,0 +1,135 @@
+---
+/** CSV to SQL converter. Behaviour in ./csv-to-sql.client.ts */
+import { INSERT_DIALECTS, DEFAULT_TABLE } from '../../lib/sql-insert';
+---
+
+<section class="tool card" id="tool" data-tool="csv-to-sql">
+  <div class="tool-toolbar">
+    <button type="button" class="btn btn-sm" id="btn-fullscreen" aria-pressed="false">⛶ Fullscreen</button>
+  </div>
+  <div class="panes">
+    <div class="pane">
+      <div class="pane-head">
+        <label for="input">Paste CSV</label>
+        <span class="stat" id="input-stat" aria-live="polite">0 characters</span>
+      </div>
+      <div class="code-wrap">
+        <div class="gutter" id="input-gutter" aria-hidden="true"><span>1</span></div>
+        <textarea
+          id="input"
+          rows="14"
+          spellcheck="false"
+          autocomplete="off"
+          placeholder={'id,name,city\n1,Ada Lovelace,London'}
+        ></textarea>
+      </div>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-sm" id="btn-paste">Paste</button>
+        <button type="button" class="btn btn-sm" id="btn-sample">Load sample</button>
+        <button type="button" class="btn btn-sm" id="btn-clear">Clear</button>
+      </div>
+      <p class="muted drop-hint">Or drop a .csv/.txt file onto the box above.</p>
+    </div>
+
+    <div class="pane">
+      <div class="pane-head">
+        <label for="output">SQL</label>
+        <span class="stat" id="output-stat" aria-live="polite"></span>
+      </div>
+      <textarea id="output" rows="14" readonly spellcheck="false" placeholder="CREATE TABLE and INSERT statements appear here as you type"></textarea>
+      <div class="pane-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy to clipboard</button>
+        <button type="button" class="btn btn-sm" id="btn-download">Download .sql</button>
+        <button type="button" class="btn btn-sm" id="btn-wrap" aria-pressed="false">No-wrap</button>
+      </div>
+      <div class="status-banner sql-notes" id="status" role="status" hidden>
+        <p id="status-title"></p>
+        <ul id="status-list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="options">
+    <fieldset>
+      <legend>Database</legend>
+      <div class="row">
+        <label class="field">
+          <span>Dialect</span>
+          <select id="opt-dialect">
+            {INSERT_DIALECTS.map((d) => <option value={d.value}>{d.label}</option>)}
+          </select>
+        </label>
+      </div>
+      <div class="row">
+        <label class="field">
+          <span>Table name</span>
+          <input type="text" id="opt-table" value={DEFAULT_TABLE} spellcheck="false" autocomplete="off" />
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Statements</legend>
+      <div class="row">
+        <label class="field">
+          <span>Rows per INSERT</span>
+          <select id="opt-batch">
+            <option value="1">1 (one INSERT per row)</option>
+            <option value="100" selected>100</option>
+            <option value="500">500</option>
+            <option value="1000">1,000</option>
+            <option value="0">All rows in one INSERT</option>
+          </select>
+        </label>
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" id="opt-create" checked /> Add CREATE TABLE</label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Values</legend>
+      <div class="checks">
+        <label><input type="checkbox" id="opt-detect" checked /> Detect numbers, booleans and dates</label>
+      </div>
+      <div class="row">
+        <label class="field">
+          <span>Empty text cells</span>
+          <select id="opt-empty">
+            <option value="null">NULL</option>
+            <option value="empty">Empty text ('')</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>CSV</legend>
+      <div class="row">
+        <label class="field">
+          <span>Field separator</span>
+          <select id="opt-delimiter">
+            <option value=",">Comma (,)</option>
+            <option value=";">Semicolon (;)</option>
+            <option value="tab">Tab</option>
+          </select>
+        </label>
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" id="opt-header" checked /> First row is column names</label>
+        <label><input type="checkbox" id="opt-snake" /> Column names in snake_case</label>
+      </div>
+    </fieldset>
+  </div>
+
+  <p class="tool-toast" id="toast" role="status" aria-live="polite" hidden></p>
+</section>
+
+<style>
+  .sql-notes { flex-direction: column; gap: 0.35rem; }
+  .sql-notes p { margin: 0; font-weight: 600; }
+  .sql-notes ul { margin: 0; padding-left: 1.2rem; }
+  .sql-notes li { overflow-wrap: anywhere; }
+</style>
+
+<script src="./csv-to-sql.client.ts"></script>

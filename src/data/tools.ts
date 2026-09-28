@@ -455,6 +455,18 @@ export const TOOLS: Tool[] = [
     reviewedBy: SITE.author,
     reviewedOn: '2026-09-28',
   },
+  {
+    slug: 'csv-to-sql',
+    name: 'CSV to SQL Converter',
+    title: 'CSV to SQL Converter: INSERT Statements and CREATE TABLE',
+    description: 'Turn a CSV file into SQL INSERT statements and a CREATE TABLE with detected column types, escaped for MySQL, PostgreSQL, SQL Server or SQLite.',
+    short: 'Turn CSV rows into INSERT statements and a CREATE TABLE with detected column types, with quotes escaped the way your database expects.',
+    category: 'sql-tools',
+    features: ['CREATE TABLE with detected column types', 'Multi-row INSERT batches', 'Escaping per database, including MySQL backslashes', 'Keeps leading zeros and long IDs exact'],
+    intent: 'csv to sql',
+    reviewedBy: SITE.author,
+    reviewedOn: '2026-09-28',
+  },
   // ---- Compare & Diff Tools ------------------------------------------------
   {
     slug: 'text-diff-checker',

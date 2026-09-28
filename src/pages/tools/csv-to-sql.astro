@@ -1,0 +1,137 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import CsvToSqlTool from '../../components/tools/CsvToSqlTool.astro';
+import { toolBySlug } from '../../data/tools';
+import { csvToSql, SAMPLE_CSV_SQL, quoteIdent, SQLSERVER_MAX_ROWS, type InsertResult } from '../../lib/sql-insert';
+
+const tool = toolBySlug('csv-to-sql');
+
+// Every output, type and note below comes from the real engine at build time. Where the prose
+// states a behaviour, the check throws if the engine stops doing it.
+const must = (cond: boolean, what: string) => {
+  if (!cond) throw new Error(`csv-to-sql page: engine no longer ${what}`);
+};
+const run = (csv: string, opts = {}) => {
+  const r: InsertResult = csvToSql(csv, opts);
+  if (!r.ok) throw new Error(`csv-to-sql page: ${r.error}`);
+  return r;
+};
+const BS = String.fromCharCode(92);
+
+const sample = run(SAMPLE_CSV_SQL);
+const sampleOut = sample.output;
+const serverRow = run(SAMPLE_CSV_SQL, { dialect: 'sqlserver' }).output.split('\n').find((l) => l.includes('Brien'))!.trim();
+const sqliteTypes = run(SAMPLE_CSV_SQL, { dialect: 'sqlite' }).output.split('\n').slice(1, 8).map((l) => l.trim().replace(/,$/, '')).join(', ');
+
+const pathCsv = `path\nC:${BS}temp${BS}new`;
+const pathMysql = run(pathCsv, { dialect: 'mysql', createTable: false }).output.split('\n')[1].trim();
+const pathPg = run(pathCsv, { dialect: 'postgresql', createTable: false }).output.split('\n')[1].trim();
+must(pathMysql.includes(BS + BS) && !pathPg.includes(BS + BS), 'doubles backslashes for MySQL only');
+
+const bigId = run('id\n9007199254740993', { createTable: false }).output.split('\n')[1].trim();
+must(bigId === '(9007199254740993);', 'writes long integers digit for digit');
+
+const badDateType = run('d\n2026-02-30').columns[0].type;
+must(badDateType === 'text', 'treats an impossible date as text');
+
+const emptyTyped = run('name,qty\n,\nAda,5', { createTable: false, emptyAs: 'empty' }).output.split('\n')[1].trim().replace(/,$/, '');
+must(emptyTyped === "('', NULL)", 'keeps NULL for empty cells in a number column');
+
+const raggedNote = run('a,b\n1,2,3', { createTable: false }).notes[0];
+const dupNote = run('email,Email\nx,y', { createTable: false }).notes[0];
+const capNote = run('n\n' + Array.from({ length: SQLSERVER_MAX_ROWS + 1 }, (_, k) => k).join('\n'), { dialect: 'sqlserver', batchSize: 0, createTable: false }).notes[0];
+must(!!raggedNote && !!dupNote && !!capNote, 'reports ragged rows, duplicate names and the SQL Server cap');
+
+const spaced = { mysql: quoteIdent('First Name', 'mysql'), pg: quoteIdent('First Name', 'postgresql'), mssql: quoteIdent('First Name', 'sqlserver') };
+const snakeName = run('First Name\nx', { snakeCase: true }).columns[0].name;
+
+const steps = [
+  'Paste CSV, drop a <code>.csv</code> file on the box, or press <strong>Load sample</strong>.',
+  'Pick your database under <strong>Dialect</strong> and type the <strong>Table name</strong>.',
+  'Choose <strong>Rows per INSERT</strong>, and untick <strong>Add CREATE TABLE</strong> if the table already exists.',
+  'Read any notes under the result: renamed columns, dropped extra values, a split for SQL Server.',
+  '<strong>Copy to clipboard</strong> or <strong>Download .sql</strong>, or open the result in the SQL Formatter with <strong>Format this SQL</strong>.',
+];
+
+const faq = [
+  {
+    q: 'Which databases does the output work with?',
+    a: 'MySQL and MariaDB, PostgreSQL, SQL Server and SQLite each have their own <strong>Dialect</strong> setting; Standard SQL suits most other databases. Oracle is not in the list: it accepts several rows in one VALUES list only from Oracle Database 23ai, so for an older version choose <strong>1 (one INSERT per row)</strong> and change the CREATE TABLE types to VARCHAR2 and NUMBER.',
+  },
+  {
+    q: 'Why is a ZIP code or phone number written as text?',
+    a: `Because it starts with a zero. Storing <code>01234</code> as a number would silently turn it into 1234, so any value with a leading zero is treated as text, and one such value makes the whole column text. In the sample the zip column becomes <code>VARCHAR(5)</code> and <code>01234</code> is inserted as <code>'01234'</code>, digits intact.`,
+  },
+  {
+    q: 'Why does the MySQL output have double backslashes?',
+    a: `MySQL reads a backslash inside a string as the start of an escape, so <code>\\t</code> in <code>C:\\temp</code> would arrive as a tab. The tool doubles every backslash for MySQL only: <code>${pathMysql}</code>. PostgreSQL, SQL Server and SQLite take backslashes literally, so there the same row is <code>${pathPg}</code>.`,
+  },
+  {
+    q: 'How large a CSV can it convert?',
+    a: 'The limit is your browser, not a server. A 3 MB file of 50,000 rows converts in about a third of a second on a laptop, and the result is a few megabytes of text you can download. For millions of rows, a database loader is faster than any INSERT script: <code>LOAD DATA INFILE</code> in MySQL, <code>COPY</code> in PostgreSQL, <code>BULK INSERT</code> in SQL Server.',
+  },
+  {
+    q: 'Is my data uploaded anywhere?',
+    a: 'No. The conversion runs in your browser with JavaScript, there is no server side that could receive the file, and nothing is stored. You can load the page, disconnect from the network and convert a file with customer data in it. Your browser remembers the options you picked; the CSV itself is not kept.',
+  },
+];
+---
+
+<ToolLayout {tool} {steps} {faq}>
+  <CsvToSqlTool />
+
+  <Fragment slot="content">
+    <h2>What it writes, and why the escaping differs per database</h2>
+    <p>
+      Joining CSV values into <code>INSERT</code> statements by hand fails on the first name with an apostrophe in it. The fix is not the same everywhere: every database doubles a single quote (<code>O''Brien</code>), but MySQL also reads backslashes as escapes, and SQL Server needs an <code>N</code> before a string that holds characters outside its code page, or they are stored as question marks. This tool applies the rules of the database you pick under <strong>Dialect</strong>, and the site's tests read every generated string back through that dialect's quoting rules, and run the SQLite output in a real SQLite database, to check that each value arrives unchanged.
+    </p>
+    <p>
+      With <strong>Add CREATE TABLE</strong> on, each column gets the narrowest type that fits every value in it: whole numbers become INTEGER or BIGINT, decimals get a DECIMAL with exactly the precision and scale the data needs, true/false becomes a boolean, and real calendar dates become DATE or a timestamp type. Anything else, including a single value that does not fit, makes the column text, sized to its longest value.
+    </p>
+    <p>
+      It does not guess a primary key, NOT NULL or indexes, because a CSV cannot tell it which column is unique or required; add those to the CREATE TABLE yourself. It never connects to a database or runs anything.
+    </p>
+
+    <h2>Example</h2>
+    <p>The file that <strong>Load sample</strong> inserts, with an apostrophe, a comma inside a quoted field, an accented name, a ZIP code with a leading zero and two empty cells:</p>
+    <pre><code>{SAMPLE_CSV_SQL}</code></pre>
+    <p>becomes, with the default options (Standard SQL, 100 rows per INSERT):</p>
+    <pre><code>{sampleOut}</code></pre>
+    <p>With <strong>SQL Server</strong> the second row is <code>{serverRow}</code>: text gets the <code>N</code> prefix and the boolean becomes <code>0</code>, stored in a <code>BIT</code> column. With <strong>SQLite</strong>, which has no DATE or BOOLEAN type, the columns are <code>{sqliteTypes}</code>.</p>
+
+    <h2>Options explained</h2>
+    <ul>
+      <li><strong>Dialect</strong>: Standard SQL, MySQL / MariaDB, PostgreSQL, SQL Server (T-SQL) or SQLite. It sets how names and strings are quoted, how booleans are written (TRUE/FALSE, or 1/0 in SQL Server and SQLite) and which type names the CREATE TABLE uses.</li>
+      <li><strong>Table name</strong>: used in every statement and as the download's file name. <code>schema.table</code> is split on the dot, and a name you type in quotes is kept as typed.</li>
+      <li><strong>Rows per INSERT: 1 / 100 / 500 / 1,000 / All rows in one INSERT</strong>. Fewer rows per statement means a failing row takes fewer others down with it; more rows means a shorter script. SQL Server is capped at {SQLSERVER_MAX_ROWS.toLocaleString('en-US')}.</li>
+      <li><strong>Add CREATE TABLE</strong>: untick it when the table already exists and you only need the rows.</li>
+      <li><strong>Detect numbers, booleans and dates</strong>: untick it to make every column text and quote every value, which is the safe choice when you will convert types in SQL afterwards.</li>
+      <li><strong>Empty text cells: NULL / Empty text ('')</strong> sets what an empty cell becomes in a text column. In a number, date or boolean column an empty cell is always NULL, because <code>''</code> is not a valid number or date.</li>
+      <li><strong>Field separator: Comma / Semicolon / Tab</strong>. Semicolon is what Excel writes in countries that use a comma as the decimal mark; tab is a TSV file.</li>
+      <li><strong>First row is column names</strong>: untick it for a file with no header, and the columns become <code>column_1</code>, <code>column_2</code> and so on.</li>
+      <li><strong>Column names in snake_case</strong> rewrites headers into names that never need quotes: <code>First Name</code> becomes <code>{snakeName}</code>. Without it, a name with a space is quoted as <code>{spaced.mysql}</code> in MySQL, <code>{spaced.pg}</code> in PostgreSQL and <code>{spaced.mssql}</code> in SQL Server.</li>
+    </ul>
+
+    <h2>Edge cases and common errors</h2>
+    <ul>
+      <li><strong>Long IDs keep every digit.</strong> Values are copied into the SQL as written rather than converted to JavaScript numbers, so <code>9007199254740993</code> (past 2<sup>53</sup>, where most JSON tools round) is inserted as <code>{bigId}</code>.</li>
+      <li><strong>Impossible dates are text.</strong> <code>2026-02-30</code> looks like a date but is not one, so its column stays text instead of producing an INSERT the database would reject.</li>
+      <li><strong>Empty cells in typed columns stay NULL</strong> even with <strong>Empty text ('')</strong> selected: an empty name and an empty quantity become <code>{emptyTyped}</code>.</li>
+      <li><strong>Rows with too many values</strong> keep only as many values as there are columns, and a note says so: "{raggedNote}" Rows with too few values get NULL for the missing ones.</li>
+      <li><strong>Duplicate or missing column names</strong> would make the CREATE TABLE fail, so they are renamed and reported: "{dupNote}"</li>
+      <li><strong>More than {SQLSERVER_MAX_ROWS.toLocaleString('en-US')} rows for SQL Server</strong> in one INSERT raise error 10738 there, so the tool splits them: "{capNote}"</li>
+      <li><strong>Names that are SQL keywords</strong>, such as a column called <code>order</code> or <code>user</code>, are quoted automatically. PostgreSQL also folds unquoted names to lower case, so a header like <code>CustomerId</code> becomes the column <code>customerid</code> there; tick <strong>Column names in snake_case</strong> if you want predictable names.</li>
+      <li><strong>Files saved by Excel</strong> often start with an invisible byte order mark. It is removed, so it never ends up inside the first column's name.</li>
+      <li><strong>Commas, quotes and line breaks inside a field</strong> follow the CSV quoting rules the <a href="/tools/csv-to-json-converter">CSV to JSON Converter</a> uses: <code>"Dublin, Ireland"</code> is one value, not two.</li>
+    </ul>
+
+    <h2>Do the same thing in code</h2>
+    <pre><code>import sqlite3
+import pandas as pd
+
+df = pd.read_csv("data.csv", dtype=str)
+df.to_sql("my_table", sqlite3.connect("data.db"), index=False)</code></pre>
+    <pre><code>\copy my_table FROM 'data.csv' WITH (FORMAT csv, HEADER true)</code></pre>
+    <p class="muted">In a program, send the values as query parameters rather than building INSERT text, which is what pandas does above; <code>dtype=str</code> stops it from reading <code>01234</code> as the number 1234. The second line is PostgreSQL's <code>psql</code> client loading a file into an existing table. Before loading, <a href="/tools/remove-duplicate-lines">Remove Duplicate Lines</a> can drop repeated rows that would break a primary key, and the <a href="/tools/sql-formatter">SQL Formatter</a> lays out the generated script if you want to read it before running it.</p>
+  </Fragment>
+</ToolLayout>

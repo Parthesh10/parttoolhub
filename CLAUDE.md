@@ -305,6 +305,20 @@ found while writing it: the Write tool decodes `\uXXXX` escapes in file content 
 characters (a U+2028 inside a regex literal broke the parse), so write non-ASCII code points as
 `charCodeAt` numbers or `String.fromCharCode(…)` rather than escapes.
 
+**`src/lib/sql-insert.ts` builds CREATE TABLE + INSERT statements** for CSV to SQL (2026-09-28,
+branch `sql-tools`), and is meant to be reused by JSON to SQL: `buildSql(names, rows, opts)` takes
+rows of text cells, so each front end only has to produce those (`csvToSql` reuses `parseCsv` from
+`csv-json.ts`). The escaping differs per database and is the whole point of the tool: `'` is doubled
+everywhere, MySQL also doubles `\` (it reads backslash escapes by default), SQL Server text gets
+`N'…'`, booleans are 1/0 where there is no boolean type (SQL Server BIT, SQLite), and SQL Server is
+capped at 1,000 rows per VALUES list (error 10738). Values are copied as written, never through
+`Number()`, so IDs past 2^53 keep every digit; a leading zero makes a column text. Tests check this
+two independent ways: every generated string is read back through the SQL Formatter's tokenizer for
+that dialect (`tests/sql-insert.test.ts` decodes it the way the database would) on a fuzzer of hostile
+cells, and the SQLite output is executed in a real SQLite database via Node's built-in `node:sqlite`
+(skipped on a Node without it). The CSV to SQL page also asserts in its frontmatter each behaviour its
+prose describes; that check caught an all-empty column ignoring the "Empty text ('')" option.
+
 **`src/lib/json-parse.ts` is the one place `JSON.parse` gets called** when a tool needs a helpful
 error, not a raw exception — `parseJson(input, emptyMessage)` returns `{ok:true,value}` or
 `{ok:false,error,line?,column?,snippet?}`, translating whatever a given JS engine's SyntaxError
