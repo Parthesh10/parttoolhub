@@ -199,12 +199,19 @@ export function detectDelimiter(input: string): string {
   return bestCount === 0 ? ' ' : best;
 }
 
+/**
+ * Strip one matching pair of quotes and undo the escaping columnToList adds inside them, so
+ * ('O''Brien') and ['O\'Brien'] both come back as O'Brien: a doubled quote (SQL, CSV) or a
+ * backslash before the quote or before another backslash (JSON, Python, JS). Other backslash
+ * sequences such as \n are left as typed.
+ */
 function stripQuotes(s: string): string {
   if (s.length >= 2) {
     const first = s[0];
     const last = s[s.length - 1];
     if ((first === '"' || first === "'" || first === '`') && first === last) {
-      return s.slice(1, -1);
+      const doubled = first + first;
+      return s.slice(1, -1).replace(/\\([\\"'`])|(["'`])\2/g, (m, escaped) => escaped ?? (m === doubled ? first : m));
     }
   }
   return s;

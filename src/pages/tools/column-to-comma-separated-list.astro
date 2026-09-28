@@ -33,8 +33,8 @@ const faq = [
     a: 'No. The conversion runs entirely in your browser with JavaScript. Nothing you paste is sent to a server, stored, or logged. You can disconnect from the internet after the page loads and it will keep working.',
   },
   {
-    q: 'How do I put quotes around each value?',
-    a: 'Type a quote character into both the <em>Before</em> and <em>After</em> boxes under “Wrap each item”, or click the <strong>SQL IN</strong>, <strong>JSON array</strong> or <strong>Python list</strong> preset, which fills those boxes for you.',
+    q: 'Is a comma separated list the same as a comma delimited list or a CSV?',
+    a: '“Comma separated” and “comma delimited” mean the same thing: values with a comma between them. A CSV file is many such lines, one per row, so the single line this tool produces is exactly one CSV row. The difference shows up when a value itself contains a comma: CSV puts that value in double quotes (<code>"Smith, John"</code>), which you can do here by typing <code>"</code> into both the <em>Before</em> and <em>After</em> boxes under “Wrap each item”. The <strong>SQL IN</strong>, <strong>JSON array</strong> and <strong>Python list</strong> presets fill those boxes for you.',
   },
   {
     q: 'Can I use a separator other than a comma?',
@@ -91,10 +91,11 @@ const faq = [
     </div>
 
     <h2>Common situations where this saves time</h2>
-    <h3>Building a SQL <code>IN</code> clause</h3>
+    <h3>Building a SQL <code>IN</code> list</h3>
     <p>
       You have a column of IDs from a report and need to query those exact rows. Paste the IDs, click <strong>SQL IN</strong>, and
-      drop the result straight after <code>WHERE id IN</code>. For numeric IDs you may prefer no quotes at all; use the <strong>Plain</strong>
+      drop the result straight after <code>WHERE id IN</code>. Each value becomes a quoted string, and a quote inside a value is
+      doubled, so a name like <code>O'Brien</code> stays one value instead of ending the string early. For numeric IDs you may prefer no quotes at all; use the <strong>Plain</strong>
       preset and wrap the whole list in parentheses:
     </p>
     <pre><code>SELECT * FROM orders WHERE customer_id IN ({sqlExample});</code></pre>

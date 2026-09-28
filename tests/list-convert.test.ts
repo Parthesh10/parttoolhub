@@ -139,6 +139,16 @@ test('an explicit escape choice overrides auto, and only applies when "After" is
   assert.equal(columnToList("o'brien", { itemPrefix: '<', itemSuffix: '>', quoteEscape: 'double' }).output, "<o'brien>");
 });
 
+test('list → column undoes that escaping, so every quoting preset round-trips', () => {
+  const values = ["O'Brien", 'say "hi"', 'C:\\temp', "it''s", 'plain'];
+  for (const id of ['sql', 'json', 'python']) {
+    const list = columnToList(values.join('\n'), preset(id)).output;
+    assert.deepEqual(listToColumn(list, { delimiter: ', ' }).output.split('\n'), values, `${id}: ${list}`);
+  }
+  assert.equal(listToColumn(`"it''s", 'a\\nb'`).output, "it''s\na\\nb", "'' inside double quotes and \\n are left as typed");
+  assert.equal(listToColumn(`"Smith ""Jr"""`, { delimiter: ',' }).output, 'Smith "Jr"', 'CSV-style doubled quotes');
+});
+
 test('escaping happens after dedupe and sort, so they compare the raw values', () => {
   assert.equal(columnToList("b'\na'\nb'", { ...preset('sql'), dedupe: true, sort: 'az' }).output, "('a''', 'b''')");
 });
