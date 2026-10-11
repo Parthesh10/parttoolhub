@@ -8,3 +8,7 @@ dist/
 .DS_Store
 Thumbs.db
 *.log
+
+# Python bytecode written when the tests run the per-tool scripts
+__pycache__/
+*.pyc
