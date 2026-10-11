@@ -40,7 +40,7 @@ const faq = [
   },
   {
     q: 'Does key order change from what I pasted?',
-    a: `Only in one case: JavaScript (and therefore this tool, which parses with <code>JSON.parse</code>) always lists keys that look like array indices (<code>"0"</code>, <code>"1"</code>, <code>"2"</code>) in ascending numeric order before any other keys, regardless of where they appeared in the source. Every other key keeps its original position. Python’s own <code>json.loads</code> does not do this reordering, so if exact order matters, sort keys explicitly or avoid all-digit keys.`,
+    a: `No. Every key keeps the position it was written in, including digit-only keys such as <code>"2"</code> and <code>"1"</code>, which a plain JavaScript object would move to the front in numeric order. That matches what Python’s own <code>json.loads</code> gives you. Tick <strong>Sort keys alphabetically</strong> if you want a fixed order instead.`,
   },
   {
     q: 'Can I use the result as-is in my code?',
@@ -91,11 +91,9 @@ const faq = [
       <li><strong>Comments are not allowed.</strong> Unlike Python's <code>#</code> comments (handled by the site's <a href="/tools/python-dict-to-json">Python Dict to JSON</a> tool), JSON has no comment syntax at all: a <code>//</code> or <code>/* */</code> block anywhere in the input fails the same way a syntax error would.</li>
       <li><strong>Duplicate keys keep the last value</strong>, exactly as Python's own dict literal would if you typed
         it directly: <code>{'{"a": 1, "a": 2}'}</code> becomes <code>{dupKeys}</code>.</li>
-      <li><strong>Digit-only keys are reordered.</strong> <code>{'{"2": "b", "1": "a", "x": "c"}'}</code> becomes <code>{reordered}</code>. JavaScript's object model always lists array-index-shaped keys in ascending numeric
-        order first, before this tool ever sees them, so the output key order can differ from the pasted source. Every
-        other key keeps its written position.</li>
-      <li><strong>Large integers can lose precision.</strong> <code>12345678901234567890</code> becomes <code>{bigInt}</code>, because the number passes through a JavaScript float on the way. Python's own integers
-        have no such limit; if an ID needs every digit, keep it as a JSON string on the way in.</li>
+      <li><strong>Digit-only keys stay where they were written.</strong> <code>{'{"2": "b", "1": "a", "x": "c"}'}</code> becomes <code>{reordered}</code>. A JavaScript object would list <code>"1"</code> and <code>"2"</code> first in numeric order; this tool reads the keys straight from your text instead, so the order matches what Python's <code>json.loads</code> gives.</li>
+      <li><strong>Large integers keep every digit.</strong> <code>{'{"id": 12345678901234567890}'}</code> becomes <code>{bigInt}</code>. Numbers are copied from your text as written rather than through a JavaScript number, which would round anything above 2<sup>53</sup> (this one to <code>12345678901234567000</code>). Python's integers have no size limit, so the literal reads back exactly. <code>1.0</code> stays <code>1.0</code> and <code>1E5</code> stays <code>1E5</code>, both valid Python floats.</li>
+      <li><strong>Control characters are escaped</strong>, so the output always parses: a carriage return becomes <code>\r</code> and other invisible characters <code>\x00</code>-style escapes, where a raw one would end the string literal or, for a NUL byte, be rejected as source code.</li>
       <li><strong>Size:</strong> a 4 MB JSON document takes well under a second to parse and re-render on a laptop, and
         typing is debounced so the page stays responsive while you edit.</li>
     </ul>

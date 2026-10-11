@@ -3,6 +3,8 @@ import ToolLayout from '../../layouts/ToolLayout.astro';
 import PythonDictTool from '../../components/tools/PythonDictTool.astro';
 import { toolBySlug } from '../../data/tools';
 import { pythonToJson } from '../../lib/python-dict';
+import CodeScript from '../../components/CodeScript.astro';
+import pythonScript from '../../lib/python/python_dict_to_json.py?raw';
 
 const tool = toolBySlug('python-dict-to-json');
 
@@ -18,6 +20,9 @@ const decimalErr = err("{'d': Decimal('1.5')}");
 const jsonInputErr = err('{"a": true}');
 const tupleKeyErr = err("{(1, 2): 'a'}");
 const mixedKeys = (pythonToJson("{1: 'a', 2.5: 'b', True: 'c', None: 'd'}", { indent: 0 }) as { ok: true; output: string }).output;
+const bigInt = (pythonToJson("{'id': 12345678901234567890}", { indent: 0 }) as { ok: true; output: string }).output;
+const floats = (pythonToJson('[1.0, 1e16, 0.00001]', { indent: 0 }) as { ok: true; output: string }).output;
+const keyOrder = (pythonToJson("{'b': 1, '2': 2, 'a': 3}", { indent: 0 }) as { ok: true; output: string }).output;
 
 const steps = [
   'Paste the Python literal (a dict, list, tuple, set or a single value) exactly as <code>print()</code>, the REPL, a debugger or a log line showed it.',
@@ -95,17 +100,47 @@ const faq = [
       <li><strong>Non-string keys follow <code>json.dumps</code>:</strong> <code>{"{1: 'a', 2.5: 'b', True: 'c', None: 'd'}"}</code> becomes <code>{mixedKeys}</code>. A tuple key such as <code>{"{(1, 2): 'a'}"}</code> is rejected with “{tupleKeyErr}”.</li>
       <li><strong><code>float('nan')</code>, <code>float('inf')</code>, <code>nan</code> and <code>inf</code> become <code>null</code></strong>, because JSON cannot express them. Python's own <code>json.dumps</code> would emit the non-standard <code>NaN</code> unless you pass <code>allow_nan=False</code>.</li>
       <li><strong>Duplicate keys keep the last value</strong>, exactly as Python does when it builds the dict.</li>
-      <li><strong>Integers above 2<sup>53</sup> lose precision</strong>: <code>12345678901234567890</code> comes out as <code>12345678901234567000</code>, because the output passes through JavaScript numbers. Python itself would keep every digit. Store such IDs as strings.</li>
+      <li><strong>Large integers keep every digit</strong>: <code>{"{'id': 12345678901234567890}"}</code> becomes <code>{bigInt}</code>, as it would from Python's own <code>json.dumps</code>. Integers are converted as exact whole numbers, never through a JavaScript number, which would round anything above 2<sup>53</sup> (this one to <code>12345678901234567000</code>). Whether the program that reads the JSON keeps every digit is a separate question: JavaScript's <code>JSON.parse</code> does not, so an ID that big is safer sent as a string.</li>
+      <li><strong>Floats are written the way <code>json.dumps</code> writes them</strong>: <code>[1.0, 1e16, 0.00001]</code> becomes <code>{floats}</code>. A float keeps its <code>.0</code>, so it stays a float when Python reads it back.</li>
+      <li><strong>Keys keep the order you wrote them in</strong>, digit-only keys included: <code>{"{'b': 1, '2': 2, 'a': 3}"}</code> becomes <code>{keyOrder}</code>. (A plain JavaScript object would have moved <code>"2"</code> to the front.)</li>
       <li><strong>f-strings are not evaluated</strong>: <code>f'hi {'{x}'}'</code> is kept literally as <code>"hi {'{x}'}"</code>. Complex numbers (<code>1+2j</code>) are rejected outright.</li>
       <li><strong>Anything after the value is an error</strong>, not ignored: <code>{"{'a': 1} extra"}</code> stops at <code>extra</code>. Paste one value at a time.</li>
       <li><strong>Size:</strong> a 4 MB literal takes about half a second to parse on a laptop, and typing is debounced so the page stays responsive while you edit.</li>
     </ul>
 
     <h2>Do the same thing in Python</h2>
-    <p>If you're already inside a Python process, this is the direct equivalent of what the tool does:</p>
+    <p>If the text is plain literals and you are already inside a Python process, two lines do it:</p>
     <pre><code>import json, ast
 data = ast.literal_eval(python_repr_string)
 print(json.dumps(data, indent=2))</code></pre>
-    <p class="muted"><code>ast.literal_eval</code> is the safe alternative to <code>eval()</code>: it only accepts literal values, never runs code. Like this tool, it rejects <code>datetime(…)</code> and other object reprs.</p>
+    <p>
+      <code>ast.literal_eval</code> is the safe alternative to <code>eval()</code>: it only accepts literal values and never runs
+      code. It stops on several things a debugger or log line prints, though: <code>OrderedDict([...])</code>,
+      <code>Counter(...)</code>, <code>nan</code> and <code>float('nan')</code>. <code>json.dumps</code> then fails on a set
+      (<code>Object of type set is not JSON serializable</code>) and writes a NaN as <code>NaN</code>, which is not JSON.
+    </p>
+    <p>
+      This script reads everything the tool reads and writes the same JSON: sets in the order they were written, NaN and
+      infinity as <code>null</code>, every digit of a large integer. It needs Python 3.9 or later and only the standard
+      library, and like <code>literal_eval</code> it never runs any of the text.
+    </p>
+    <CodeScript code={pythonScript} filename="python_dict_to_json.py" />
+    <p>
+      Run it on a file or pipe text through it; <code>--indent</code> takes <code>2</code>, <code>4</code>, <code>tab</code> or
+      <code>0</code> (one compact line), and <code>--sort-keys</code> sorts every object's keys:
+    </p>
+    <pre><code>python python_dict_to_json.py debug_output.txt &gt; data.json
+python python_dict_to_json.py --indent 4 --sort-keys &lt; pasted.txt</code></pre>
+    <p>
+      From your own code: <code>from python_dict_to_json import python_to_json</code>, then
+      <code>python_to_json(text, indent=2)</code>. It raises <code>PyLiteralError</code>, a <code>ValueError</code>, with the
+      same message the tool shows.
+    </p>
+    <p class="muted">
+      The site's test suite runs this script and the tool on the same inputs (the tool's own test cases plus about a
+      thousand generated literals: nested containers, large integers in four bases, floats written six ways, strings with
+      every kind of escape, and damaged copies of them) and fails on any difference in the JSON or the error message. Where
+      Python's own <code>ast.literal_eval</code> and <code>json.dumps</code> can read an input, the output must match theirs too.
+    </p>
   </Fragment>
 </ToolLayout>

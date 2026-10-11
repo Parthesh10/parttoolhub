@@ -212,7 +212,10 @@ is imported into the page with `?raw` and rendered by `CodeScript.astro` (markup
 Download buttons are one delegated handler in `floating-tools.client.ts`, reporting `copy_result` /
 `download_result` with `target: 'script'`). Every script gets a parity test that runs it and the engine
 on the same inputs (the engine's unit-test cases, the page's examples and seeded generated ones under
-random options) and fails on any difference: `tests/text-clean-python.test.ts` is the template. It skips
+random options) and fails on any difference: `tests/text-clean-python.test.ts` is the template. Where Python
+itself can compute the answer, also hold both to it (an "oracle"): `tests/python-dict-python.test.ts` compares
+against `json.dumps(ast.literal_eval(...))`, which catches a mistake the engine and the port share (it found the
+engine rounding big integers and reordering digit-only keys). It skips
 when Python 3 is not on PATH, so run it somewhere Python exists before release. Porting JS regexes to
 Python: JS `\w`/`\d` are ASCII (spell out `[A-Za-z0-9_]`/`[0-9]`), JS `\s` is a different set from
 Python's (the script spells it out), and `\p{…}` needs the third-party `regex` module. Prove the test

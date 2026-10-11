@@ -101,7 +101,7 @@ export const TOOLS: Tool[] = [
     features: ['Single-quoted strings', 'True/False/None to true/false/null', 'Tuples and sets to arrays', 'Trailing commas and comments'],
     intent: 'python dict to json',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-18',
+    reviewedOn: '2026-10-11',
     spec: { name: 'Python language reference: literals', url: 'https://docs.python.org/3/reference/lexical_analysis.html#literals' },
   },
   {
@@ -114,7 +114,7 @@ export const TOOLS: Tool[] = [
     features: ['2, 4 or tab indent, or single line', 'true/false/null to True/False/None', 'Sort keys alphabetically', 'Same parser errors as Python\'s json module'],
     intent: 'json to python dict',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-18',
+    reviewedOn: '2026-10-11',
     spec: { name: 'Python language reference: literals', url: 'https://docs.python.org/3/reference/lexical_analysis.html#literals' },
   },
   {
