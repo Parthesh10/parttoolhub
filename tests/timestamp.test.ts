@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { timestampToDate, dateToTimestamp, relativeTime } from '../src/lib/timestamp.ts';
+import { timestampToDate, dateToTimestamp, relativeTime, toOffsetIso, toLocalIso, nowDateInput } from '../src/lib/timestamp.ts';
 
 const NOW = Date.UTC(2025, 0, 15, 12, 0, 0); // fixed "now" for deterministic relative-time tests
 
@@ -97,4 +97,57 @@ test('relativeTime phrasing around the "now" boundary', () => {
   assert.equal(relativeTime(new Date(NOW), NOW), 'in 1 second'); // diff of exactly 0 rounds to the "in" side
   assert.equal(relativeTime(new Date(NOW + 2 * 3600e3), NOW), 'in 2 hours');
   assert.equal(relativeTime(new Date(NOW - 3 * 86400e3), NOW), '3 days ago');
+});
+
+test('toOffsetIso: writes the wall-clock time of a fixed offset, ending in that offset', () => {
+  const d = new Date(1736937000000); // 2025-01-15T10:30:00Z
+  assert.equal(toOffsetIso(d, 330), '2025-01-15T16:00:00.000+05:30'); // India
+  assert.equal(toOffsetIso(d, -300), '2025-01-15T05:30:00.000-05:00'); // New York in winter
+  assert.equal(toOffsetIso(d, 0), '2025-01-15T10:30:00.000+00:00');
+  assert.equal(toOffsetIso(d, 345, false), '2025-01-15T16:15:00+05:45'); // Nepal, no milliseconds
+  assert.equal(toOffsetIso(new Date(Date.UTC(2025, 0, 15, 20, 0)), 330), '2025-01-16T01:30:00.000+05:30'); // crosses midnight
+  assert.equal(toOffsetIso(d, 353 + 1 / 3), '2025-01-15T16:23:20.000+05:53:20'); // historical LMT offset with seconds
+  const ancient = new Date(Date.UTC(-1, 0, 1));
+  assert.equal(toOffsetIso(ancient, 0), ancient.toISOString().replace('Z', '+00:00')); // same signed 6-digit year form
+});
+
+test('toOffsetIso: always the same instant, for any offset and any year', () => {
+  const instants = [0, -1, 1736937000000, 1736937000500, Date.UTC(1900, 5, 1), Date.UTC(9999, 11, 31, 23, 59), Date.UTC(-500, 0, 1), Date.UTC(12000, 0, 1)];
+  for (const ms of instants) {
+    for (let off = -720; off <= 840; off += 15) {
+      assert.equal(new Date(toOffsetIso(new Date(ms), off)).getTime(), ms, `${ms} at ${off}`);
+    }
+  }
+});
+
+test('localIso: the result row in the local zone is the same instant as iso', () => {
+  for (const input of ['1736937000', '-3600', '1736937000500', '0']) {
+    const r = timestampToDate(input, 'auto', NOW);
+    assert.ok(r.ok);
+    if (!r.ok) continue;
+    assert.equal(new Date(r.value.localIso).getTime(), r.value.epochMilliseconds);
+    assert.equal(r.value.localIso, toLocalIso(new Date(r.value.epochMilliseconds)));
+  }
+});
+
+test('regression: Convert now on the date side gives the current Unix time under either "Interpret as" (India)', () => {
+  // The bug: the input was toISOString() minus its Z (UTC fields, no offset), so under
+  // "Local time" an IST browser got a timestamp 5 h 30 min early. Run it in a real IST zone.
+  const before = process.env.TZ;
+  process.env.TZ = 'Asia/Kolkata';
+  try {
+    const now = new Date(Date.UTC(2026, 9, 11, 11, 19, 58, 400));
+    const filled = nowDateInput(now);
+    assert.equal(filled, '2026-10-11T16:49:58+05:30'); // reads as the local clock, offset written out
+    for (const interpret of ['utc', 'local'] as const) {
+      const r = dateToTimestamp(filled, interpret, now.getTime());
+      assert.ok(r.ok && r.value.epochSeconds === Math.floor(now.getTime() / 1000), interpret);
+    }
+    const r = timestampToDate('1736937000', 'auto', NOW);
+    assert.ok(r.ok && r.value.localIso === '2025-01-15T16:00:00.000+05:30');
+    assert.ok(r.ok && /4:00:00/.test(r.value.local));
+  } finally {
+    if (before === undefined) delete process.env.TZ;
+    else process.env.TZ = before;
+  }
 });

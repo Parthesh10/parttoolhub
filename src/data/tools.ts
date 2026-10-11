@@ -124,10 +124,10 @@ export const TOOLS: Tool[] = [
     description: 'Convert a Unix timestamp to a readable date and back. Auto-detects seconds vs milliseconds, shows UTC, your local time and a relative time.',
     short: 'Convert between Unix time and a human date, with explicit control over seconds/milliseconds and time zone.',
     category: 'converters',
-    features: ['Auto-detects seconds vs milliseconds', 'UTC, local and relative time shown together', 'Explicit UTC/local interpretation for dates with no offset', 'Works with negative (pre-1970) timestamps'],
+    features: ['Auto-detects seconds vs milliseconds', 'Answers in your local time, with ISO 8601 in your zone and in UTC', 'Explicit UTC/local interpretation for dates with no offset', 'Works with negative (pre-1970) timestamps'],
     intent: 'unix timestamp converter',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-25',
+    reviewedOn: '2026-10-11',
     spec: { name: 'ECMA-262: the Date object', url: 'https://tc39.es/ecma262/multipage/numbers-and-dates.html#sec-date-objects' },
   },
   {

@@ -77,7 +77,10 @@
 
   <div class="ts-result" id="result" hidden>
     <div class="ts-headline">
-      <span class="ts-relative" id="relative"></span>
+      <div class="ts-answer">
+        <span class="ts-when" id="when"></span>
+        <span class="ts-relative" id="relative"></span>
+      </div>
       <button type="button" class="btn btn-primary btn-sm" id="btn-copy">Copy <span id="primary-name"></span></button>
     </div>
     <div class="ts-list" id="grid"></div>
@@ -114,7 +117,10 @@
   /* Result ------------------------------------------------------------------ */
   .ts-result { margin-top: 1.1rem; }
   .ts-headline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.6rem; }
-  .ts-relative { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; }
+  /* The answer in the reader's own terms (local date, or the Unix number) leads; "2 years ago" sits under it. */
+  .ts-answer { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+  .ts-when { font-family: var(--font-display); font-size: clamp(1.1rem, 4.5vw, 1.5rem); font-weight: 700; overflow-wrap: anywhere; }
+  .ts-relative { color: var(--text-muted); font-size: 0.95rem; }
   .ts-list { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
   /* Rows are built by the client script (innerHTML), hence :global. */
   .ts-list :global(.ts-row) {

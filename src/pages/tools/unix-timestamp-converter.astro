@@ -2,7 +2,7 @@
 import ToolLayout from '../../layouts/ToolLayout.astro';
 import TimestampTool from '../../components/tools/TimestampTool.astro';
 import { toolBySlug } from '../../data/tools';
-import { timestampToDate, dateToTimestamp, SAMPLE_EPOCH_SECONDS, SAMPLE_DATE_TIME } from '../../lib/timestamp';
+import { timestampToDate, dateToTimestamp, toOffsetIso, SAMPLE_EPOCH_SECONDS, SAMPLE_DATE_TIME } from '../../lib/timestamp';
 
 const tool = toolBySlug('unix-timestamp-converter');
 
@@ -14,7 +14,12 @@ const autoMs = (timestampToDate('1736937000000') as { ok: true; value: { iso: st
 const autoS = (timestampToDate('1736937000') as { ok: true; value: { iso: string } }).value.iso;
 
 const utcInterpret = (dateToTimestamp('2025-01-15T10:30:00', 'utc') as { ok: true; value: { epochSeconds: number } }).value.epochSeconds;
-const localInterpret = (dateToTimestamp('2025-01-15T10:30:00', 'local') as { ok: true; value: { epochSeconds: number } }).value.epochSeconds;
+// Never 'local' here: this runs at build time, on a server in UTC, so "local" would just mean UTC
+// (the page once printed the same number twice). A fixed, named zone shows the real difference.
+const IST_MINUTES = 330;
+const istInterpret = (dateToTimestamp('2025-01-15T10:30:00+05:30', 'utc') as { ok: true; value: { epochSeconds: number } }).value.epochSeconds;
+const sampleIst = toOffsetIso(new Date(Number(SAMPLE_EPOCH_SECONDS) * 1000), IST_MINUTES);
+const sampleIstNow = toOffsetIso(new Date(Number(SAMPLE_EPOCH_SECONDS) * 1000), IST_MINUTES, false);
 
 const rollover = (dateToTimestamp('2025-13-40', 'utc') as { ok: true; value: { iso: string } }).value.iso;
 
@@ -31,7 +36,7 @@ const steps = [
   'Choose a direction: <strong>Timestamp → Date</strong> or <strong>Date → Timestamp</strong>.',
   'Going from a timestamp, pick the unit: <em>Auto-detect</em> works for anything from the last ~55 years. Going from a date, pick <strong>Interpret as</strong> (UTC or your browser\'s local time) for dates with no time zone written in them.',
   'Paste the value, or press <strong>Convert now</strong> on the live clock at the top to fill in the current moment. The clock\'s own Copy buttons take the current Unix time in seconds or milliseconds directly.',
-  'Read the result: how long ago or from now it is, in large type, then every representation in one list: Unix seconds and milliseconds, ISO 8601, UTC and your local time. The answer to the direction you chose comes first and is highlighted.',
+  'Read the result: the answer in large type (your local date and time, or the Unix time going the other way) with how long ago or from now it is, then every representation in one list: your local time, ISO 8601 in your time zone and in UTC, the UTC date, and Unix seconds and milliseconds. The answer to the direction you chose comes first and is highlighted.',
   'Press <strong>Copy</strong> on any row, or the main Copy button (or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the input) for the highlighted answer.',
 ];
 
@@ -47,6 +52,10 @@ const faq = [
   {
     q: 'Does it handle dates before 1970?',
     a: 'Yes. Unix time is just negative before the epoch, and this tool accepts negative timestamps and dates as far back as JavaScript\'s <code>Date</code> can represent (about 273,790 years in either direction).',
+  },
+  {
+    q: 'Why does the highlighted date end in +05:30 instead of Z?',
+    a: `Both describe the same instant. Going from a timestamp, the highlighted answer is ISO 8601 written in your own time zone with its offset from UTC (in India, <code>${sampleIst}</code>), so it reads as your local time and still means exactly one moment wherever it is pasted. If the system you are pasting into wants UTC, copy the <strong>ISO 8601 (UTC)</strong> row instead: <code>${sampleBreakdown.iso}</code>.`,
   },
   {
     q: 'What time zone is the Local value shown in?',
@@ -73,14 +82,15 @@ const faq = [
     <p>The Unix timestamp <code>{SAMPLE_EPOCH_SECONDS}</code> (seconds) becomes:</p>
     <pre><code>{sampleBreakdown.iso}
 {sampleBreakdown.utc}</code></pre>
+    <p>In your browser the headline shows that moment in your own time zone, and the highlighted answer is ISO 8601 with your UTC offset: for India Standard Time, <code>{sampleIst}</code>, the same instant as the <code>Z</code> form above.</p>
     <p>Going the other way, <code>{SAMPLE_DATE_TIME}</code> with <strong>Interpret as: UTC</strong> becomes the Unix timestamp <code>{reverseCheck}</code>, the same instant, both directions.</p>
 
     <h2>Options explained</h2>
     <ul>
       <li><strong>Direction: Timestamp → Date / Date → Timestamp</strong> switches which side you type into and which side is computed.</li>
       <li><strong>Unit (Timestamp → Date only): Auto-detect / Seconds / Milliseconds</strong> reads the number of digits: <code>1736937000</code> (10 digits) auto-detects as seconds and resolves to <code>{autoS}</code>; <code>1736937000000</code> (13 digits) auto-detects as milliseconds and resolves to the same instant, <code>{autoMs}</code>.</li>
-      <li><strong>Interpret as (Date → Timestamp only): UTC / Local time</strong> only matters when the date you paste has no time zone of its own. <code>{SAMPLE_DATE_TIME}</code> becomes Unix time <code>{utcInterpret}</code> under UTC but <code>{localInterpret}</code> under this browser's local zone. Add an explicit <code>Z</code> or <code>+05:30</code> to the date and this option is ignored; the offset you wrote always wins.</li>
-      <li><strong>Convert now</strong> fills the input with right now, in whichever direction is active (the clock above it ticks once a second, and pauses while the tab is in the background); <strong>Load sample</strong> inserts the worked example above; <strong>Clear</strong> empties the box.</li>
+      <li><strong>Interpret as (Date → Timestamp only): UTC / Local time</strong> only matters when the date you paste has no time zone of its own. <code>{SAMPLE_DATE_TIME}</code> becomes Unix time <code>{utcInterpret}</code> under UTC, but <code>{istInterpret}</code> under Local time in a browser set to India Standard Time (UTC+05:30). Add an explicit <code>Z</code> or <code>+05:30</code> to the date and this option is ignored; the offset you wrote always wins.</li>
+      <li><strong>Convert now</strong> fills the input with right now, in whichever direction is active (the clock above it ticks once a second, and pauses while the tab is in the background). On the date side it is written in your local time with your UTC offset (in India it looks like <code>{sampleIstNow}</code>), so the result is right whichever Interpret as option is selected. <strong>Load sample</strong> inserts the worked example above; <strong>Clear</strong> empties the box.</li>
     </ul>
 
     <h2>Edge cases and common errors</h2>
@@ -102,6 +112,7 @@ Math.floor(Date.parse('2025-01-15T10:30:00Z') / 1000); // date -> timestamp (UTC
 # Python
 import datetime
 datetime.datetime.fromtimestamp(1736937000, datetime.timezone.utc)
+datetime.datetime.fromtimestamp(1736937000).astimezone().isoformat()  # your local time, with offset
 int(datetime.datetime(2025, 1, 15, 10, 30, tzinfo=datetime.timezone.utc).timestamp())</code></pre>
     <p class="muted">Both languages have the same no-offset ambiguity this tool routes around: JavaScript's <code>Date.parse</code> and Python's naive <code>datetime</code> objects assume different defaults depending on the exact string shape and platform. Pass an explicit UTC offset (as above) whenever the zone actually matters.</p>
   </Fragment>

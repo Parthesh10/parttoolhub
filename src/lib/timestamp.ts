@@ -34,6 +34,8 @@ export interface TimestampBreakdown {
   utc: string;
   /** Formatted in whichever zone this JS engine resolves as local. */
   local: string;
+  /** ISO 8601 in the local zone with its offset, e.g. "2025-01-15T16:00:00.000+05:30": the same instant as `iso`. */
+  localIso: string;
   /** "in 3 days" / "2 hours ago" phrasing relative to `now`. */
   relative: string;
   /** IANA zone name behind `local`, e.g. "Asia/Kolkata" — so the UI can label it. */
@@ -67,6 +69,38 @@ export function relativeTime(date: Date, now: number = Date.now()): string {
   return 'now';
 }
 
+const pad = (n: number, width = 2) => String(n).padStart(width, '0');
+
+/**
+ * ISO 8601 for `date` written in the wall-clock time of a zone `offsetMinutes` east of UTC,
+ * ending in that offset ("+05:30") instead of "Z". It is the same instant either way, so
+ * `new Date(toOffsetIso(d, o))` always gives back `d`. Years outside 0–9999 use the same
+ * signed six-digit form as `toISOString`; a historical offset with seconds (local mean time
+ * before ~1900) is written as ±HH:MM:SS.
+ */
+export function toOffsetIso(date: Date, offsetMinutes: number, withMs = true): string {
+  const shifted = new Date(date.getTime() + offsetMinutes * 60_000);
+  if (Number.isNaN(shifted.getTime())) return date.toISOString(); // shifted past Date's range edge
+  const y = shifted.getUTCFullYear();
+  const year = y >= 0 && y <= 9999 ? pad(y, 4) : (y < 0 ? '-' : '+') + pad(Math.abs(y), 6);
+  const ms = withMs ? '.' + pad(shifted.getUTCMilliseconds(), 3) : '';
+  const abs = Math.abs(offsetMinutes);
+  const offSecs = Math.round((abs * 60) % 60);
+  const offset = (offsetMinutes < 0 ? '-' : '+') + pad(Math.floor(abs / 60)) + ':' + pad(Math.floor(abs % 60)) + (offSecs ? ':' + pad(offSecs) : '');
+  return `${year}-${pad(shifted.getUTCMonth() + 1)}-${pad(shifted.getUTCDate())}T${pad(shifted.getUTCHours())}:${pad(shifted.getUTCMinutes())}:${pad(shifted.getUTCSeconds())}${ms}${offset}`;
+}
+
+/** `date` as ISO 8601 in this engine's local zone, e.g. "2025-01-15T16:00:00.000+05:30". */
+export const toLocalIso = (date: Date, withMs = true) => toOffsetIso(date, -date.getTimezoneOffset(), withMs);
+
+/**
+ * What "Convert now" puts in the Date → Timestamp input: local wall-clock time WITH its offset.
+ * The offset matters: without it the string would be re-read through "Interpret as", and the
+ * old `toISOString()`-minus-"Z" value (UTC fields, no offset) came out a whole UTC offset wrong
+ * under "Local time".
+ */
+export const nowDateInput = (now: Date = new Date()) => toLocalIso(now, false);
+
 function breakdown(date: Date, now: number): BreakdownResult {
   if (Number.isNaN(date.getTime())) return { ok: false, error: 'That does not resolve to a valid date.' };
   if (Math.abs(date.getTime()) > MAX_SAFE_MS) return { ok: false, error: 'That is outside the range JavaScript dates can represent (year ±273,790).' };
@@ -78,6 +112,7 @@ function breakdown(date: Date, now: number): BreakdownResult {
       iso: date.toISOString(),
       utc: date.toUTCString(),
       local: new Intl.DateTimeFormat(undefined, { dateStyle: 'full', timeStyle: 'long' }).format(date),
+      localIso: toLocalIso(date),
       relative: relativeTime(date, now),
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     },

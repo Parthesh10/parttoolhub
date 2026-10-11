@@ -1,4 +1,4 @@
-import { timestampToDate, dateToTimestamp, SAMPLE_EPOCH_SECONDS, SAMPLE_DATE_TIME, type TimestampBreakdown } from '../../lib/timestamp';
+import { timestampToDate, dateToTimestamp, nowDateInput, SAMPLE_EPOCH_SECONDS, SAMPLE_DATE_TIME, type TimestampBreakdown } from '../../lib/timestamp';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -8,6 +8,7 @@ const inputStat = $('input-stat');
 // The primary value lives in `primary`, never in a variable named "output" inside track() calls:
 // the static analytics PII guard bans that identifier there (see uuid-generate.client.ts).
 let primary = '';
+const whenEl = $('when');
 const relativeEl = $('relative');
 const primaryName = $('primary-name');
 const nowS = $('now-s');
@@ -98,16 +99,20 @@ function showBreakdown(b: TimestampBreakdown) {
   result.hidden = false;
   status.hidden = true;
   // The answer to the direction chosen comes first and is the one the main Copy button takes.
-  const primaryKey = mode === 'to-date' ? 'iso' : 'seconds';
-  primary = mode === 'to-date' ? b.iso : String(b.epochSeconds);
+  // Timestamp → Date answers in the visitor's own zone: the headline is their local date and the
+  // highlighted value is ISO 8601 with their offset (exact, and the same instant as the "Z" row).
+  const primaryKey = mode === 'to-date' ? 'local_iso' : 'seconds';
+  primary = mode === 'to-date' ? b.localIso : String(b.epochSeconds);
   primaryName.textContent = mode === 'to-date' ? 'ISO date' : 'timestamp';
+  whenEl.textContent = mode === 'to-date' ? b.local : String(b.epochSeconds);
   relativeEl.textContent = b.relative.charAt(0).toUpperCase() + b.relative.slice(1);
   const rows: [string, string, string][] = [
-    ['Unix seconds', String(b.epochSeconds), 'seconds'],
-    ['Unix milliseconds', String(b.epochMilliseconds), 'milliseconds'],
+    [`Local (${b.timeZone})`, b.local, 'local'],
+    ['ISO 8601 (local)', b.localIso, 'local_iso'],
     ['ISO 8601 (UTC)', b.iso, 'iso'],
     ['UTC', b.utc, 'utc'],
-    [`Local (${b.timeZone})`, b.local, 'local'],
+    ['Unix seconds', String(b.epochSeconds), 'seconds'],
+    ['Unix milliseconds', String(b.epochMilliseconds), 'milliseconds'],
   ];
   rows.sort((a, c) => Number(c[2] === primaryKey) - Number(a[2] === primaryKey));
   grid.innerHTML = rows.map(([label, value, key]) => listRow(label, value, key, key === primaryKey)).join('');
@@ -231,7 +236,8 @@ $('btn-sample').addEventListener('click', () => {
 });
 $('btn-now').addEventListener('click', () => {
   inputSource = 'sample'; // a generated value, not typed or pasted
-  input.value = mode === 'to-date' ? String(Math.floor(Date.now() / 1000)) : new Date().toISOString().replace(/\.\d+Z$/, '');
+  // Date side: local wall-clock time with its offset, so "Interpret as" cannot shift it.
+  input.value = mode === 'to-date' ? String(Math.floor(Date.now() / 1000)) : nowDateInput();
   track('tool_option', { option: 'btn-now', value: '(text)' });
   render();
 });
