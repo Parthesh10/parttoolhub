@@ -321,7 +321,7 @@ export const TOOLS: Tool[] = [
     features: ['Case-insensitive matching', 'Trim before comparing', 'Keep first or last occurrence', 'Sort the result'],
     intent: 'remove duplicate lines',
     reviewedBy: SITE.author,
-    reviewedOn: '2026-09-18',
+    reviewedOn: '2026-10-17',
   },
   {
     slug: 'markdown-to-plain-text',

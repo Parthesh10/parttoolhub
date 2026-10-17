@@ -1,6 +1,8 @@
 ---
 import ToolLayout from '../../layouts/ToolLayout.astro';
 import DedupeLinesTool from '../../components/tools/DedupeLinesTool.astro';
+import CodeScript from '../../components/CodeScript.astro';
+import pythonScript from '../../lib/python/remove_duplicate_lines.py?raw';
 import { toolBySlug } from '../../data/tools';
 import { dedupeLines, SAMPLE_INPUT } from '../../lib/dedupe-lines';
 
@@ -87,10 +89,39 @@ const faq = [
       <li><strong>Empty input</strong> gives an empty output and a count of 0. No error is raised.</li>
     </ul>
 
-    <h2>Do the same thing on the command line</h2>
+    <h2>Do the same thing in code</h2>
+    <p>On the command line, each of these keeps one copy of every line:</p>
     <pre><code>sort -u file.txt                        # sorted, unique lines
 awk '!seen[$0]++' file.txt              # unique lines, original order preserved
 Get-Content file.txt | Select-Object -Unique   # PowerShell, original order</code></pre>
     <p class="muted"><code>sort -u</code> and <code>awk</code> are case-sensitive and do not trim; add <code>-f</code> to <code>sort</code> for case-folding.</p>
+    <p>In Python, a dictionary remembers the order its keys were added in, so two lines keep the first copy of each line in order:</p>
+    <pre><code>lines = [line.strip() for line in text.split("\n")]
+unique = list(dict.fromkeys(line for line in lines if line))</code></pre>
+    <p>
+      Use <code>split("\n")</code> rather than <code>splitlines()</code> here: <code>splitlines()</code> also breaks lines at
+      form feeds, <code>U+0085</code> and <code>U+2028</code>, which the tool leaves inside the line. The script below does
+      everything the tool does (case-insensitive matching, keeping the last copy, repeated lines only, sorting) and prints
+      the same counter. It needs Python 3.9 or later and only the standard library.
+    </p>
+    <CodeScript code={pythonScript} filename="remove_duplicate_lines.py" />
+    <p>
+      Run it on a file or pipe a list through it. The list goes to standard output and the counter to standard error, so
+      <code>&gt;</code> saves only the list:
+    </p>
+    <pre><code>python remove_duplicate_lines.py emails.txt &gt; unique.txt
+python remove_duplicate_lines.py --ignore-case --keep last --sort az &lt; export.txt
+python remove_duplicate_lines.py --only-duplicates log.txt</code></pre>
+    <p>
+      From your own code: <code>from remove_duplicate_lines import dedupe_lines</code>, then
+      <code>dedupe_lines(text, ignore_case=True)</code> returns the output with the three counts.
+    </p>
+    <p class="muted">
+      The site's test suite runs this script and the tool on the same inputs (the tool's own test cases plus about fifteen
+      hundred generated lists, padded with every kind of space, under random option combinations) and fails on any
+      difference in the output or the counts. With the default comparison and no sorting, the script's result must also equal
+      Python's own <code>dict.fromkeys</code>. Sorting follows an English-locale browser; other languages sort their own
+      alphabets differently, but the lines you keep are the same.
+    </p>
   </Fragment>
 </ToolLayout>
